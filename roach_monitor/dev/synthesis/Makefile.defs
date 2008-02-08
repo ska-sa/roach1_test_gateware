@@ -1,0 +1,33 @@
+SYNTH_BIN=synplify
+SYNTH_F=$(PROJECT).edn
+SYNTH_SCRIPT=$(PROJECT).prj
+
+
+SYNTH_COMMANDS=impl -add synthesis -type fpga;\
+               set_option -technology FUSION;\
+               set_option -part AFS600;\
+               set_option -speed_grade -1;\
+               set_option -default_enum_encoding default;\
+               set_option -symbolic_fsm_compiler 1;\
+               set_option -resource_sharing 1;\
+               set_option -frequency 10.000;\
+               set_option -run_prop_extract 1;\
+               set_option -fanout_limit 12;\
+               set_option -globalthreshold 50;\
+               set_option -maxfan_hard 0;\
+               set_option -disable_io_insertion 0;\
+               set_option -retiming 0;\
+               set_option -report_path 4000;\
+               set_option -update_models_cp 0;\
+               set_option -preserve_registers 0;\
+               set_option -write_verilog 0;\
+               set_option -write_vhdl 0;\
+               set_option -write_apr_constraint 1;\
+	       set_option -top_module $(TOPLEVEL);\
+               project -result_format edif;\
+               project -result_file $(SYNTH_F);\
+               set_option -dup 0;\
+               set_option -include_path $(INCLUDE);\
+               set_option -vlog_std v2001;\
+               impl -active $(PROJECT)
+

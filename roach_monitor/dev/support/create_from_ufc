@@ -1,0 +1,11 @@
+#!/bin/bash
+J=127;
+cp $2 tempfile0
+for o in $(cat $1); do
+  i=$(echo $o | sed -e 's/\m//g');
+  cat tempfile0 |sed -e "s/MOO$J</$i</g" > tempfile1
+  cp tempfile1 tempfile0
+  J=$[J - 1]
+done
+cat tempfile0
+rm tempfile0 tempfile1

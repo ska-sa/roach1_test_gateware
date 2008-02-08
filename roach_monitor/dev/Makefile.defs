@@ -1,0 +1,34 @@
+MODULE_ID=roach_monitor
+REV_MAJOR=ba
+REV_MINOR:=$(shell svn log|sed -n -e 2p | cut -d " " -f 1 | sed -e 's/r//')
+PROJECT=$(MODULE_ID)_$(REV_MAJOR)
+
+# Directory Defines
+SYNTH_DIR=synthesis
+PAR_DIR=par
+GEN_DIR=gen
+CONSTRAINTS_DIR=constraint
+INCLUDE_DIR=include
+MODULES_DIR=modules
+SUPPORT_DIR=support
+
+# File Defines
+TOPLEVEL=toplevel
+CONSTRAINTS_P=$(CONSTRAINTS_DIR)/$(MODULE_ID).pdc
+CONSTRAINTS_P=$(CONSTRAINTS_DIR)/$(MODULE_ID).pdc
+SRC=./modules/toplevel/hdl/toplevel.v \
+    ./modules/infrastructure/hdl/infrastructure.v \
+    ./modules/infrastructure/hdl/clocks.v \
+    ./modules/infrastructure/hdl/rcclock.v \
+    ./modules/infrastructure/hdl/vrpsm.v \
+    ./modules/infrastructure/hdl/xtalclk.v \
+    ./modules/reset_block/hdl/reset_block.v \
+    ./modules/debouncer/hdl/debouncer.v \
+    ./include/parameters.v 
+
+FLASHROM_F = $(PROJECT).ufc
+FLASHMEM_F = $(PROJECT).efc
+CHEADER_F  = $(PROJECT).h
+SYNTH_FILE = $(PROJECT).edn
+BIT_FILE   = $(PROJECT).stp
+PROG_F     = $(PROJECT).stp
