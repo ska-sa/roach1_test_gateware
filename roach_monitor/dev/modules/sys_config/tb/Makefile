@@ -1,4 +1,4 @@
-MODULE=serial_uart
+MODULE=sys_config
 
 VCC=iverilog
 FLAGS=-Wall

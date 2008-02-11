@@ -19,9 +19,7 @@ module as_wb_bridge(
 
     wb_we_o, wb_cyc_o, wb_stb_o,
     wb_adr_o, wb_dat_o, wb_dat_i,
-    wb_ack_i,
-
-    wb_timeout
+    wb_ack_i, wb_err_i
   );
 
   input  clk, reset;
@@ -35,9 +33,7 @@ module as_wb_bridge(
   output [15:0] wb_adr_o;
   output [15:0] wb_dat_o;
   input  [15:0] wb_dat_i;
-  input  wb_ack_i;
-
-  input  wb_timeout;
+  input  wb_ack_i, wb_err_i;
 
   reg [2:0] state;
 
@@ -172,7 +168,7 @@ module as_wb_bridge(
 	  end
 	end
 	`ASWB_STATE_WRITE: begin
-	  if (wb_timeout) begin
+	  if (wb_err_i) begin
 	    state<=`ASWB_STATE_CMND;
           end else if (wb_ack_i) begin
 	    state<=`ASWB_STATE_CMND;
@@ -182,7 +178,7 @@ module as_wb_bridge(
           end
 	end
 	`ASWB_STATE_READ: begin
-	  if (wb_timeout) begin
+	  if (wb_err_i) begin
 	    state<=`ASWB_STATE_CMND;
           end else if (wb_ack_i) begin
 	    wb_dat_i_buf<=wb_dat_i;

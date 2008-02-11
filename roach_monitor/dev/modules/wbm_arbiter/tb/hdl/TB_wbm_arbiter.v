@@ -33,10 +33,9 @@ module TB_wbm_arbiter();
     .wbm_ack_o(wbm_ack_o), .wbm_err_o(wbm_err_o),
     .wbs_cyc_o(wbs_cyc_o), .wbs_stb_o(wbs_stb_o), .wbs_we_o(wbs_we_o),
     .wbs_adr_o(wbs_adr_o), .wbs_dat_o(wbs_dat_o), .wbs_dat_i(wbs_dat_i),
-    .wbs_ack_i(wbs_ack_i), 
+    .wbs_ack_i(wbs_ack_i), .wbs_err_i(1'b0),
     .wbm_id(),
-    .wbm_mask(4'b1111),
-    .wb_timeout(1'b0)
+    .wbm_mask(4'b1111)
   );
 
   reg [31:0] clk_counter;

@@ -10,11 +10,10 @@ module wbm_arbiter(
     /*wbs signals*/
     wbs_cyc_o, wbs_stb_o, wbs_we_o,
     wbs_adr_o, wbs_dat_o, wbs_dat_i,
-    wbs_ack_i, 
+    wbs_ack_i, wbs_err_i,
     /*special signals*/
     wbm_mask,
-    wbm_id,
-    wb_timeout
+    wbm_id
   );
   parameter NUM_MASTERS = 2;
 
@@ -29,17 +28,14 @@ module wbm_arbiter(
   output [NUM_MASTERS - 1:0] wbm_ack_o;
   output [NUM_MASTERS - 1:0] wbm_err_o;
 
-  output wbs_cyc_o;
-  output wbs_stb_o;
-  output wbs_we_o;
+  output wbs_cyc_o, wbs_stb_o, wbs_we_o;
   output [15:0] wbs_adr_o;
   output [15:0] wbs_dat_o;
   input  [15:0] wbs_dat_i;
-  input  wbs_ack_i;
+  input  wbs_ack_i, wbs_err_i;
 
   output [NUM_MASTERS - 1:0] wbm_id;
   input  [NUM_MASTERS - 1:0] wbm_mask;
-  input  wb_timeout;
 
   integer active_master;
 
@@ -50,7 +46,7 @@ module wbm_arbiter(
   end endgenerate
 
   generate for (gen_j=0; gen_j < NUM_MASTERS; gen_j=gen_j+1) begin : G1
-    assign wbm_err_o[gen_j] = active_master == gen_j ? wb_timeout & ~wbs_ack_i : 1'b0;
+    assign wbm_err_o[gen_j] = active_master == gen_j ? wbs_err_i : 1'b0;
   end endgenerate
 
   assign wbm_dat_o = wbs_dat_i;
@@ -98,7 +94,7 @@ module wbm_arbiter(
         end
       end
 
-      if (wbs_ack_i | wb_timeout) begin
+      if (wbs_ack_i | wbs_err_i) begin
         pending[active_master] <= 1'b0;
         wb_busy <= 1'b0;
 `ifdef DEBUG

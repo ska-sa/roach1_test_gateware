@@ -1,77 +1,70 @@
-`timescale 1 ns/10 ps
-`include "memlayout.v"
+//`include "irq_controller.vh"
 module irq_controller(
-  reset,
-  internal_event,
-  irq,
-  lb_addr,lb_data_in,lb_data_out,lb_rd,lb_wr,lb_strb,lb_clk
+    wb_rst_i, wb_clk_i,
+    wb_cyc_i, wb_stb_i, wb_we_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
+    irq_i, irq_o
   );
-  input reset;
+  parameter NUM_SOURCES = 4;
+  input  wb_rst_i, wb_clk_i;
+  input  wb_cyc_i, wb_stb_i, wb_we_i;
+  input  [15:0] wb_adr_i;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
+  output wb_ack_o;
+  input  [NUM_SOURCES - 1:0] irq_i;
+  output irq_o;
   
-  input [3:0] internal_event; 
-  output irq;
+  reg wb_ack_o;
+  reg wb_dat_o_src;
 
-  input lb_clk;
-  input [15:0] lb_addr;
-  input [15:0] lb_data_in;
-  output [15:0] lb_data_out;
-  input lb_rd,lb_wr;
-  output lb_strb;
-  
-  reg lb_strb;
-  reg [15:0] lb_data_out;
-  wire addressed = (lb_addr >= `IRQC_A && lb_addr < `IRQC_A + `IRQC_L);
+  reg [NUM_SOURCES:0] irq_mask;
+  reg [NUM_SOURCES:0] irq_flag;
+  assign wb_dat_o = wb_dat_o_src ? {{16 - (NUM_SOURCES + 1){1'b0}}, irq_mask} :
+                                   {{16 - (NUM_SOURCES + 1){1'b0}}, irq_flag};
+  assign irq_o=((irq_flag & irq_mask) != 5'b0);
 
-  reg [4:0] irq_mask;
-  reg [4:0] irq_flag;
-
-  assign irq=((irq_flag & irq_mask) != 5'b0);
-
-  always @(posedge lb_clk) begin
-    if (reset) begin
-      irq_mask<=5'b11111;
-      irq_flag<=5'b00000;
-      lb_strb<=1'b0;
-      lb_data_out<=16'b0;
-`ifdef DEBUG
-      $display("irqc: reset");
-`endif 
+  always @(posedge wb_clk_i) begin
+    wb_ack_o <= 1'b0;
+    if (wb_rst_i) begin
+      irq_mask<={NUM_SOURCES + 1 {1'b1}};
+      irq_flag<={NUM_SOURCES + 1 {1'b0}};
     end else begin
-      if (addressed & (lb_rd | lb_wr)) begin
-        case (lb_addr)
-          `IRQC_FLAG_A: begin
-            if (lb_rd) begin
-              lb_data_out<={11'b0,irq_flag};
-            end else begin
+      if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
+        wb_ack_o <= 1'b1;
+        case (wb_adr_i)
+          `REG_IRQC_FLAG: begin
+            if (wb_we_i) begin
+              irq_flag<=irq_flag & wb_dat_i[NUM_SOURCES:0]; //leave zeros, clear ones
 `ifdef DEBUG
-              $display("irqc: setting flags to %b -- events = %b",irq_flag & lb_data_in[4:0],internal_event);
+
+              $display("irqc: setting flags to %b -- events = %b",irq_flag & wb_dat_i[NUM_SOURCES:0],irq_i);
 `endif
-              irq_flag<=irq_flag & lb_data_in[4:0]; /*leave zeros, clear ones*/
+            end else begin
+              wb_dat_o_src <= 1'b0;
             end
           end
-          `IRQC_USER_A: begin
-            if (lb_wr && lb_data_in) begin
-              irq_flag[4]<=1'b1;
+          `REG_IRQC_USER: begin
+            if (wb_we_i) begin
+              irq_flag[NUM_SOURCES] <= wb_dat_i == 16'hff_ff;
             end 
           end
-          `IRQC_MASK_A: begin
-            if (lb_rd) begin
-              lb_data_out<={11'b0,irq_mask};
+          `REG_IRQC_MASK: begin
+            if (wb_we_i) begin
+              irq_mask<=wb_dat_i[NUM_SOURCES:0];
             end else begin
-              irq_mask<=lb_data_in[4:0];
+              wb_dat_o_src <= 1'b1;
             end
           end
         endcase
-        lb_strb<=1'b1;
       end else begin
-        irq_flag<=(irq_flag | {1'b0,internal_event}); /*leave ones, set zeros*/
+        irq_flag<=(irq_flag | {1'b0, irq_i}); //leave ones, set zeros
 `ifdef DEBUG
-        if ( irq_flag != (irq_flag | {1'b0,internal_event})) begin
-          $display("irqc: got irq -- events == %b",internal_event);
+        if ( irq_flag != (irq_flag | {1'b0, irq_i})) begin
+          $display("irqc: got irq -- events == %b", irq_i);
         end
 `endif 
-        lb_data_out<=16'b0;
-        lb_strb<=1'b0;
       end 
     end 
   end

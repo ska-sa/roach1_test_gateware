@@ -2,11 +2,11 @@
 `timescale 1ns/10ps
 
 module i2c_slave(
-  clk, reset,
-  sda_i, sda_o, scl_i, scl_o, sda_oen, scl_oen,
-  as_data_i,  as_data_o,
-  as_dstrb_o, as_dstrb_i, as_busy_o,
-  i2c_cmnd_strb_o
+    clk, reset,
+    sda_i, sda_o, scl_i, scl_o, sda_oen, scl_oen,
+    as_data_i,  as_data_o,
+    as_dstrb_o, as_dstrb_i, as_busy_o,
+    i2c_cmnd_strb_o
   );
   parameter FREQ          = 100_000;
   parameter CLOCK_RATE    = 10_000_000;

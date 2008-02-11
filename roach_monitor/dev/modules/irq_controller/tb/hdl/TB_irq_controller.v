@@ -1,38 +1,36 @@
-`timescale 1ns/10ps
+`include "irq_controller.vh"
 
-`include "memlayout.v"
+`define CLK_PERIOD 32'd2
 
-`define CLK_PERIOD      32'd100
+`define STATE_START   2'd0
+`define STATE_COMMAND 2'd1
+`define STATE_WAIT    2'd2
 
-`define STATE_START 3'd0
-`define STATE_COMMAND 3'd1
-`define STATE_WAITW 3'd2
-`define STATE_WAITR 3'd3
-`define STATE_CHECK 3'd4
-
-`define COMMAND_USER_SET 3'd0
-`define COMMAND_MASK_SET 3'd1
+`define COMMAND_USER_SET  3'd0
+`define COMMAND_MASK_SET  3'd1
 `define COMMAND_MASK_READ 3'd2
-`define COMMAND_FLAG_SET 3'd3
+`define COMMAND_FLAG_SET  3'd3
 `define COMMAND_FLAG_READ 3'd4
 
 module TB_irq_controller();
-  reg reset;
-  reg [3:0] internal_event;
-  wire irq;
+  reg  reset;
   wire clk;
-  reg [15:0] lb_addr;
-  reg [15:0] lb_data_in;
-  wire [15:0] lb_data_out;
-  wire lb_strb;
-  reg lb_rd,lb_wr;
+  reg  [3:0] internal_event;
+  wire irq;
+  reg  wb_cyc_i, wb_stb_i, wb_we_i;
+  reg  [15:0] wb_adr_i;
+  reg  [15:0] wb_dat_i;
+  wire [15:0] wb_dat_o;
+  wire wb_ack_o;
 
-  irq_controller irq_controller(
-    .reset(reset),
-    .internal_event(internal_event),
-    .irq(irq),
-    .lb_addr(lb_addr),.lb_data_in(lb_data_in),.lb_data_out(lb_data_out),
-    .lb_rd(lb_rd),.lb_wr(lb_wr),.lb_strb(lb_strb),.lb_clk(clk)
+  irq_controller #(
+    .NUM_SOURCES(4)
+  ) irq_controller_inst (
+    .wb_rst_i(reset), .wb_clk_i(clk),
+    .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i),
+    .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
+    .wb_ack_o(wb_ack_o),
+    .irq_i(internal_event), .irq_o(irq)
   );
 
   reg [31:0] clk_counter;
@@ -41,13 +39,13 @@ module TB_irq_controller();
 
   initial begin
 `ifdef DEBUG
-    $display("starting simulation");
+    $display("sim: starting simulation");
 `endif
    reset<=1'b1;
    clk_counter<=32'b0;
    #512
 `ifdef DEBUG
-    $display("clearing reset");
+    $display("sim: clearing reset");
 `endif
    reset<=1'b0;
    #999999
@@ -60,21 +58,19 @@ module TB_irq_controller();
     #1 clk_counter<=(clk_counter < `CLK_PERIOD ? clk_counter + 32'b1 : 32'b0);
   end
 
-  reg [3:0] fault_countdown;
-
-  reg [2:0] state;
+  reg [1:0] state;
   reg [3:0] sequence;
   reg [2:0] command;
   reg [4:0] my_flag;
   reg [4:0] my_mask;
 
-  reg [15:0] lb_data_out_buff;
-
+  reg [15:0] wb_dat_o_buf;
 
   always @(posedge clk) begin
+    wb_cyc_i <= 1'b0;
+    wb_stb_i <= 1'b0;
     if (reset) begin
       state<=`STATE_START;
-      fault_countdown<=4'b0;
       sequence<=4'd0;
       my_mask<=4'b0;
       my_flag<=4'b0;
@@ -89,8 +85,8 @@ module TB_irq_controller();
               command<=`COMMAND_FLAG_READ;
             end
             4'd1: begin
-              if (!(lb_data_out_buff[4:0] === 5'b0)) begin
-                $display("FAILED: incorrect irq flags == %b  - seq == %d",lb_data_out_buff[4:0],sequence);
+              if (!(wb_dat_o_buf[4:0] === 5'b0)) begin
+                $display("FAILED: incorrect irq flags == %b  - seq == %d",wb_dat_o_buf[4:0],sequence);
                 $finish;
               end else if (irq) begin
                 $display("FAILED: spurious irq - seq == %d",sequence);
@@ -99,14 +95,14 @@ module TB_irq_controller();
               command<=`COMMAND_FLAG_READ;
               internal_event<=4'b1111;
 `ifdef DEBUG              
-              $display("test: read flag - events = %b, flag = %b, irq = %b",internal_event,lb_data_out_buff[4:0],irq);
+              $display("test: read flag - events = %b, flag = %b, irq = %b",internal_event,wb_dat_o_buf[4:0],irq);
 `endif
             end
             4'd2: begin
 `ifdef DEBUG              
-              $display("test: read flag - events = %b, flag = %b, irq = %b",internal_event,lb_data_out_buff[4:0],irq);
+              $display("test: read flag - events = %b, flag = %b, irq = %b",internal_event,wb_dat_o_buf[4:0],irq);
 `endif
-              if (!(lb_data_out_buff === {11'b0,5'b01111})) begin
+              if (!(wb_dat_o_buf === {11'b0,5'b01111})) begin
                 $display("FAILED: incorrect irq flags - seq == %d",sequence);
                 $finish;
               end else if (~irq) begin
@@ -128,7 +124,7 @@ module TB_irq_controller();
               command<=`COMMAND_FLAG_READ;
             end
             4'd4: begin
-              if (!(lb_data_out_buff === {11'b0,5'b00000})) begin
+              if (!(wb_dat_o_buf === {11'b0,5'b00000})) begin
                 $display("FAILED: incorrect irq flags - seq == %d",sequence);
                 $finish;
               end else if (irq) begin
@@ -139,7 +135,7 @@ module TB_irq_controller();
               my_mask<=5'b11100;
               internal_event<=4'b0011;
 `ifdef DEBUG              
-              $display("test: read flag - events = %b, flag = %b, irq = %d",internal_event,lb_data_out_buff[4:0],irq);
+              $display("test: read flag - events = %b, flag = %b, irq = %d",internal_event,wb_dat_o_buf[4:0],irq);
 `endif
             end
             4'd5: begin
@@ -154,7 +150,7 @@ module TB_irq_controller();
 `endif
             end
             4'd6: begin
-              if (!(lb_data_out_buff === {11'b0,5'b11100})) begin
+              if (!(wb_dat_o_buf === {11'b0,5'b11100})) begin
                 $display("FAILED: incorrect irq mask - seq == %d",sequence);
                 $finish;
               end else if (!(irq === 1'b1)) begin
@@ -163,7 +159,7 @@ module TB_irq_controller();
               end
               command<=`COMMAND_USER_SET;
 `ifdef DEBUG              
-              $display("test: read mask - events = %b, mask = %b, irq = %d",internal_event,lb_data_out_buff[4:0],irq);
+              $display("test: read mask - events = %b, mask = %b, irq = %d",internal_event,wb_dat_o_buf[4:0],irq);
 `endif
             end
             4'd7: begin
@@ -192,94 +188,45 @@ module TB_irq_controller();
           endcase
         end
         `STATE_COMMAND: begin
+          wb_stb_i <= 1'b1;
+          wb_cyc_i <= 1'b1;
           case (command)
             `COMMAND_USER_SET: begin
-              state<=`STATE_WAITW;
-              lb_data_in<=16'hffff;
-              lb_wr<=1'b1;
-              lb_addr<=`IRQC_USER_A;
+              state<=`STATE_WAIT;
+              wb_dat_i<=16'hffff;
+              wb_we_i <=1'b1;
+              wb_adr_i<=`REG_IRQC_USER;
             end
             `COMMAND_MASK_SET: begin
-              state<=`STATE_WAITW;
-              lb_data_in<={11'b0,my_mask};
-              lb_wr<=1'b1;
-              lb_addr<=`IRQC_MASK_A;
+              state<=`STATE_WAIT;
+              wb_dat_i<={11'b0,my_mask};
+              wb_we_i<=1'b1;
+              wb_adr_i<=`REG_IRQC_MASK;
             end
             `COMMAND_MASK_READ: begin
-              state<=`STATE_WAITR;
-              lb_rd<=1'b1;
-              lb_addr<=`IRQC_MASK_A;
+              state<=`STATE_WAIT;
+              wb_we_i<=1'b0;
+              wb_adr_i<=`REG_IRQC_MASK;
             end
             `COMMAND_FLAG_SET: begin
-              state<=`STATE_WAITW;
-              lb_data_in<={11'b0,my_flag};
-              lb_wr<=1'b1;
-              lb_addr<=`IRQC_FLAG_A;
+              state<=`STATE_WAIT;
+              wb_dat_i<={11'b0,my_flag};
+              wb_we_i<=1'b1;
+              wb_adr_i<=`REG_IRQC_FLAG;
             end
             `COMMAND_FLAG_READ: begin
-              state<=`STATE_WAITR;
-              lb_rd<=1'b1;
-              lb_addr<=`IRQC_FLAG_A;
+              state<=`STATE_WAIT;
+              wb_we_i<=1'b0;
+              wb_adr_i<=`REG_IRQC_FLAG;
             end
           endcase
         end
-        `STATE_WAITW: begin
-          if (fault_countdown == 4'b1111) begin
-            state<=`STATE_COMMAND;
-            fault_countdown<=4'b0;
-            if (lb_addr >= `IRQC_A && lb_addr < `IRQC_A + `IRQC_L) begin
-                $display("FAILED: invalid timeout on write: address %x",lb_addr);
-                $finish;
-            end
-`ifdef DEBUG
-            $display("bus timeout at address: %x", lb_addr);
-`endif
-          end else begin
-            fault_countdown<=fault_countdown + 4'b1;
-            if (lb_wr)
-              lb_wr<=1'b0;
-
-            if (lb_strb) begin
-              if (lb_addr < `IRQC_A || lb_addr >= `IRQC_A + `IRQC_L) begin
-                $display("FAILED: invalid reply on write: address %x",lb_addr);
-                $finish;
-              end
-              state<=`STATE_CHECK;
-              fault_countdown<=4'b0;
-            end
+        `STATE_WAIT: begin
+          wb_dat_o_buf<=wb_dat_o;
+          if (wb_ack_o) begin
+            state<=`STATE_START;
+            sequence<=sequence + 1'b1;
           end
-        end
-        `STATE_WAITR: begin
-          if (fault_countdown == 4'b1111) begin
-            state<=`STATE_COMMAND;
-            fault_countdown<=4'b0;
-            if (lb_addr >= `IRQC_A && lb_addr < `IRQC_A + `IRQC_L) begin
-                $display("FAILED: invalid timeout on read: address %x",lb_addr);
-                $finish;
-            end
-`ifdef DEBUG
-            $display("bus timeout at address: %x", lb_addr);
-`endif
-          end else begin
-            fault_countdown<=fault_countdown + 4'b1;
-            if (lb_rd)
-              lb_rd<=1'b0;
-
-            if (lb_strb) begin
-              if (lb_addr < `IRQC_A || lb_addr >= `IRQC_A + `IRQC_L) begin
-                $display("FAILED: invalid reply on read: address %x",lb_addr);
-                $finish;
-              end
-              /*check data here*/
-              state<=`STATE_CHECK;
-              fault_countdown<=4'b0;
-              lb_data_out_buff<=lb_data_out;
-            end
-          end
-        end
-        `STATE_CHECK: begin
-          state<=`STATE_START;
-          sequence<=sequence + 1'b1;
         end
       endcase
     end

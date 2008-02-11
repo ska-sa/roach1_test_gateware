@@ -28,26 +28,28 @@ module wbs_arbiter(
   parameter TOCONF1 = 52'b0;
   parameter TODEFAULT = 20'b0;
  
-  parameter A0_BASE = 16'h0;
-  parameter A0_HIGH = 16'h0;
-  parameter A1_BASE = 16'h0;
-  parameter A1_HIGH = 16'h0;
-  parameter A2_BASE = 16'h0;
-  parameter A2_HIGH = 16'h0;
-  parameter A3_BASE = 16'h0;
-  parameter A3_HIGH = 16'h0;
-  parameter A4_BASE = 16'h0;
-  parameter A4_HIGH = 16'h0;
-  parameter A5_BASE = 16'h0;
-  parameter A5_HIGH = 16'h0;
-  parameter A6_BASE = 16'h0;
-  parameter A6_HIGH = 16'h0;
-  parameter A7_BASE = 16'h0;
-  parameter A7_HIGH = 16'h0;
-  parameter A8_BASE = 16'h0;
-  parameter A8_HIGH = 16'h0;
-  parameter A9_BASE = 16'h0;
-  parameter A9_HIGH = 16'h0;
+  parameter A0_BASE  = 16'h0;
+  parameter A0_HIGH  = 16'h0;
+  parameter A1_BASE  = 16'h0;
+  parameter A1_HIGH  = 16'h0;
+  parameter A2_BASE  = 16'h0;
+  parameter A2_HIGH  = 16'h0;
+  parameter A3_BASE  = 16'h0;
+  parameter A3_HIGH  = 16'h0;
+  parameter A4_BASE  = 16'h0;
+  parameter A4_HIGH  = 16'h0;
+  parameter A5_BASE  = 16'h0;
+  parameter A5_HIGH  = 16'h0;
+  parameter A6_BASE  = 16'h0;
+  parameter A6_HIGH  = 16'h0;
+  parameter A7_BASE  = 16'h0;
+  parameter A7_HIGH  = 16'h0;
+  parameter A8_BASE  = 16'h0;
+  parameter A8_HIGH  = 16'h0;
+  parameter A9_BASE  = 16'h0;
+  parameter A9_HIGH  = 16'h0;
+  parameter A10_BASE = 16'h0;
+  parameter A10_HIGH = 16'h0;
 
   /*
    * note: memory location bits [5:0] should only be zero
@@ -57,7 +59,7 @@ module wbs_arbiter(
    *
    */
 
-  localparam NUM_SLAVES = 9;
+  localparam NUM_SLAVES = 11;
 
   input  wb_clk_i, wb_rst_i;
 
@@ -132,30 +134,46 @@ module wbs_arbiter(
 
   /*********************** WB Slave Arbitration **************************/
 
-  assign wbs_sel = wbm_adr_i[15:6] < A0_HIGH[15:6] && wbm_adr_i[15:6] >= A0_BASE[15:6] ? (temp << 0) : 
-                   wbm_adr_i[15:6] < A1_HIGH[15:6] && wbm_adr_i[15:6] >= A1_BASE[15:6] ? (temp << 1) : 
-                   wbm_adr_i[15:6] < A2_HIGH[15:6] && wbm_adr_i[15:6] >= A2_BASE[15:6] ? (temp << 2) : 
-                   wbm_adr_i[15:6] < A3_HIGH[15:6] && wbm_adr_i[15:6] >= A3_BASE[15:6] ? (temp << 3) : 
-                   wbm_adr_i[15:6] < A4_HIGH[15:6] && wbm_adr_i[15:6] >= A4_BASE[15:6] ? (temp << 4) : 
-                   wbm_adr_i[15:6] < A5_HIGH[15:6] && wbm_adr_i[15:6] >= A5_BASE[15:6] ? (temp << 5) : 
-                   wbm_adr_i[15:6] < A6_HIGH[15:6] && wbm_adr_i[15:6] >= A6_BASE[15:6] ? (temp << 6) : 
-                   wbm_adr_i[15:6] < A7_HIGH[15:6] && wbm_adr_i[15:6] >= A7_BASE[15:6] ? (temp << 7) : 
-                   wbm_adr_i[15:6] < A8_HIGH[15:6] && wbm_adr_i[15:6] >= A8_BASE[15:6] ? (temp << 8) : 
+  assign wbs_sel = wbm_adr_i[15:6] <= A0_HIGH[15:6]  && wbm_adr_i[15:6] >= A0_BASE[15:6]  ? (temp << 0)  : 
+                   wbm_adr_i[15:6] <= A1_HIGH[15:6]  && wbm_adr_i[15:6] >= A1_BASE[15:6]  ? (temp << 1)  : 
+                   wbm_adr_i[15:6] <= A2_HIGH[15:6]  && wbm_adr_i[15:6] >= A2_BASE[15:6]  ? (temp << 2)  : 
+                   wbm_adr_i[15:6] <= A3_HIGH[15:6]  && wbm_adr_i[15:6] >= A3_BASE[15:6]  ? (temp << 3)  : 
+                   wbm_adr_i[15:6] <= A4_HIGH[15:6]  && wbm_adr_i[15:6] >= A4_BASE[15:6]  ? (temp << 4)  : 
+                   wbm_adr_i[15:6] <= A5_HIGH[15:6]  && wbm_adr_i[15:6] >= A5_BASE[15:6]  ? (temp << 5)  : 
+                   wbm_adr_i[15:6] <= A6_HIGH[15:6]  && wbm_adr_i[15:6] >= A6_BASE[15:6]  ? (temp << 6)  : 
+                   wbm_adr_i[15:6] <= A7_HIGH[15:6]  && wbm_adr_i[15:6] >= A7_BASE[15:6]  ? (temp << 7)  : 
+                   wbm_adr_i[15:6] <= A8_HIGH[15:6]  && wbm_adr_i[15:6] >= A8_BASE[15:6]  ? (temp << 8)  : 
+                   wbm_adr_i[15:6] <= A9_HIGH[15:6]  && wbm_adr_i[15:6] >= A9_BASE[15:6]  ? (temp << 9)  : 
+                   wbm_adr_i[15:6] <= A10_HIGH[15:6] && wbm_adr_i[15:6] >= A10_BASE[15:6] ? (temp << 10) : 
                    {NUM_SLAVES{1'b0}};
 
-  assign wbm_dat_o = wbs_active == (temp << 0) ? wbs_dat_i[16*(0+1) - 1:16*0] :
-                     wbs_active == (temp << 1) ? wbs_dat_i[16*(1+1) - 1:16*1] :
-                     wbs_active == (temp << 2) ? wbs_dat_i[16*(2+1) - 1:16*2] :
-                     wbs_active == (temp << 3) ? wbs_dat_i[16*(3+1) - 1:16*3] :
-                     wbs_active == (temp << 4) ? wbs_dat_i[16*(4+1) - 1:16*4] :
-                     wbs_active == (temp << 5) ? wbs_dat_i[16*(5+1) - 1:16*5] :
-                     wbs_active == (temp << 6) ? wbs_dat_i[16*(6+1) - 1:16*6] :
-                     wbs_active == (temp << 7) ? wbs_dat_i[16*(7+1) - 1:16*7] :
-                     wbs_active == (temp << 8) ? wbs_dat_i[16*(8+1) - 1:16*8] :
+  assign wbs_adr_o = wbs_active == (temp << 0)  ? wbm_adr_i - `A0_BASE :
+                     wbs_active == (temp << 1)  ? wbm_adr_i - `A1_BASE :
+                     wbs_active == (temp << 2)  ? wbm_adr_i - `A2_BASE :
+                     wbs_active == (temp << 3)  ? wbm_adr_i - `A3_BASE :
+                     wbs_active == (temp << 4)  ? wbm_adr_i - `A4_BASE :
+                     wbs_active == (temp << 5)  ? wbm_adr_i - `A5_BASE :
+                     wbs_active == (temp << 6)  ? wbm_adr_i - `A6_BASE :
+                     wbs_active == (temp << 7)  ? wbm_adr_i - `A7_BASE :
+                     wbs_active == (temp << 8)  ? wbm_adr_i - `A8_BASE :
+                     wbs_active == (temp << 9)  ? wbm_adr_i - `A8_BASE :
+                     wbs_active == (temp << 10) ? wbm_adr_i - `A8_BASE :
+                     16'b0;
+
+  assign wbm_dat_o = wbs_active == (temp << 0)  ? wbs_dat_i[16*(0+1)  - 1:16*0 ] :
+                     wbs_active == (temp << 1)  ? wbs_dat_i[16*(1+1)  - 1:16*1 ] :
+                     wbs_active == (temp << 2)  ? wbs_dat_i[16*(2+1)  - 1:16*2 ] :
+                     wbs_active == (temp << 3)  ? wbs_dat_i[16*(3+1)  - 1:16*3 ] :
+                     wbs_active == (temp << 4)  ? wbs_dat_i[16*(4+1)  - 1:16*4 ] :
+                     wbs_active == (temp << 5)  ? wbs_dat_i[16*(5+1)  - 1:16*5 ] :
+                     wbs_active == (temp << 6)  ? wbs_dat_i[16*(6+1)  - 1:16*6 ] :
+                     wbs_active == (temp << 7)  ? wbs_dat_i[16*(7+1)  - 1:16*7 ] :
+                     wbs_active == (temp << 8)  ? wbs_dat_i[16*(8+1)  - 1:16*8 ] :
+                     wbs_active == (temp << 9)  ? wbs_dat_i[16*(9+1)  - 1:16*9 ] :
+                     wbs_active == (temp << 10) ? wbs_dat_i[16*(10+1) - 1:16*10] :
                      16'b0;
 
   assign wbs_we_o = wbm_we_i;
-  assign wbs_adr_o = wbm_adr_i;
   assign wbs_dat_o = wbm_dat_i;
 
   reg wbm_err_o, wbm_ack_o;
@@ -169,12 +187,14 @@ module wbs_arbiter(
   localparam STATE_WAIT   = 2'd2;
 
   assign timeout_reset = ~(state == STATE_WAIT);
+  
 
   always @(posedge wb_clk_i) begin
     /* strobes */
-    wbs_cyc_o <= 1'b0;
-    wbs_stb_o <= 1'b0;
+    wbs_cyc_o <= {NUM_SLAVES{1'b0}};
+    wbs_stb_o <= {NUM_SLAVES{1'b0}};
     wbm_ack_o <= 1'b0;
+    wbm_err_o <= 1'b0;
     vcheck <= 1'b0;
 
     if (wb_rst_i) begin
@@ -187,6 +207,9 @@ module wbs_arbiter(
             wbs_active <= wbs_sel;
             vcheck <=1'b1;
             state <= STATE_VCHECK;
+`ifdef DEBUG
+            $display("wb_arb: got event, wbs_sel = %x",wbs_sel);
+`endif
           end else begin
             wbs_active <= {NUM_SLAVES{1'b0}};
             /* this delayed clear is intentional as the wbm_ack depends on the value */
@@ -194,21 +217,33 @@ module wbs_arbiter(
         end
         STATE_VCHECK: begin
           if (vpass) begin
-            wbs_stb_o <= 1'b1;
-            wbs_cyc_o <= 1'b1;
+            wbs_stb_o <= wbs_active;
+            wbs_cyc_o <= wbs_active;
             state <= STATE_WAIT;
+`ifdef DEBUG
+            $display("wb_arb: no mem violation");
+`endif
           end else if (vfail) begin
             wbm_err_o <= 1'b1;
             state <= STATE_IDLE;
+`ifdef DEBUG
+            $display("wb_arb: mem violation");
+`endif
           end
         end
         STATE_WAIT: begin
-          if (wbs_ack_i) begin
+          if (wbs_ack_i & wbs_active) begin
             wbm_ack_o <= 1'b1;
             state <= STATE_IDLE;
+`ifdef DEBUG
+            $display("wb_arb: got ack");
+`endif
           end else if(bm_timeout) begin
             wbm_err_o <= 1'b1;
             state <= STATE_IDLE;
+`ifdef DEBUG
+            $display("wb_arb: bus timeout");
+`endif
           end
         end
       endcase

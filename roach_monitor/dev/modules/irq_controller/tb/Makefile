@@ -3,7 +3,7 @@ MODULE=irq_controller
 VCC=iverilog
 VSIM=vvp
 
-INCLUDE_DIR=./include
+INCLUDE_DIR=../hdl
 SRC_DIR=../hdl
 TB_DIR=./hdl
 GEN_DIR=./gen
@@ -11,7 +11,7 @@ GEN_DIR=./gen
 INCLUDE=-I $(INCLUDE_DIR)
 FLAGS=-Wall
 DEFINES=-DDEBUG 
-DEFINES=-DDESPERATE_DEBUG
+DEFINES+=-DDESPERATE_DEBUG
 
 SRC=$(SRC_DIR)/$(MODULE).v
 TB_SRC=$(TB_DIR)/TB_$(MODULE).v

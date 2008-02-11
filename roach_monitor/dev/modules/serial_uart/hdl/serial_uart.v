@@ -1,9 +1,9 @@
 `timescale 1ns/10ps
 module serial_uart(
-  clk, reset,
-  serial_in, serial_out,
-  as_data_i,  as_data_o,
-  as_dstrb_i, as_busy_o, as_dstrb_o
+    clk, reset,
+    serial_in, serial_out,
+    as_data_i,  as_data_o,
+    as_dstrb_i, as_busy_o, as_dstrb_o
   );
   parameter BAUD        = 115200;
   parameter CLOCK_RATE  = 100000000;

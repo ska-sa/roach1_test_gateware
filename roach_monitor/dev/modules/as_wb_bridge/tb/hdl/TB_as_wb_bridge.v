@@ -18,7 +18,7 @@ module TB_as_wb_bridge();
     .as_data_i(s_data_i),.as_data_o(s_data_o),.as_dstrb_i(s_gotdata),.as_busy_i(s_busy),.as_dstrb_o(s_ostrb),
     .wb_stb_o(wb_stb_o), .wb_cyc_o(wb_cyc_o), .wb_we_o(wb_we_o),
     .wb_adr_o(wb_adr_o), .wb_dat_o(wb_dat_o), .wb_dat_i(wb_dat_i),
-    .wb_ack_i(wb_ack_i), .wb_timeout(1'b0)
+    .wb_ack_i(wb_ack_i), .wb_err_i(1'b0)
   );
 
   reg readback_command;
