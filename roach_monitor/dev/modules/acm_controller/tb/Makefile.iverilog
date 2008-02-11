@@ -1,11 +1,12 @@
-MODULE=abconf_controller
+MODULE=acm_controller
 
 VCC=iverilog
 VSIM=vvp
 
 FLAGS=-Wall
 INCLUDE=-I include
-DEFINES=-DDEBUG -DDESPERATE_DEBUG
+DEFINES=-DDEBUG
+DEFINES+=-DSIMULATION
 
 SRCDIR=./../hdl
 SRC=$(SRCDIR)/$(MODULE).v

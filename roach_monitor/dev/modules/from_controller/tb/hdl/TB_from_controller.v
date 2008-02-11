@@ -1,6 +1,13 @@
+`timescale 1ns/1ns
+`define CLK_PERIOD 25
+
+`ifdef MODELSIM
+`include "fusion.v"
+`endif
 module TB_from_controller();
-  reg clk,reset;
-  reg [7:0] from_data;
+  wire clk;
+  reg  reset;
+  wire [7:0] from_data;
   wire [6:0] from_addr;
   wire from_clk;
 
@@ -19,8 +26,11 @@ module TB_from_controller();
   );
 
 
+  reg [7:0] clk_counter;
+
   initial begin
-    clk<=1'b0;
+    $dumpvars();
+    clk_counter<=8'b0;
     reset<=1'b1;
 `ifdef DEBUG
     $display("sim: starting sim");
@@ -30,19 +40,35 @@ module TB_from_controller();
 `ifdef DEBUG
     $display("sim: clearing reset");
 `endif
-    #8000 
+    #80000 
     $display("FAILED: simulation timed out");
     $finish;
   end
 
+  assign clk = clk_counter < ((`CLK_PERIOD) / 2);
+
   always begin
-    #1 clk <=~clk;
+    #1 clk_counter <= (clk_counter == `CLK_PERIOD - 1 ? 32'b0 : clk_counter + 1);
   end
 
-    /*from goodies*/
+  /*from goodies*/
+  `ifdef MODELSIM
+  UFROM #(
+    .MEMORYFILE("include/from.mem")
+  ) UFROM_inst(
+    .ADDR6(from_addr[6]), .ADDR5(from_addr[5]), .ADDR4(from_addr[4]), .ADDR3(from_addr[3]),
+    .ADDR2(from_addr[2]), .ADDR1(from_addr[1]), .ADDR0(from_addr[0]),
+    .CLK(from_clk),
+    .DO7(from_data[7]), .DO6(from_data[6]), .DO5(from_data[5]), .DO4(from_data[4]),
+    .DO3(from_data[3]), .DO2(from_data[2]), .DO1(from_data[1]), .DO0(from_data[0])
+  );
+  `else
+  reg [7:0] from_data_reg;
+  assign from_data = from_data_reg;
   always @(posedge from_clk) begin
-    from_data<={1'b0,from_addr};
+    from_data_reg<={1'b0,from_addr};
   end
+  `endif
 
   reg state;
   `define STATE_SEND 1'b0
@@ -63,10 +89,16 @@ module TB_from_controller();
           wb_we_i  <= 1'b0;
           wb_adr_i <= {9'b0, counter};
           state <= `STATE_WAIT;
+`ifdef DEBUG
+          $display("wbm: read command, adr = %x", {9'b0, counter});
+`endif
         end
         `STATE_WAIT: begin
           if (wb_ack_o) begin
-            if (wb_dat_o[6:0] != counter) begin
+`ifdef DEBUG
+            $display("wbm: read reply,  data = %x", wb_dat_o);
+`endif
+            if (wb_dat_o[6:0] !== counter) begin
               $display("FAILED: invalid data");
               $finish;
             end else if (counter == 7'b111_1111) begin
