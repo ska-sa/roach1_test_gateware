@@ -1,89 +1,63 @@
-`include "memlayout.v"
+`timescale 10ns/10ps
 
-`timescale 1ns/10ps
-`define SIM_MAX 150000000
+`define SIM_LENGTH 1500000
+`define CLK_PERIOD 2
 
-`define LB_STATE_IDLE 2'd0
-`define LB_STATE_WRITE 2'd1
-`define LB_STATE_READ 2'd2
-
-`define MODE_WRITE 2'd0
-`define MODE_READ 2'd1
-`define MODE_IDLE 2'd2
-
-`ifdef SIMULATION
-`define LBUS_TIMEOUT 32'd90
-`else
-`define LBUS_TIMEOUT 32'd90000
-`endif
-`define FLASH_START_ADDR 32'd1328
-`define FLASH_STOP_ADDR 32'd1512
+`define TEST_LENGTH 1000
 
 module TB_flashmem_controller();
-  reg reset;
+  wire clk;
+  reg  reset;
 
+  wire FM_CLK, FM_RESET;
   wire [16:0] FM_ADDR;
   wire [15:0] FM_WD;
-  wire FM_REN, FM_WEN, FM_PROGRAM;
-  wire FM_RESET;
-`ifdef MODELSIM
+  wire FM_REN, FM_WEN, FM_PROGRAM, FM_PAGESTATUS;
+
   wire [15:0]  FM_RD;
   wire FM_BUSY;
   wire [1:0] FM_STATUS;
-`else
-  reg [15:0]  FM_RD;
-  reg FM_BUSY;
-  reg [1:0] FM_STATUS;
-`endif
-  reg [15:0] lb_addr;
-  reg [15:0] lb_data_in;
-  reg lb_rd,lb_wr;
-  reg lb_clk;
-  wire [15:0] lb_data_out;
-  wire lb_strb;
-  
+
+  reg [15:0] wb_adr_i;
+  reg [15:0] wb_dat_i;
+  reg wb_stb_i, wb_cyc_i, wb_we_i;
+  wire [15:0] wb_dat_o;
+  wire wb_ack_o;
+
   flashmem_controller flashmem_controller(
-  .reset(reset),
-  .FM_ADDR(FM_ADDR), .FM_WD(FM_WD), .FM_RD(FM_RD),
-  .FM_REN(FM_REN), .FM_WEN(FM_WEN), .FM_PROGRAM(FM_PROGRAM),
-  .FM_BUSY(FM_BUSY), .FM_STATUS(FM_STATUS),
-  .lb_addr(lb_addr),.lb_data_in(lb_data_in),.lb_data_out(lb_data_out),
-  .lb_rd(lb_rd),.lb_wr(lb_wr),.lb_strb(lb_strb),
-  .lb_clk(lb_clk)
+    .wb_clk_i(clk), .wb_rst_i(reset),
+    .wb_stb_i(wb_stb_i), .wb_cyc_i(wb_cyc_i), .wb_we_i(wb_we_i),
+    .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
+    .wb_ack_o(wb_ack_o),
+    .FM_CLK(FM_CLK), .FM_RESET(FM_RESET),
+    .FM_ADDR(FM_ADDR), .FM_WD(FM_WD), .FM_RD(FM_RD),
+    .FM_REN(FM_REN), .FM_WEN(FM_WEN), .FM_PROGRAM(FM_PROGRAM),
+    .FM_BUSY(FM_BUSY), .FM_STATUS(FM_STATUS), .FM_PAGESTATUS(FM_PAGESTATUS)
   );
 
-  reg [1:0] mode;
   reg [7:0] clk_counter;
-  reg got_something;
 
   initial begin
-    lb_clk<=1'b1;
-    got_something<=1'b0;
     reset<=1'b1;
     clk_counter<=8'b0;
-    lb_addr<=16'b0;
-    mode<=`MODE_IDLE;
 `ifdef DEBUG
-    $display("Starting Simulation");
+    $display("sim: Starting Simulation");
 `endif
     #512
     reset<=1'b0;
     #10000
-    mode<=`MODE_WRITE;
 `ifdef DEBUG
-    $display("Deasserting Reset");
+    $display("sim: Deasserting Reset");
 `endif
-    #`SIM_MAX
+    #`SIM_LENGTH
     $display("FAILED: simulation timed out");
     $finish;
   end
 
+  assign clk = clk_counter < ((`CLK_PERIOD) >> 1);
+
   always begin
-    #1 clk_counter<=(clk_counter == 8'd50 ? 8'b0 : clk_counter + 8'b1);
-  end
-  always @(clk_counter) begin
-    if (clk_counter == 8'd50)
-      lb_clk<=~lb_clk;
+    #1 clk_counter<=(clk_counter >= (`CLK_PERIOD) - 1 ? 8'b0 : clk_counter + 8'b1);
   end
 
   /* Flash Memory Block */
@@ -108,13 +82,20 @@ module TB_flashmem_controller();
    .PAGELOSSPROTECT(1'b1),  
    .PIPE(1'b0),             
    .LOCKREQUEST(1'b0),      
-   .CLK(lb_clk),              
-   .RESET(~reset),            
+   .CLK(FM_CLK),              
+   .RESET(FM_RESET),            
    .RD({temp,FM_RD}),
    .BUSY(FM_BUSY),
    .STATUS(FM_STATUS)
   );
 `else
+
+  reg [15:0]  FM_RD_reg;
+  reg FM_BUSY_reg;
+  reg [1:0] FM_STATUS_reg;
+  assign FM_RD = FM_RD_reg;
+  assign FM_BUSY = FM_BUSY_reg;
+  assign FM_STATUS = FM_STATUS_reg;
 
 `define FM_STATE_IDLE 3'd0
 `define FM_STATE_READ 3'd1
@@ -122,11 +103,7 @@ module TB_flashmem_controller();
 `define FM_STATE_PROGRAM 3'd3
 `define FM_WAIT_WRITE 32'd10
 `define FM_WAIT_READ 32'd5
-`ifdef SIMULATION
 `define FM_WAIT_PROGRAM 32'd850
-`else
-`define FM_WAIT_PROGRAM 32'd85000
-`endif
 
   reg [7:0] memory [65535:0];
   reg [2:0] fm_state;
@@ -137,12 +114,12 @@ module TB_flashmem_controller();
   reg [15:0] fm_data;
   wire [10:0] fm_page_index = fm_addr[17:7];
   
-  always @(posedge lb_clk) begin
-    if (reset) begin
+  always @(posedge FM_CLK) begin
+    if (~FM_RESET) begin
       fm_state<=`FM_STATE_IDLE;
       dirty_page<=1'b0;
-      FM_STATUS<=2'b0;
-      FM_BUSY<=1'b0;
+      FM_STATUS_reg<=2'b0;
+      FM_BUSY_reg<=1'b0;
     end else begin
       case (fm_state)
         `FM_STATE_IDLE: begin
@@ -150,14 +127,14 @@ module TB_flashmem_controller();
           if (FM_REN) begin
             fm_state<=`FM_STATE_READ;
             wait_length<=`FM_WAIT_READ;
-            FM_BUSY<=1'b1;
+            FM_BUSY_reg<=1'b1;
 `ifdef DESPERATE_DEBUG
             $display("fm: read command, addr %d",FM_ADDR);
 `endif
           end else if (FM_WEN) begin
             fm_state<=`FM_STATE_WRITE;
             wait_length<=`FM_WAIT_WRITE;
-            FM_BUSY<=1'b1;
+            FM_BUSY_reg<=1'b1;
             fm_data<=FM_WD;
 `ifdef DESPERATE_DEBUG
             $display("fm: write command, addr %d, data %d",FM_ADDR,FM_WD);
@@ -168,13 +145,13 @@ module TB_flashmem_controller();
 `endif
             fm_state<=`FM_STATE_PROGRAM;
             wait_length<=`FM_WAIT_PROGRAM;
-            FM_BUSY<=1'b1;
+            FM_BUSY_reg<=1'b1;
           end
         end
         `FM_STATE_READ: begin
           if (wait_length==32'b0) begin
-            FM_BUSY<=1'b0;
-            FM_RD<={memory[fm_addr+1],memory[fm_addr]};
+            FM_BUSY_reg<=1'b0;
+            FM_RD_reg<={memory[fm_addr+1],memory[fm_addr]};
             fm_state<=`FM_STATE_IDLE;
 `ifdef DEBUG
             $display("fm: read addr %d, read data %d, page_index %d",fm_addr[17:1],
@@ -191,7 +168,7 @@ module TB_flashmem_controller();
         end
         `FM_STATE_WRITE: begin
           if (wait_length==32'b0) begin
-            FM_BUSY<=1'b0;
+            FM_BUSY_reg<=1'b0;
             dirty_page<=1'b1;
             dirty_page_index<=fm_page_index;
             memory[fm_addr]<=fm_data[7:0];
@@ -212,7 +189,7 @@ module TB_flashmem_controller();
         end
         `FM_STATE_PROGRAM: begin
           if (wait_length==32'b0) begin
-            FM_BUSY<=1'b0;
+            FM_BUSY_reg<=1'b0;
             fm_state<=`FM_STATE_IDLE;
             dirty_page<=1'b0;
 `ifdef DEBUG
@@ -239,122 +216,114 @@ module TB_flashmem_controller();
 `endif
 
 
-/* LBus controller */
-  reg [1:0] state;
-  reg [31:0] fault_countdown;
-  always @(posedge lb_clk) begin
+/********************** Common Signals ****************************/
+  reg mode;
+`define MODE_WRITE 1'b0
+`define MODE_READ  1'b1
+
+  reg mode_done;
+  reg [15:0] master_mem [1024 * 64 - 1:0];
+/*********************** Mode Control **************************/
+ 
+  integer i;
+  always @(posedge clk) begin
     if (reset) begin
-      state<=`LB_STATE_IDLE;
-      lb_addr<=`FLASH_START_ADDR - 16'b1;
-      lb_rd<=1'b0;
-      lb_wr<=1'b0;
-      fault_countdown<=32'b0;
+      mode <= `MODE_WRITE;
     end else begin
-      case (state)
-        `LB_STATE_IDLE: begin
-          case (mode) 
-            `MODE_READ: begin
-              lb_rd<=1'b1;
-              if (lb_addr > `FLASH_STOP_ADDR) begin
-                lb_addr <= `FLASH_START_ADDR;
-              end else begin
-                lb_addr<=lb_addr + 16'b1;
-              end
-              fault_countdown<=32'b0;
-              state<=`LB_STATE_READ;
-`ifdef DESPERATE_DEBUG
-              $display("lb: read, addr %d",lb_addr + 16'b1);
+      case (mode)
+        `MODE_WRITE: begin
+          if (mode_done) begin
+            mode <= `MODE_READ;
+`ifdef DEBUG
+            $display("mode: WRITE mode passed");
 `endif
-            end
-            `MODE_WRITE: begin
-              lb_wr<=1'b1;
-              lb_addr<=lb_addr + 16'b1;
-              lb_data_in<=lb_addr + 16'b1;
-              fault_countdown<=32'b0;
-              state<=`LB_STATE_WRITE;
-`ifdef DESPERATE_DEBUG
-              $display("lb: write, addr %d, data %d",lb_addr + 16'b1,lb_addr + 16'b1);
-`endif
-            end
-          endcase
+          end
         end
-        `LB_STATE_READ: begin
-          if (fault_countdown == `LBUS_TIMEOUT && 
-              (lb_addr >= `FLASH_A && lb_addr <= `FLASH_A + (`FLASH_L - 1'b1))) begin
-            $display("FAILED: invalid timeout on read: address %d",lb_addr);
-            $finish;
-          end
-          if (fault_countdown == `LBUS_TIMEOUT && 
-              (lb_addr < `FLASH_A || lb_addr > `FLASH_A + (`FLASH_L - 1'b1))) begin
-            state<=`LB_STATE_IDLE;
-`ifdef DEBUG
-            $display("LBus read timeout on address = %d",lb_addr);
-`endif
-          end
-          if (lb_strb && (lb_addr < `FLASH_A || lb_addr > `FLASH_A + (`FLASH_L - 1'b1))) begin
-            $display("FAILED: invalid reply on read: address %d",lb_addr);
-            $finish;
-          end
-          if (lb_strb && (lb_addr >= `FLASH_A && lb_addr <= `FLASH_A + (`FLASH_L -1'b1))) begin
-`ifdef DEBUG
-            $display("dv: comparing lb_data out = %d & lb_addr %d",lb_data_out,lb_addr);
-`endif
-            if (lb_data_out === lb_addr) begin
-              state<=`LB_STATE_IDLE;
-              got_something<=1'b1;
-            end else begin
-              $display("FAILED: data error on read: address %d, data %d, expected",
-                lb_addr,lb_data_out,lb_addr);
+        `MODE_READ: begin
+          if (mode_done) begin
+            for (i=0; i < `TEST_LENGTH; i=i+1) begin
+              if (master_mem[i] !== i) begin
+                $display("FAILED: data invalid - got %d, expected %d", master_mem[i], i);
                 $finish;
+              end else if (i == `TEST_LENGTH - 1) begin
+                $display("PASSED");
+                $finish;
+              end
             end
           end
-          fault_countdown<=fault_countdown+1'b1;
-          lb_rd<=1'b0;
-        end
-        `LB_STATE_WRITE: begin
-          if (fault_countdown == `LBUS_TIMEOUT && 
-              (lb_addr >= `FLASH_A && lb_addr <= `FLASH_A + `FLASH_L - 1'b1)) begin
-            $display("FAILED: invalid timeout on write: address %d",lb_addr);
-            $finish;
-          end
-          if (fault_countdown == `LBUS_TIMEOUT && 
-              (lb_addr < `FLASH_A || lb_addr > `FLASH_A + `FLASH_L - 1'b1)) begin
-            state<=`LB_STATE_IDLE;
-`ifdef DEBUG
-            $display("LBus write timeout on address = %d",lb_addr);
-`endif
-          end
-          if (lb_strb && (lb_addr < `FLASH_A || lb_addr > `FLASH_A + `FLASH_L -1'b1)) begin
-            $display("FAILED: invalid reply on write: address %d",lb_addr);
-            $finish;
-          end
-          if (lb_strb && (lb_addr >= `FLASH_A && lb_addr <= `FLASH_A + `FLASH_L - 1'b1)) begin
-            state<=`LB_STATE_IDLE;
-          end
-          fault_countdown<=fault_countdown+1'b1;
-          lb_wr<=1'b0;
         end
       endcase
     end
   end
-/* Mode Controller */
-  always @(posedge lb_clk) begin
-    if (!reset && lb_addr == `FLASH_STOP_ADDR && state == `LB_STATE_IDLE) begin
-      case (mode)
-        `MODE_WRITE: begin
-          mode<=`MODE_READ;
-`ifdef DEBUG
-          $display("mode: entering read mode, lb_addr == %d, state == %d",lb_addr,state);
+
+/******************** WB Master controller *******************/
+
+  reg [1:0] state;
+`define STATE_COMMAND 2'd0
+`define STATE_COLLECT 2'd1
+`define STATE_WAIT    2'd2
+
+  reg [31:0] counter;
+
+  always @(posedge clk) begin
+    wb_cyc_i <= 1'b0;
+    wb_stb_i <= 1'b0;
+    mode_done <= 1'b0;
+
+    if (reset) begin
+      state <=`STATE_COMMAND;
+      counter <= 32'b0;
+    end else begin
+      case (state)
+        `STATE_COMMAND: begin
+          case (mode) 
+            `MODE_WRITE: begin
+              wb_cyc_i <= 1'b1;
+              wb_stb_i <= 1'b1;
+              wb_we_i <= 1'b1;
+              wb_adr_i <= counter + 16'd64;
+              wb_dat_i <= counter;
+              state<=`STATE_COLLECT;
+`ifdef DESPERATE_DEBUG
+              $display("wbm: write, addr %d, data %d", counter + 16'd64, counter);
 `endif
+            end
+            `MODE_READ: begin
+              wb_cyc_i <= 1'b1;
+              wb_stb_i <= 1'b1;
+              wb_we_i <= 1'b0;
+              wb_adr_i <= counter + 16'd64;
+              state<=`STATE_COLLECT;
+`ifdef DESPERATE_DEBUG
+              $display("wbm: read, addr %d", counter + 16'd64);
+`endif
+            end
+          endcase
         end
-        `MODE_READ: begin /*will not check last flash location*/
-          if (got_something) begin
-            $display("PASSED");
-            $finish;
-          end else begin
-            $display("FAILED: got nothing");
-            $finish;
+        `STATE_COLLECT: begin
+          if (wb_ack_o) begin
+            if (counter == `TEST_LENGTH - 1) begin
+              counter <= 32'b0;
+              mode_done <= 1'b1;
+              state<=`STATE_WAIT;
+            end else begin
+              counter <= counter + 1;
+              state<=`STATE_COMMAND;
+            end
+            if (wb_we_i) begin
+`ifdef DESPERATE_DEBUG
+              $display("wbm: write_response");
+`endif
+            end else begin
+              master_mem[counter[15:0]] <= wb_dat_o;
+`ifdef DESPERATE_DEBUG
+              $display("wbm: read response, data %d, counter %d", wb_dat_o, counter);
+`endif
+            end
           end
+        end
+        `STATE_WAIT: begin
+          state<=`STATE_COMMAND;
         end
       endcase
     end
