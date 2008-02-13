@@ -1,138 +1,83 @@
-`timescale 1ns/10ps
-
-`include "memlayout.v"
+`timescale 1ns/1ps
+`include "bus_monitor.vh"
 
 module bus_monitor(
-  reset, hard_reset,
-  timeout, lb_strb_all,
-  lb_addr,lb_data_in,lb_data_out,lb_rd,lb_wr,lb_strb,lb_clk
+    wb_clk_i, wb_rst_i,
+    wb_stb_i, wb_cyc_i, wb_we_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
+
+    bm_memv,
+    bm_timeout,
+    bm_wbm_id,
+    bm_addr,
+    bm_we
   );
-  input reset,hard_reset;
-  input timeout;
-  input [15:0] lb_addr;
-  input [15:0] lb_data_in;
-  output [15:0] lb_data_out;
-  input lb_rd,lb_wr;
-  input lb_strb_all;
-  output lb_strb;
-  input lb_clk;
+  parameter NUM_MASTERS = 4;
 
-  reg lb_strb;
-  reg [15:0] lb_data_out;
-  wire addressed = (lb_addr >= (`BUSMON_A) && lb_addr < (`BUSMON_A) + (`BUSMON_L));
+  input  wb_clk_i, wb_rst_i;
+  input  wb_stb_i, wb_cyc_i, wb_we_i;
+  input  [15:0] wb_adr_i;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
+  output wb_ack_o;
 
-  reg [1:0] current_cmnd;
-  reg [15:0] current_addr;
-  reg [15:0] current_data;
-  
-  reg [1:0] error_cmnd;
-  reg [15:0] error_addr;
-  reg error_occurred;
-  reg [15:0] error_count;
-  reg [15:0] error_data;
+  input  bm_memv;
+  input  bm_timeout;
+  input  [NUM_MASTERS - 1:0] bm_wbm_id;
+  input  [15:0] bm_addr;
+  input  bm_we;
 
-  reg timeout_fresh;
-  reg read_op;
-  reg [15:0] op_count;
-  reg strb_fresh;
+  reg [15:0] timeout_count;
+  reg [15:0] memv_count;
 
-  always @(posedge lb_clk) begin
-    if (hard_reset) begin
-      error_count<=16'd0;
-      op_count<=16'd0;
-    end else if (reset) begin
-      strb_fresh<=1'b1;
-      lb_strb<=1'b0;
-      lb_data_out<=16'b0;
-      error_occurred<=1'b0;
-      error_data<=16'd0;
-      timeout_fresh<=1'b1;
+  reg [31:0] bm_status;
+
+  reg wb_ack_o;
+
+  assign wb_dat_o = wb_adr_i == `REG_BUS_STATUS_0   ? {bm_status[15:0]} :
+                    wb_adr_i == `REG_BUS_STATUS_1   ? {bm_status[31:16]} :
+                    wb_adr_i == `REG_TIMEOUT_COUNT  ? timeout_count :
+                    wb_adr_i == `REG_MEMV_COUNT ? memv_count :
+                    16'b0;
+
+  always @(posedge wb_clk_i) begin
+    //strobes
+    wb_ack_o <= 1'b0;
+    if (wb_rst_i) begin
+      timeout_count <= 16'b0;
+      memv_count <= 16'b0;
+      bm_status <= 32'b0;
     end else begin
-      if (addressed & (lb_rd | lb_wr)) begin
-        case (lb_addr) 
-         `BUSMON_CADDR_A: begin
-           if (lb_rd) begin
-             lb_data_out<=current_addr;
-           end
-         end
-         `BUSMON_CCMND_A: begin
-           if (lb_rd) begin
-             lb_data_out<=current_cmnd;
-           end
-         end
-         `BUSMON_CDATA_A: begin
-           if (lb_rd) begin
-             lb_data_out<=current_data;
-           end
-         end
-	 `BUSMON_ADDR_A: begin
-           if (lb_rd) begin
-             lb_data_out<=error_addr;
-           end
-         end
-         `BUSMON_DATA_A: begin
-           if (lb_rd) begin
-             lb_data_out<=error_data;
-           end
-         end
-         `BUSMON_COUNT_A: begin
-           if (lb_rd) begin
-             lb_data_out<=error_count;
-           end
-         end
-	 `BUSMON_OPCNT_A: begin
-           if (lb_rd) begin
-             lb_data_out<=op_count;
-           end
-	 end
-         `BUSMON_CMND_A: begin
-           if (lb_rd) begin
-             lb_data_out<={error_occurred,13'b0,error_cmnd};
-             error_occurred<=1'b0;
-`ifdef DEBUG
-          $display("bmon: got cmnd rd , data = %b",{error_occurred,13'b0,error_cmnd});
-`endif
-           end
-         end
-        endcase
-        lb_strb<=1'b1;
-      end else begin
-        lb_strb<=1'b0;
-        lb_data_out<=16'b0;
-        if (lb_rd | lb_wr) begin
-          current_cmnd<={lb_wr,lb_rd};
-          current_addr<=lb_addr;
-	  if (lb_wr) begin
-            current_data<=lb_data_in;
-	  end
-	  read_op<=lb_rd;
+      if (~wb_ack_o & wb_cyc_i & wb_stb_i) begin
+        wb_ack_o <= 1'b1;
+        if (wb_we_i) begin
+          case (wb_adr_i)
+            `REG_BUS_STATUS_0: begin
+              bm_status <= 32'b0;
+            end
+            `REG_BUS_STATUS_1: begin
+              bm_status <= 32'b0;
+            end
+            `REG_TIMEOUT_COUNT: begin
+              timeout_count <= 16'b0;
+            end
+            `REG_MEMV_COUNT: begin
+              memv_count <= 16'b0;
+            end
+          endcase
         end
-        if (lb_strb_all & read_op & ~lb_strb)
-          current_data<=lb_data_in;
-      end	
-      if (timeout && timeout_fresh) begin
-        error_count<=error_count + 16'd1;
-        error_occurred<=1'b1;
-        error_cmnd<=current_cmnd;
-        error_addr<=current_addr;
-        error_data<=current_data;
-        timeout_fresh<=1'b0;
-`ifdef DEBUG
-        if (error_occurred == 1'b0)
-        $display("bmon: got timeout, addr = %d, cmnd = %b",current_addr,current_cmnd);
-`endif
-      end else if (~timeout && ~timeout_fresh) begin
-        timeout_fresh<=1'b1;
-        
-      end
-      
-      if (lb_strb_all && strb_fresh && !lb_strb) begin
-        strb_fresh<=1'b0;
-        op_count<=op_count + 1;
-      end
-      if (~lb_strb_all) begin
-        strb_fresh<=1'b1;
       end
     end
+    if (bm_timeout | bm_memv) begin
+      bm_status = {bm_addr, 3'b0, bm_we, bm_wbm_id, 2'b0, bm_timeout, bm_memv};
+    end
+    if (bm_timeout) begin
+      timeout_count <= timeout_count + 1;
+    end
+    if (bm_memv) begin
+      memv_count <= memv_count + 1;
+    end
   end
+
 endmodule
