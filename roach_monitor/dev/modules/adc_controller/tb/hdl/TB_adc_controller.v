@@ -10,6 +10,93 @@
 `define ADC_SAMPLETIME 8'd6 //(6+2) clock cycles sample time 
 `define ADC_MODE       4'b0001    //12bit + nopowerdown 
 //`define ADC_MODE       4'b0001    //12bit
+//
+
+
+`define PRESCALE_FACTOR 4.095
+
+//test current in AMPs sense resistor is one ohm
+`define TESTV_0 0.4
+`define TESTV_1 0.8
+`define TESTV_2 1.2
+`define TESTV_3 1.6
+`define TESTV_4 2.0
+`define TESTV_5 2.4
+`define TESTV_6 2.8
+`define TESTV_7 3.2
+`define TESTV_8 3.6
+`define TESTV_9 4.0
+
+//test current in amps
+`define TESTC_0 0.0
+`define TESTC_1 0.1
+`define TESTC_2 0.2
+`define TESTC_3 0.3
+`define TESTC_4 0.4
+`define TESTC_5 0.5
+`define TESTC_6 0.6
+`define TESTC_7 0.7
+`define TESTC_8 0.8
+`define TESTC_9 0.9
+
+//test resistance in ohms
+`define TESTR_0 0.1
+`define TESTR_1 0.1
+`define TESTR_2 0.1
+`define TESTR_3 0.1
+`define TESTR_4 0.1
+`define TESTR_5 0.1
+`define TESTR_6 0.1
+`define TESTR_7 0.1
+`define TESTR_8 0.1
+`define TESTR_9 0.1
+
+//test temperatures
+`define TESTT_0 0.0
+`define TESTT_1 100.0
+`define TESTT_2 200.0
+`define TESTT_3 35.0
+`define TESTT_4 40.0
+`define TESTT_5 45.0
+`define TESTT_6 50.0
+`define TESTT_7 55.0
+`define TESTT_8 60.0
+`define TESTT_9 100.0
+
+//Expected Results 
+`define RES_00 2400
+`define RES_01 ((`TESTV_0/`PRESCALE_FACTOR) * 4095) 
+`define RES_02 ((`TESTC_0 * `TESTR_0 * 10)/2.56 * 4095) 
+`define RES_03 (`TESTT_0 * 19.53)
+`define RES_04 ((`TESTV_1/`PRESCALE_FACTOR) * 4095) 
+`define RES_05 ((`TESTC_1 * `TESTR_1 * 10)/2.56 * 4095) 
+`define RES_06 (`TESTT_1 * 19.53)
+`define RES_07 ((`TESTV_2/`PRESCALE_FACTOR) * 4095) 
+`define RES_08 ((`TESTC_2 * `TESTR_2 * 10))/2.56 * 4095  
+`define RES_09 (`TESTT_2 * 19.53)
+`define RES_10 ((`TESTV_3/`PRESCALE_FACTOR) * 4095) 
+`define RES_11 ((`TESTC_3 * `TESTR_3 * 10))/2.56 * 4095  
+`define RES_12 (`TESTT_3 * 19.53)
+`define RES_13 ((`TESTV_4/`PRESCALE_FACTOR) * 4095) 
+`define RES_14 ((`TESTC_4 * `TESTR_4 * 10))/2.56 * 4095  
+`define RES_15 (`TESTT_4 * 19.53)
+`define RES_16 ((`TESTV_5/`PRESCALE_FACTOR) * 4095) 
+`define RES_17 ((`TESTC_5 * `TESTR_0 * 10))/2.56 * 4095  
+`define RES_18 (`TESTT_5 * 19.53)
+`define RES_19 ((`TESTV_6/`PRESCALE_FACTOR) * 4095) 
+`define RES_20 ((`TESTC_6 * `TESTR_6 * 10))/2.56 * 4095  
+`define RES_21 (`TESTT_6 * 19.53)
+`define RES_22 ((`TESTV_7/`PRESCALE_FACTOR) * 4095) 
+`define RES_23 ((`TESTC_7 * `TESTR_7 * 10))/2.56 * 4095  
+`define RES_24 (`TESTT_7 * 19.53)
+`define RES_25 ((`TESTV_8/`PRESCALE_FACTOR) * 4095) 
+`define RES_26 ((`TESTC_8 * `TESTR_8 * 10))/2.56 * 4095  
+`define RES_27 (`TESTT_8 * 19.53)
+`define RES_28 ((`TESTV_9/`PRESCALE_FACTOR) * 4095) 
+`define RES_29 ((`TESTC_9 * `TESTR_0 * 10))/2.56 * 4095  
+`define RES_30 (`TESTT_9 * 19.53)
+`define RES_31 0
+
 
 module TB_adc_controller();
   wire clk;
@@ -82,6 +169,8 @@ module TB_adc_controller();
 
   integer k;
 
+  reg [11:0] expected_val;
+
   always @(posedge clk) begin
     if (reset) begin
       mode <= `MODE_ACM_CONF;
@@ -114,12 +203,48 @@ module TB_adc_controller();
         `MODE_ADC_RUN: begin
           if (mode_done[3]) begin
 `ifdef MODELSIM
-            $display("FAILED: implement check now");
             for (k=0; k < 32; k=k+1) begin
-              if (adc_mem[k] !== k) begin
-                $display("FAILED: invalid value - got %d, expected %d", adc_mem[k], k);
-              end else if (k == 31) begin
-                $display("PASSED");
+              case (k)
+                0: expected_val = `RES_00;
+                1: expected_val = `RES_01;
+                2: expected_val = `RES_02;
+                3: expected_val = `RES_03;
+                4: expected_val = `RES_04;
+                5: expected_val = `RES_05;
+                6: expected_val = `RES_06;
+                7: expected_val = `RES_07;
+                8: expected_val = `RES_08;
+                9: expected_val = `RES_09;
+                10: expected_val = `RES_10;
+                11: expected_val = `RES_11;
+                12: expected_val = `RES_12;
+                13: expected_val = `RES_13;
+                14: expected_val = `RES_14;
+                15: expected_val = `RES_15;
+                16: expected_val = `RES_16;
+                17: expected_val = `RES_17;
+                18: expected_val = `RES_18;
+                19: expected_val = `RES_19;
+                20: expected_val = `RES_20;
+                21: expected_val = `RES_21;
+                22: expected_val = `RES_22;
+                23: expected_val = `RES_23;
+                24: expected_val = `RES_24;
+                25: expected_val = `RES_25;
+                26: expected_val = `RES_26;
+                27: expected_val = `RES_27;
+                28: expected_val = `RES_28;
+                29: expected_val = `RES_29;
+                30: expected_val = `RES_30;
+                31: expected_val = `RES_31;
+              endcase
+              if (adc_mem[k] === expected_val) begin
+                if (k == 31) begin 
+                  $display("PASSED");
+                  $finish;
+                end
+              end else begin
+                $display("FAILED: invalid value on val %d - got %d, expected %d", k, adc_mem[k], expected_val);
                 $finish;
               end
             end
@@ -144,21 +269,36 @@ module TB_adc_controller();
     end
   end
 
-  wire [10*64 - 1: 0] AV_val = {64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff};
-  wire [10*64 - 1: 0] AC_val = {64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff};
-  wire [10*64 - 1: 0] AT_val = {64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff, 
-                                64'h0fffffff_ffffffff, 64'h0fffffff_ffffffff};
+  wire [10*64 - 1: 0] AV_val = {$realtobits(`TESTV_9), 
+                                $realtobits(`TESTV_8), 
+                                $realtobits(`TESTV_7), 
+                                $realtobits(`TESTV_6), 
+                                $realtobits(`TESTV_5), 
+                                $realtobits(`TESTV_4), 
+                                $realtobits(`TESTV_3), 
+                                $realtobits(`TESTV_2), 
+                                $realtobits(`TESTV_1), 
+                                $realtobits(`TESTV_0)};
+  wire [10*64 - 1: 0] AC_val = {$realtobits(`TESTV_9 - `TESTC_9*`TESTR_9), 
+                                $realtobits(`TESTV_8 - `TESTC_8*`TESTR_8), 
+                                $realtobits(`TESTV_7 - `TESTC_7*`TESTR_7), 
+                                $realtobits(`TESTV_6 - `TESTC_6*`TESTR_6), 
+                                $realtobits(`TESTV_5 - `TESTC_5*`TESTR_5), 
+                                $realtobits(`TESTV_4 - `TESTC_4*`TESTR_4), 
+                                $realtobits(`TESTV_3 - `TESTC_3*`TESTR_3), 
+                                $realtobits(`TESTV_2 - `TESTC_2*`TESTR_2), 
+                                $realtobits(`TESTV_1 - `TESTC_1*`TESTR_1), 
+                                $realtobits(`TESTV_0 - `TESTC_0*`TESTR_0)};
+  wire [10*64 - 1: 0] AT_val = {$realtobits(`TESTT_9/1024), 
+                                $realtobits(`TESTT_8/1024), 
+                                $realtobits(`TESTT_7/1024), 
+                                $realtobits(`TESTT_6/1024), 
+                                $realtobits(`TESTT_5/1024), 
+                                $realtobits(`TESTT_4/1024), 
+                                $realtobits(`TESTT_3/1024), 
+                                $realtobits(`TESTT_2/1024), 
+                                $realtobits(`TESTT_1/1024), 
+                                $realtobits(`TESTT_0/1024)};
 
 
 /******************** Simulated ADC/Analogue Block *****************************/

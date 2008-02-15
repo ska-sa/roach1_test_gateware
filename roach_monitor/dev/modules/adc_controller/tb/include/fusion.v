@@ -41751,44 +41751,39 @@ module AB (
 
       case (CHNUMBER_i)
         5'b00000 : MUXOUT = 1.5;
-        5'b00001 : MUXOUT = $bitstoreal ( v_muxout0 );
-        5'b00010 : MUXOUT = $bitstoreal ( c_muxout0 );
-        5'b00011 : MUXOUT = $bitstoreal ( t_muxout0 );
-        5'b00100 : MUXOUT = $bitstoreal ( v_muxout1 );
-        5'b00101 : MUXOUT = $bitstoreal ( c_muxout1 );
-        5'b00110 : MUXOUT = $bitstoreal ( t_muxout1 );
-        5'b00111 : MUXOUT = $bitstoreal ( v_muxout2 );
-        5'b01000 : MUXOUT = $bitstoreal ( c_muxout2 );
-        5'b01001 : MUXOUT = $bitstoreal ( t_muxout2 );
-        5'b01010 : MUXOUT = $bitstoreal ( v_muxout3 );
-        5'b01011 : MUXOUT = $bitstoreal ( c_muxout3 );
-        5'b01100 : MUXOUT = $bitstoreal ( t_muxout3 );
-        5'b01101 : MUXOUT = $bitstoreal ( v_muxout4 );
-        5'b01110 : MUXOUT = $bitstoreal ( c_muxout4 );
-        5'b01111 : MUXOUT = $bitstoreal ( t_muxout4 );
-        5'b10000 : MUXOUT = $bitstoreal ( v_muxout5 );
-        5'b10001 : MUXOUT = $bitstoreal ( c_muxout5 );
-        5'b10010 : MUXOUT = $bitstoreal ( t_muxout5 );
-        5'b10011 : MUXOUT = $bitstoreal ( v_muxout6 );
-        5'b10100 : MUXOUT = $bitstoreal ( c_muxout6 );
-        5'b10101 : MUXOUT = $bitstoreal ( t_muxout6 );
-        5'b10110 : MUXOUT = $bitstoreal ( v_muxout7 );
-        5'b10111 : MUXOUT = $bitstoreal ( c_muxout7 );
-        5'b11000 : MUXOUT = $bitstoreal ( t_muxout7 );
-        5'b11001 : MUXOUT = $bitstoreal ( v_muxout8 );
-        5'b11010 : MUXOUT = $bitstoreal ( c_muxout8 );
-        5'b11011 : MUXOUT = $bitstoreal ( t_muxout8 );
-        5'b11100 : MUXOUT = $bitstoreal ( v_muxout9 );
-        5'b11101 : MUXOUT = $bitstoreal ( c_muxout9 );
-        5'b11110 : MUXOUT = $bitstoreal ( t_muxout9 );
-        5'b11111 : MUXOUT = 0.0;
-        default  : MUXOUT = 0.0;
+        5'b00001 : MUXOUT = $bitstoreal( v_muxout0);
+        5'b00010 : MUXOUT = $bitstoreal( c_muxout0);
+        5'b00011 : MUXOUT = $bitstoreal( t_muxout0);
+        5'b00100 : MUXOUT = $bitstoreal( v_muxout1);
+        5'b00101 : MUXOUT = $bitstoreal( c_muxout1);
+        5'b00110 : MUXOUT = $bitstoreal( t_muxout1);
+        5'b00111 : MUXOUT = $bitstoreal( v_muxout2);
+        5'b01000 : MUXOUT = $bitstoreal( c_muxout2);
+        5'b01001 : MUXOUT = $bitstoreal( t_muxout2);
+        5'b01010 : MUXOUT = $bitstoreal( v_muxout3);
+        5'b01011 : MUXOUT = $bitstoreal( c_muxout3);
+        5'b01100 : MUXOUT = $bitstoreal( t_muxout3);
+        5'b01101 : MUXOUT = $bitstoreal( v_muxout4);
+        5'b01110 : MUXOUT = $bitstoreal( c_muxout4);
+        5'b01111 : MUXOUT = $bitstoreal( t_muxout4);
+        5'b10000 : MUXOUT = $bitstoreal( v_muxout5);
+        5'b10001 : MUXOUT = $bitstoreal( c_muxout5);
+        5'b10010 : MUXOUT = $bitstoreal( t_muxout5);
+        5'b10011 : MUXOUT = $bitstoreal( v_muxout6);
+        5'b10100 : MUXOUT = $bitstoreal( c_muxout6);
+        5'b10101 : MUXOUT = $bitstoreal( t_muxout6);
+        5'b10110 : MUXOUT = $bitstoreal( v_muxout7);
+        5'b10111 : MUXOUT = $bitstoreal( c_muxout7);
+        5'b11000 : MUXOUT = $bitstoreal( t_muxout7);
+        5'b11001 : MUXOUT = $bitstoreal( v_muxout8);
+        5'b11010 : MUXOUT = $bitstoreal( c_muxout8);
+        5'b11011 : MUXOUT = $bitstoreal( t_muxout8);
+        5'b11100 : MUXOUT = $bitstoreal( v_muxout9);
+        5'b11101 : MUXOUT = $bitstoreal( c_muxout9);
+        5'b11110 : MUXOUT = $bitstoreal( t_muxout9);
+        5'b11111 : MUXOUT = 0.0;                         
+        default  : MUXOUT = 0.0;                        
       endcase
-      #1
-      $display("chnum weird: %b, %b", CHNUMBER_i, TMSTB9_ipd); 
-      $display("0 %f", MUXOUT); 
-      $display("1 %f", $bitstoreal (t_muxout9[38:32])); 
-      $display("2 %b", t_muxout9); 
   end
 
 
@@ -42429,8 +42424,10 @@ module AB (
               SAMPLE_reg  = 1'b0;
               if ( MUXOUT < 0.0 ) begin
                 adc_input = 0.0;
+//                $display("funny mux: %f", MUXOUT);
               end else begin
                 adc_input = MUXOUT;
+ //               $display("mux: %f", MUXOUT);
               end
             end
           end
