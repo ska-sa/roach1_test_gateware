@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 
-`define SIMLENGTH 6400
+`define SIMLENGTH 64000
 `define CLK_PERIOD 10
 
 `define NUM_MASTERS 4
@@ -35,7 +35,7 @@ module TB_wbm_arbiter();
     .wbs_adr_o(wbs_adr_o), .wbs_dat_o(wbs_dat_o), .wbs_dat_i(wbs_dat_i),
     .wbs_ack_i(wbs_ack_i), .wbs_err_i(1'b0),
     .wbm_id(),
-    .wbm_mask(4'b1111)
+    .wbm_mask({`NUM_MASTERS{1'b1}})
   );
 
   reg [31:0] clk_counter;
@@ -65,8 +65,8 @@ module TB_wbm_arbiter();
   `define MODE_READ_BLAST  1'b1
   reg mode;
   reg mode_done_strb;
-  reg [15:0] slave_mem  [15:0];
-  reg [15:0] master_mem [15:0];
+  reg [15:0] slave_mem  [65535:0];
+  reg [15:0] master_mem [65535:0];
 
   integer i;
 
@@ -104,11 +104,11 @@ module TB_wbm_arbiter();
 
   /******* Simulated WB Slave ********/
 
-  reg [3:0] sindex;
+  reg [15:0] sindex;
 
   always @(posedge clk) begin
     if (reset) begin
-      sindex <= 4'b0;
+      sindex <= 16'b0;
       wbs_ack_i<=1'b0;
     end else begin
       wbs_ack_i<=1'b0;
@@ -118,13 +118,13 @@ module TB_wbm_arbiter();
           slave_mem[sindex] <= wbs_dat_o;
           sindex <= sindex + 1;
 `ifdef DEBUG
-          $display("wbs: got write, addr = %x, data = %x", wbs_adr_o, wbs_dat_o);
+          $display("wbs: got write, addr = %x, data = %x, sindex == %x", wbs_adr_o, wbs_dat_o, sindex);
 `endif
         end else begin
           wbs_ack_i<=1'b1;
-          wbs_dat_i <= slave_mem[wbs_adr_o[3:0]];
+          wbs_dat_i <= slave_mem[wbs_adr_o[15:0]];
 `ifdef DEBUG
-          $display("wbs: got read, addr = %x, data = %x", wbs_adr_o, slave_mem[wbs_adr_o[3:0]]);
+          $display("wbs: got read, addr = %x, data = %x", wbs_adr_o, slave_mem[wbs_adr_o[15:0]]);
 `endif
         end
       end
@@ -166,7 +166,7 @@ module TB_wbm_arbiter();
               wbm_cyc_i <= {`NUM_MASTERS{1'b1}};
               wbm_stb_i <= {`NUM_MASTERS{1'b1}};
               wbm_we_i  <= {`NUM_MASTERS{1'b1}};
-              wbm_adr_i <= {4{16'b0}};
+              wbm_adr_i <= {`NUM_MASTERS{16'b0}};
               wbm_dat_i <= test_data;
               mstate <= `MSTATE_WAIT;
 `ifdef DEBUG
