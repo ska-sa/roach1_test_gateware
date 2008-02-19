@@ -1,300 +1,251 @@
-`timescale 1ns/10ps
-`include "memlayout.v"
-`include "parameters.v"
-  
- /* ADC interface Variables */
-`define ADC_STATE_RQST 2'd0
-`define ADC_STATE_WAIT 2'd1
-`define ADC_STATE_COMPARE 2'd2
-
-/*FIXME: this SUCKS!*/
+`timescale 100ps/10ps
+`include "level_checker.vh"
 
 module level_checker(
-  soft_reset,hard_reset,
-  adc_result,adc_channel,adc_rd,adc_strb,
-  irq,power_down,no_power, stall_buffer,
-  lb_addr,lb_data_in,lb_data_out,lb_rd,lb_wr,lb_strb,lb_clk,
-  RB_ADDR,RB_WDATA,RB_RDATA,RB_WRB
+    wb_clk_i, wb_rst_i,
+    wb_stb_i, wb_cyc_i, wb_we_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
+    adc_result, adc_channel, adc_strb,
+    soft_reset,
+    soft_viol, hard_viol,
+    v_in_range
   );
-  input soft_reset,hard_reset;
+  input  wb_clk_i, wb_rst_i;
+  input  wb_stb_i, wb_cyc_i, wb_we_i;
+  input  [15:0] wb_adr_i;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
+  output wb_ack_o;
  
-  input adc_strb;
-  output adc_rd;
-  output [4:0] adc_channel;
-  input [11:0] adc_result;
+  input  adc_strb;
+  input   [4:0] adc_channel;
+  input  [11:0] adc_result;
 
-  input [15:0] lb_addr;
-  input [15:0] lb_data_in;
-  output [15:0] lb_data_out;
-  input lb_rd,lb_wr,lb_clk;
-  input stall_buffer;
-  output lb_strb;
+  input  soft_reset;
+  output soft_viol, hard_viol;
+  output [31:0] v_in_range;
 
-  output irq,power_down;
-  input no_power;
+  /************** Common Signals *****************/
+  reg  hard_thresh_valid, soft_thresh_valid;
+  wire thresh_sel_type; //level checker is checking hard or soft
+  wire thresh_sel_pol;  //level checker is checking high or low
+  wire wb_trans = wb_cyc_i & wb_stb_i & ~wb_ack_o;
+  wire wb_ram   = wb_adr_i < 16'd128;
 
-  output [11:0] RB_WDATA;
-  input  [11:0] RB_RDATA;
-  output [12:0]  RB_ADDR;
-  output RB_WRB;
-  
-  wire addressed=(lb_addr >= `ALC_A && lb_addr < `ALC_A + `ALC_L);
-  wire [7:0] temp_addr=(lb_addr - (`ALC_A));
-  
-  wire value_addressed=(lb_addr >= (`ALC_ADC_VALUE_A) && 
-                       lb_addr < (`ALC_ADC_VALUE_A + `ALC_ADC_VALUE_L));
-  wire faultval_addressed=(lb_addr >= (`ALC_FAULTVAL_A) && 
-                          lb_addr < (`ALC_FAULTVAL_A + `ALC_FAULTVAL_L));
-  wire hardlevel_addressed=(lb_addr >= `ALC_HARDLEVEL_A && 
-                           lb_addr < (`ALC_HARDLEVEL_A + `ALC_HARDLEVEL_L));
-  wire softlevel_addressed=(lb_addr >= (`ALC_SOFTLEVEL_A) && 
-                           lb_addr < (`ALC_SOFTLEVEL_A + `ALC_SOFTLEVEL_L));
-  wire rbuff_addressed=(lb_addr >= `ALC_RBUFF_A && 
-                           lb_addr < (`ALC_RBUFF_A + `ALC_RBUFF_L));
-  
-  wire [15:0] hardlevel_addr=(lb_addr-(`ALC_HARDLEVEL_A));
-  wire [15:0] softlevel_addr=(lb_addr-(`ALC_SOFTLEVEL_A));
-  wire [15:0] value_addr=(lb_addr-(`ALC_ADC_VALUE_A));
-  wire [15:0] faultval_addr=(lb_addr-(`ALC_FAULTVAL_A));
+  wire  [6:0] ram_raddr;
+  wire  [6:0] ram_waddr;
+  wire [11:0] ram_rdata;
+  wire [11:0] ram_wdata;
+  wire ram_wen;
 
- 
-  reg [15:0] lb_data_out;
-  reg lb_strb;
+  assign ram_wen = wb_trans & wb_ram & wb_we_i;
+  assign ram_waddr = wb_adr_i[6:0];
+  assign ram_wdata = wb_dat_i[11:0];
 
-  reg irq;
-  reg power_down;
-  
-  reg [5:0] fault_val_hard;
-  reg [5:0] fault_val_soft;
+  assign ram_wb_r = wb_trans & wb_ram & ~wb_we_i ; //the wishbone slave `takes` the ram read interface
+  assign ram_raddr = ram_wb_r ? wb_adr_i[6:0] : {thresh_sel_type, adc_channel, thresh_sel_pol};
 
-  reg [11:0] hard_level [63:0];
-  reg [11:0] soft_level [63:0];
-  
-  reg [16:0] rbuffer_head;
-  reg [16:0] frame_head;
-  reg [16:0] user_access_index;
-  reg rbuffer_pause;
+  /******************** WB Slave ********************/
+  reg wb_ack_o;
+  reg [3:0] wb_dat_o_src;
 
-  reg [1:0] adc_state; 
-  reg adc_rd; 
-  reg [4:0] adc_channel; 
+  reg  [5:0] soft_viol_source;
+  reg [11:0] soft_viol_value;
 
-  reg [127:0] value_set; /* threshold has been set? */
+  reg  [5:0] hard_viol_source;
+  reg [11:0] hard_viol_value;
 
-  reg [11:0] adc_values [31:0];
+  assign wb_dat_o = wb_dat_o_src == 4'd0 ? ram_rdata :
+                    wb_dat_o_src == 4'd1 ? {15'b0, soft_thresh_valid} :
+                    wb_dat_o_src == 4'd2 ? {15'b0, hard_thresh_valid} :
+                    wb_dat_o_src == 4'd3 ? {10'b0, soft_viol_source} :
+                    wb_dat_o_src == 4'd4 ?  {4'b0, soft_viol_value} :
+                    wb_dat_o_src == 4'd5 ? {10'b0, hard_viol_source} :
+                    wb_dat_o_src == 4'd6 ?  {4'b0, hard_viol_value} :
+                    wb_dat_o_src == 4'd7 ? v_in_range[15:0] :
+                    wb_dat_o_src == 4'd8 ? v_in_range[31:16] :
+                    16'b0;
 
-  reg RB_WRB;
-  reg [12:0] RB_ADDR_buff;
-  assign RB_ADDR = (RB_WRB ? user_access_index[12:0] : RB_ADDR_buff);
-  assign RB_WDATA = adc_result;
+  reg clear_soft_viol, clear_hard_viol;
 
+  always @(posedge wb_clk_i) begin
+    wb_ack_o <= 1'b0;
+    clear_soft_viol <= 1'b0;
+    clear_hard_viol <= 1'b0;
 
-  always @(posedge lb_clk) begin
-    if (hard_reset) begin 
-      /*need hard reset to maintain contents of history buffer after crash*/
-      rbuffer_head<=10'b0;
-      frame_head<=10'b0;
-      fault_val_hard<=6'b100000;
-      fault_val_soft<=6'b100000;
-      value_set<=128'b0;
-    end else if (soft_reset) begin
-      RB_WRB<=1'b1;
-      /*OR bus compatibility*/
-      lb_data_out<=16'b0;
-      lb_strb<=1'b0;
-      rbuffer_pause<=1'b0;
-      lb_strb<=1'b0;
-      /*local goodies*/
-      adc_state<=`ADC_STATE_RQST;
-      adc_rd<=1'b0; 
-      adc_channel<=5'b11111; 
-      power_down<=1'b0;             
-      irq<=1'b0;
-      value_set<=128'b0;
-`ifdef DEBUG 
-      $display("ALC reset");
-`endif
-    end else begin
-      /*LB Interface*/
-      if (addressed & (lb_rd | lb_wr)) begin
-        lb_strb<=1'b1; /*default action is to complete operation in 1 cycle*/
-        if (hardlevel_addressed) begin
-           if (lb_wr) begin
-             hard_level[hardlevel_addr[5:0]] <=lb_data_in[11:0];
-             value_set[{1'b0,hardlevel_addr[5:0]}] <=1'b1;
-`ifdef DEBUG
-        $display("alc: hard write -- index=%d, data=%x, high=%b",hardlevel_addr[5:0],lb_data_in[11:0],~hardlevel_addr[0]);
-`endif
-           end else begin
-             lb_data_out<={4'b0,hard_level[hardlevel_addr[5:0]]};
-`ifdef DEBUG
-        $display("alc: hard read -- index=%d data=%d",hardlevel_addr[5:0],hard_level[hardlevel_addr[5:0]]);
-`endif
-           end
-	end else if (softlevel_addressed) begin
-           if (lb_wr) begin
-             soft_level[softlevel_addr[5:0]] <=lb_data_in[11:0];
-             value_set[{1'b1,softlevel_addr[5:0]}] <=1'b1;
-`ifdef DEBUG
-        $display("alc: soft write -- index=%d, data=%d, high=%b",softlevel_addr[5:0],lb_data_in[11:0], ~softlevel_addr[0]);
-`endif
-           end else begin
-             lb_data_out<={4'b0,soft_level[softlevel_addr[5:0]]};
-`ifdef DEBUG
-        $display("alc: soft read -- index=%d data=%d",softlevel_addr[5:0],soft_level[softlevel_addr[5:0]]);
-`endif
-           end
-	end else if (value_addressed) begin
-	   if (lb_wr) begin
-	   end else begin
-             lb_data_out<={4'b0,adc_values[value_addr[4:0]]};
-`ifdef DEBUG
-	     $display("alc: value read -- channel == %d, data == %d",value_addr[4:0],adc_values[value_addr[4:0]]);
-`endif
-	   end
-        end else if (faultval_addressed) begin
-           if (lb_wr) begin
-           end else begin
-             if (faultval_addr[0] == 1'b0) begin 
-               lb_data_out<={10'b0,fault_val_hard};
-             end else begin
-               lb_data_out<={10'b0,fault_val_soft};
-             end
-`ifdef DESPERATE_DEBUG
-        $display("alc: fault value");
-`endif
-           end
-	end else if (rbuff_addressed) begin
-          if (lb_wr && ~lb_data_in) begin
-            rbuffer_pause<=1'b0;
-`ifdef DEBUG
-        $display("alc: stopping ring buffer pause");
-`endif
-          end else if (lb_wr && lb_data_in) begin
-            rbuffer_pause<=1'b1;
-            user_access_index<=frame_head - 1'b1;
-`ifdef DEBUG
-        $display("alc: starting ring buffer pause");
-`endif
-          end else if (lb_rd && rbuffer_pause) begin
-            if (user_access_index == rbuffer_head) begin
-              lb_data_out<=16'h4000; /*end of buffer bit 14 asserted*/
-`ifdef DEBUG
-        $display("alc: ring buffer finished"); 
-`endif
-            end else begin
-	      /*ring buffer read here*/
-	      lb_data_out<={4'b0,RB_RDATA};
-	      if (user_access_index == 17'b0) begin
-                user_access_index<=`MB_RING_BUFFER_SIZE - 1'b1;
-	      end else begin
-                user_access_index<=user_access_index - 1'b1;
-	      end
-`ifdef DEBUG
-        $display("alc: ring buffer read -- index == %d",user_access_index); 
-`endif
-            end
-          end else if (lb_rd && ~rbuffer_pause) begin
-            lb_data_out<=16'h8000; /*error: bit 15 asserted*/
-          end
-	end else begin
-`ifdef DEBUG 
-	  $display("warning: apparent error in memlayout");
-`endif
-	end
+    if (soft_reset) begin
+      soft_thresh_valid <= 1'b0;
+    end
+
+    if (wb_rst_i) begin
+      soft_thresh_valid <= 1'b0;
+      hard_thresh_valid <= 1'b0;
+      soft_viol_source <= 6'b0;
+      hard_viol_source <= 6'b0;
+    end else if (wb_trans) begin
+      wb_ack_o <= 1'b1;
+      if (wb_ram) begin
+        wb_dat_o_src <= 4'b0;
       end else begin
-      /*OR bus compatibility*/
-        lb_data_out<=16'b0;
-        lb_strb<=1'b0;
-      end
-
-      /*Analogue Interface*/
-      case (adc_state) 
-        `ADC_STATE_RQST: begin
-          if (~adc_strb) begin
-	    adc_rd<=1'b1;
-	    adc_channel<=adc_channel+5'b1;
-	    adc_state<=`ADC_STATE_WAIT;
-`ifdef DESPERATE_DEBUG 
-	    $display("alc_adc: requesting sample from channel %d",adc_channel+5'b1);
-`endif
-          end
-	end
-	`ADC_STATE_WAIT: begin
-	  if (adc_strb) begin
-	    adc_rd<=1'b0;
-            adc_values[adc_channel] <= adc_result[11:0];
-`ifdef DESPERATE_DEBUG 
-	    $display("alc_adc: got reply and value %d",{4'b0000,adc_result});
-`endif
-`ifdef DESPERATE_DEBUG
-            $display("alc_adc: rbuff head = %d, frame_head = %d",frame_head+adc_channel,frame_head);
-            $display("alc_adc: channel = %d, result = %d",adc_channel,adc_result[11:3]);
-`endif
-	    adc_state<=`ADC_STATE_COMPARE;
-            /* ring buffer update */
-            if (~rbuffer_pause | stall_buffer) begin
-	      RB_WRB<=1'b0;
-              RB_ADDR_buff <= frame_head+adc_channel;
-	      if (frame_head + adc_channel < `MB_RING_BUFFER_SIZE) begin
-                rbuffer_head<=(frame_head + adc_channel); 
-	      end else begin
-                rbuffer_head<=(frame_head + adc_channel) - `MB_RING_BUFFER_SIZE; 
-	      end
-              if (adc_channel == 5'd31) begin
-	        if (rbuffer_head + 10'd2 < `MB_RING_BUFFER_SIZE) begin
-                  frame_head<=rbuffer_head + 10'd2; 
-		  //frame head sneaks ahead by 2
-		end else begin
-                  frame_head<=rbuffer_head + 10'd2 - `MB_RING_BUFFER_SIZE;
-		end
-              end
-            end
-	  end
-	end
-	`ADC_STATE_COMPARE: begin
-	  adc_state<=`ADC_STATE_RQST;
-	  RB_WRB<=1'b1;
-	  if (value_set[{1'b0,adc_channel,1'b0}] && adc_result > hard_level[{adc_channel,1'b0}] || 
-              value_set[{1'b0,adc_channel,1'b1}] && adc_result < hard_level[{adc_channel,1'b1}]) begin
-             if (!no_power || (adc_channel == 32'b1 ||  adc_channel == 32'd4 || adc_channel == 32'd15)) begin
-`ifdef ALC_POWER_DOWN_ENABLE
-               power_down<=1'b1; /*only gets cleared with reset*/
-`endif
-               fault_val_hard<={1'b0,adc_channel};
-`ifdef DEBUG 
-	  $display("CRITICAL ALERT: channel==%d",adc_channel);
-`endif
-             end
-          end else if (value_set[{1'b1,adc_channel,1'b0}] && adc_result > soft_level[{adc_channel,1'b0}] || 
-              value_set[{1'b1,adc_channel,1'b1}] && adc_result < soft_level[{adc_channel,1'b1}]) begin
-              /*TODO: remove this check*/
-            if (!no_power || (adc_channel == 32'b1 ||  adc_channel == 32'd4 || adc_channel == 32'd15)) begin
-`ifdef ALC_IRQ_ENABLE
-	      irq<=1'b1;
-`endif
-              fault_val_soft<={1'b0,adc_channel};
-`ifdef DEBUG 
-	  $display("SOFT ALERT: channel == %d",adc_channel);
-`endif
+        case (wb_adr_i)
+          `REG_SOFT_THRESH_VALID: begin
+            wb_dat_o_src <= 4'd1;
+            if (wb_we_i) begin
+              soft_thresh_valid <= wb_dat_i[0];
             end
           end
-
-`ifdef DESPERATE_DEBUG 
-	  $display("alc_adc: adc_channel %d ---adc value %d --- soft thresh %d ---- hard thresh %d",adc_channel,adc_result,soft_level[{adc_channel,1'b0}], hard_level[{adc_channel,1'b0}]);
-	  $display("alc_adc: value set softh %d: softl %d: hardh %d : hardl %d ",
-            value_set[{1'b1,adc_channel,1'b0}],value_set[{1'b1,adc_channel,1'b1}],
-            value_set[{1'b0,adc_channel,1'b0}],value_set[{1'b0,adc_channel,1'b1}]);
-`endif
-	end
-      endcase
-      if (irq)begin /*assert irq for one cycle*/
-`ifdef DEBUG
-        $display("alc_irq: got ack");
-`endif
-        irq<=1'b0;
+          `REG_HARD_THRESH_VALID: begin
+            wb_dat_o_src <= 4'd2;
+            if (wb_we_i) begin
+              hard_thresh_valid <= wb_dat_i[0];
+            end
+          end
+          `REG_SOFT_VIOL_SOURCE: begin
+            wb_dat_o_src <= 4'd3;
+            clear_soft_viol <= 1'b0;
+          end
+          `REG_SOFT_VIOL_VALUE: begin
+            wb_dat_o_src <= 4'd4;
+          end
+          `REG_HARD_VIOL_SOURCE: begin
+            wb_dat_o_src <= 4'd5;
+            clear_hard_viol <= 1'b0;
+          end
+          `REG_HARD_VIOL_VALUE: begin
+            wb_dat_o_src <= 4'd6;
+          end
+          `REG_VINRANGE_0: begin
+            wb_dat_o_src <= 4'd7;
+          end
+          `REG_VINRANGE_1: begin
+            wb_dat_o_src <= 4'd8;
+          end
+        endcase
       end
     end
   end
+
+  /******************** Level Checker *********************/
+
+  reg [1:0] state;
+  localparam STATE_IDLE  = 0;
+  localparam STATE_CHECK = 1;
+  localparam STATE_SEND  = 2;
+
+  reg [1:0] check_type;
+
+  reg soft_viol_int;
+  reg hard_viol_int;
+  reg soft_viol, hard_viol;
+
+  reg [31:0] v_in_range;
+
+  assign thresh_sel_type = check_type[1];
+  assign thresh_sel_pol  = check_type[0];
+
+  reg wait_cycle;
+
+  always @(posedge wb_clk_i) begin
+    soft_viol <= 1'b0;
+    hard_viol <= 1'b0;
+    if (clear_soft_viol)
+      soft_viol_source <= 6'b0;
+    if (clear_hard_viol)
+      hard_viol_source <= 6'b0;
+    wait_cycle <= 1'b0;
+
+    if (wb_rst_i) begin
+      v_in_range <= 32'b0;
+      state <= STATE_IDLE;
+      check_type <= 2'b00;
+    end else begin
+      case (state)
+        STATE_IDLE: begin
+          if (adc_strb) begin
+            state <= STATE_CHECK;
+            hard_viol_int <= 1'b0;
+            soft_viol_int <= 1'b0;
+            check_type <= 2'b0;
+            wait_cycle <= 1'b1;
+          end
+        end
+        STATE_CHECK: begin
+          if (~ram_wb_r & ~wait_cycle) begin
+            if (soft_thresh_valid & ~check_type[1]) begin
+              soft_viol_int <= soft_viol_int | (check_type[0] ? ram_rdata < adc_result : ram_rdata > adc_result);
+`ifdef DEBUG
+              //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result);
+`endif
+            end
+            if (hard_thresh_valid & check_type[1]) begin
+              hard_viol_int <= hard_viol_int |  (check_type[0] ? ram_rdata < adc_result : ram_rdata > adc_result);
+`ifdef DEBUG
+              //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result);
+`endif
+            end
+            if (check_type == 2'b11) begin
+              state <= STATE_SEND;
+            end else begin
+              check_type <= check_type + 1;
+              wait_cycle <= 1'b1;
+            end
+          end
+        end
+        STATE_SEND: begin
+          soft_viol <= soft_viol_int;
+          hard_viol <= hard_viol_int;
+          if (hard_thresh_valid)
+            v_in_range[adc_channel] <= ~hard_viol_int;
+
+          if (hard_viol_int) begin
+`ifdef DEBUG
+            //$display("lc: hard viol");
+`endif
+            if (~hard_viol_source[5]) begin
+              hard_viol_source <= {1'b1, adc_channel};
+              hard_viol_value <= adc_result;
+            end
+          end
+          if (soft_viol_int) begin
+`ifdef DEBUG
+            //$display("lc: soft viol");
+`endif
+            if (~soft_viol_source[5]) begin
+              soft_viol_source <= {1'b1, adc_channel};
+              soft_viol_value <= adc_result;
+            end
+          end
+          state <= STATE_IDLE;
+        end
+      endcase
+    end
+  end
+
+
+  /* A single port ram is unfortunate as sharing is required, but is unwasteful
+   * fusion archicture supports only 8 bit dual ports */
+
+  wire [5:0] ram_rdata_nc;
+  RAM512X18 RAM512X18_inst (
+    .RESET(~wb_rst_i),
+    /* Read Port */
+    .RCLK(wb_clk_i), .REN(1'b0),
+    .PIPE(1'b0), .RW1(1'b1), .RW0(1'b0), //non-pipelined, 256x18 mode
+    .RADDR8(1'b0), .RADDR7(1'b0), .RADDR6(ram_raddr[6]), .RADDR5(ram_raddr[5]),
+    .RADDR4(ram_raddr[4]), .RADDR3(ram_raddr[3]), .RADDR2(ram_raddr[2]), .RADDR1(ram_raddr[1]), .RADDR0(ram_raddr[0]),
+    .RD17(ram_rdata_nc[5]), .RD16(ram_rdata_nc[4]), .RD15(ram_rdata_nc[3]),
+    .RD14(ram_rdata_nc[2]), .RD13(ram_rdata_nc[1]), .RD12(ram_rdata_nc[0]),
+    .RD11(ram_rdata[11]), .RD10(ram_rdata[10]), .RD9(ram_rdata[9]), .RD8(ram_rdata[8]), .RD7(ram_rdata[7]),.RD6(ram_rdata[6]),
+    .RD5(ram_rdata[5]), .RD4(ram_rdata[4]), .RD3(ram_rdata[3]), .RD2(ram_rdata[2]), .RD1(ram_rdata[1]), .RD0(ram_rdata[0]),
+    /* Write Port */
+    .WCLK(wb_clk_i), .WEN(~ram_wen),
+    .WW1(1'b1), .WW0(1'b0), // 256x18 mode
+    .WADDR8(1'b0),.WADDR7(1'b0),.WADDR6(ram_waddr[6]),.WADDR5(ram_waddr[5]),
+    .WADDR4(ram_waddr[4]),.WADDR3(ram_waddr[3]),.WADDR2(ram_waddr[2]),.WADDR1(ram_waddr[1]),.WADDR0(ram_waddr[0]),
+    .WD17(1'b0), .WD16(1'b0), .WD15(1'b0), .WD14(1'b0), .WD13(1'b0), .WD12(1'b0),
+    .WD11(ram_wdata[11]), .WD10(ram_wdata[10]), .WD9(ram_wdata[9]), .WD8(ram_wdata[8]), .WD7(ram_wdata[7]),.WD6(ram_wdata[6]),
+    .WD5(ram_wdata[5]), .WD4(ram_wdata[4]), .WD3(ram_wdata[3]), .WD2(ram_wdata[2]), .WD1(ram_wdata[1]), .WD0(ram_wdata[0])
+  );
 
 endmodule
