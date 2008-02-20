@@ -38,7 +38,7 @@ module flashmem_controller(
 
   reg [15:0] status_address; // which page are we going to check the status of
 
-  reg [2:0] fm_status; //flash status after transfer
+  reg  [2:0] fm_status; //flash status after transfer
 
   reg flash_write_trans; //initiate a flash write transfer
   reg flash_read_trans; //initiate a flash read transfer
@@ -46,25 +46,29 @@ module flashmem_controller(
   reg flash_sync_trans; //initiate a flash dirty page sync
   reg flash_trans_done; //strobed after transaction is complete
 
+  reg wb_ack_o_int;
+
   /***************** Wishbone State Machine ***************/
 
   reg state;
   localparam STATE_IDLE = 1'd0;
   localparam STATE_WAIT = 1'd1;
 
-  wire wb_trans = wb_cyc_i & wb_stb_i & ~wb_ack_o;
+  wire wb_trans = wb_cyc_i & wb_stb_i & ~(wb_ack_o);
 
   reg [3:0] wb_dat_o_src;
 
-  assign wb_dat_o = wb_dat_o_src == 4'd0 ? FM_RD :
+  reg [15:0] FM_RD_reg;
+
+  assign wb_dat_o = wb_dat_o_src == 4'd0 ? FM_RD_reg :
                     wb_dat_o_src == 4'd1 ? {7'b0, FM_BUSY, 6'b0, fm_status} :
                     wb_dat_o_src == 4'd2 ? (dirty_page ? {6'b0, dirty_page_index} : 16'hffff) :
                     16'b0;
-  reg wb_ack_o;
+  assign wb_ack_o = wb_ack_o_int | flash_trans_done;
 
   always @(posedge wb_clk_i) begin
     //strobes
-    wb_ack_o <= 1'b0;
+    wb_ack_o_int <= 1'b0;
     flash_write_trans <= 1'b0;
     flash_read_trans <= 1'b0;
     flash_stat_trans <= 1'b0;
@@ -89,7 +93,7 @@ module flashmem_controller(
              case (wb_adr_i[5:0]) //adr 0 -> 63 is registers
                `REG_FLASH_STATUS: begin
 		 wb_dat_o_src <= 4'd1; //status bits
-                 wb_ack_o <= 1'b1;
+                 wb_ack_o_int <= 1'b1;
 `ifdef DEBUG
                $display("fc: performing op status read");
 `endif
@@ -104,11 +108,11 @@ module flashmem_controller(
 `endif
                  end else begin
 		   status_address<=wb_dat_i;
-		   wb_ack_o <=1'b1;
+		   wb_ack_o_int <=1'b1;
                  end
                end
                `REG_DIRTY_PAGE_STATUS: begin
-		 wb_ack_o <=1'b1;
+		 wb_ack_o_int <=1'b1;
                  wb_dat_o_src <= 4'd2;  // dirty page bits
 `ifdef DEBUG
                  $display("fc: performing dirty page read");
@@ -123,7 +127,7 @@ module flashmem_controller(
                    $display("fc: performing page status read");
 `endif
                  end else begin
-                   wb_ack_o <= 1'b1;
+                   wb_ack_o_int <= 1'b1;
                  end
                end
              endcase
@@ -131,8 +135,7 @@ module flashmem_controller(
          end
         STATE_WAIT: begin
           if (flash_trans_done) begin
-             wb_ack_o <= 1'b1;
-             state <= `FM_STATE_IDLE;
+             state <= STATE_IDLE;
           end
         end
       endcase
@@ -148,18 +151,18 @@ module flashmem_controller(
   localparam FM_STATE_PROGRAM = 2'd3;
 
   assign FM_WD = wb_dat_i;
-  assign FM_ADDR = state == FM_STATE_READ && FM_PAGESTATUS ? {1'b0, status_address}   : //the address is latched on the strobe
-                   state == FM_STATE_PROGRAM               ? {dirty_page_index, 6'b0} :
+  assign FM_ADDR = fm_state == FM_STATE_READ && FM_PAGESTATUS ? {1'b0, status_address}   : //the address is latched on the strobe
+                   fm_state == FM_STATE_PROGRAM               ? {dirty_page_index, 6'b0} :
                    {1'b0, fm_addr};
   assign FM_CLK = wb_clk_i;
   assign FM_RESET = ~wb_rst_i;
 
   reg FM_REN,FM_WEN,FM_PROGRAM, FM_PAGESTATUS;
 
+  reg wait_cycle;    // wait one cycle for response
   reg status_read;   // is this a status op?
   reg program_state; // action after program: wr == 1, rd == 0
   reg sync_only;
-  reg wait_cycle;    // if true wait
 
   always @(posedge wb_clk_i) begin
     //Single cycle strobes
@@ -192,8 +195,8 @@ module flashmem_controller(
             if (dirty_page && (dirty_page_index != page_index)) begin
               program_state<=1'b1; // tell the FM state machine that this was a program before write
               sync_only <= 1'b0;
-              FM_PROGRAM<=1'b1;
-              fm_state<=FM_STATE_PROGRAM;
+              FM_PROGRAM <= 1'b1;
+              fm_state <= FM_STATE_PROGRAM;
 
 `ifdef DEBUG
               $display("fc: performing write - data = %d, addr = %d", wb_dat_i, {1'b0,fm_addr});
@@ -246,11 +249,11 @@ module flashmem_controller(
               dirty_page <= 1'b0;
               dirty_page_index<={1'b0,fm_addr[15:6]};
 `ifdef DEBUG
-              $display("fc: program completed - program state = %d",program_state);
+              $display("fc: program completed - program state = %d", program_state);
 `endif
             end else begin
 `ifdef SIMULATION
-              $display("warning - fc: apparent error during program command");
+              $display("warning - fc: apparent error during program command - status = %b", FM_STATUS);
 `endif
             end
           end
@@ -260,6 +263,7 @@ module flashmem_controller(
             fm_status <= FM_STATUS;
             flash_trans_done <= 1'b1;
             fm_state <= FM_STATE_IDLE;
+            FM_RD_reg <= FM_RD;
 
             if (FM_STATUS == 2'b00) begin
               if (~status_read) // only update dirty page index if the read not status

@@ -1,4 +1,4 @@
-MODULE=flashmem_controller
+MODULE=value_storage
 
 VLIB=vlib
 VCC=vlog
@@ -17,11 +17,11 @@ SRC=$(TB_DIR)/TB_$(MODULE).v $(SRC_DIR)/$(MODULE).v $(INCLUDE_DIR)/fusion.v
 INCLUDE=+incdir+$(INCLUDE_DIR)
 INCLUDE+=+incdir+$(SRC_DIR)
 DEFINES=+define+MODELSIM
-DEFINES+=+define+SIMULATION
 DEFINES+=+define+FUSION_DEBUG
 DEFINES+=+define+DEBUG
-DEFINES+=+define+DESPERATE_DEBUG
+#DEFINES+=+define+DESPERATE_DEBUG
 DEFINES+=+define+WARNING_MSGS_ON
+DEFINES+=+define+SIMULATION
 
 
 SIM_LOG_FILE=$(GEN_DIR)/msgs.txt
@@ -50,4 +50,4 @@ $(MS_LIB):
 	$(VLIB) $@
 
 clean:
-	rm -Rf .*.swp .*.*.swp $(SIM_LOG_FILE) $(MS_LIB) $(VSIM_SCRIPT) work transcript $(MS_INT_FILE) $(VCC_LOG_FILE)
+	rm -Rf *.vcd .*.swp .*.*.swp  $(SIM_LOG_FILE) $(MS_LIB) $(VSIM_SCRIPT) work transcript $(MS_INT_FILE) $(VCC_LOG_FILE) $(GEN_DIR)/*

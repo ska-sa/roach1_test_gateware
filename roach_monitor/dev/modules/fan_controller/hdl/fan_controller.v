@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 
-  module fan_controller(
+module fan_controller(
     wb_clk_i, wb_rst_i,
     wb_stb_i, wb_cyc_i, wb_we_i,
     wb_adr_i, wb_dat_i, wb_dat_o,

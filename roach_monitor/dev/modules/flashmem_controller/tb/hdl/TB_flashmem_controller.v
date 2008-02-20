@@ -1,7 +1,7 @@
 `timescale 10ns/10ps
 
 `define SIM_LENGTH 1500000
-`define CLK_PERIOD 2
+`define CLK_PERIOD 4
 
 `define TEST_LENGTH 1000
 
@@ -36,19 +36,22 @@ module TB_flashmem_controller();
   );
 
   reg [7:0] clk_counter;
+  reg mode_wait;
 
   initial begin
     reset<=1'b1;
+    mode_wait <= 1'b1;
     clk_counter<=8'b0;
 `ifdef DEBUG
     $display("sim: Starting Simulation");
 `endif
     #512
     reset<=1'b0;
-    #10000
 `ifdef DEBUG
     $display("sim: Deasserting Reset");
 `endif
+    #1000
+    mode_wait <= 1'b0;
     #`SIM_LENGTH
     $display("FAILED: simulation timed out");
     $finish;
@@ -217,9 +220,10 @@ module TB_flashmem_controller();
 
 
 /********************** Common Signals ****************************/
-  reg mode;
-`define MODE_WRITE 1'b0
-`define MODE_READ  1'b1
+  reg [1:0] mode;
+`define MODE_WAIT  2'd0
+`define MODE_WRITE 2'd1
+`define MODE_READ  2'd2
 
   reg mode_done;
   reg [15:0] master_mem [1024 * 64 - 1:0];
@@ -228,9 +232,14 @@ module TB_flashmem_controller();
   integer i;
   always @(posedge clk) begin
     if (reset) begin
-      mode <= `MODE_WRITE;
+      mode <= `MODE_WAIT;
     end else begin
       case (mode)
+        `MODE_WAIT: begin
+          if (~mode_wait) begin
+            mode <= `MODE_WRITE;
+          end
+        end
         `MODE_WRITE: begin
           if (mode_done) begin
             mode <= `MODE_READ;
@@ -270,7 +279,7 @@ module TB_flashmem_controller();
     wb_stb_i <= 1'b0;
     mode_done <= 1'b0;
 
-    if (reset) begin
+    if (reset | mode_wait) begin
       state <=`STATE_COMMAND;
       counter <= 32'b0;
     end else begin
