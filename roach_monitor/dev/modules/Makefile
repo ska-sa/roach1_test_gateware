@@ -8,7 +8,8 @@ sim:
 clean:
 	@for I in `ls | grep -v Makefile` ; do \
            if ! echo $(BLACKLIST) | grep -q $$I ; then \
-             make -C $$I/tb clean || exit 1; \
+             VPACKAGE=MODELSIM make -C $$I/tb clean || exit 1; \
+             VPACKAGE=IVERILOG make -C $$I/tb clean || exit 1; \
            fi \
          done
 

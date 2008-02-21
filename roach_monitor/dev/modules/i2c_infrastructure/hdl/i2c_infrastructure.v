@@ -10,18 +10,14 @@ module i2c_infrastructure(
   output scl_i;
   input  scl_o;
   input  scl_oen; //active low
-  inout  sda_buf_o;
-  input  scl_buf_o;
+  inout  sda_buf;
+  input  scl_buf;
 
-  assign sda_buf_o = sda_oen ? sda_buf_i : ~sda_o;
-  assign sda_i = sda_buf_i;
-  
-  bibuf bibuf_sda(
+  BIBUF bibuf_sda(
     .PAD(sda_buf),
     .D(sda_o),
     .E(~sda_oen),
     .Y(sda_i)
-    
   );
 
   assign scl_i = scl_buf;

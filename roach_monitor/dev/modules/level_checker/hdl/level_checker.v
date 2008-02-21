@@ -29,18 +29,18 @@ module level_checker(
   output soft_viol, hard_viol;
   output [31:0] v_in_range;
 
+  output  [6:0] ram_raddr;
+  output  [6:0] ram_waddr;
+  input  [11:0] ram_rdata;
+  output [11:0] ram_wdata;
+  output ram_wen;
+
   /************** Common Signals *****************/
   reg  hard_thresh_valid, soft_thresh_valid;
   wire thresh_sel_type; //level checker is checking hard or soft
   wire thresh_sel_pol;  //level checker is checking high or low
   wire wb_trans = wb_cyc_i & wb_stb_i & ~wb_ack_o;
   wire wb_ram   = wb_adr_i < 16'd128;
-
-  output  [6:0] ram_raddr;
-  output  [6:0] ram_waddr;
-  input  [11:0] ram_rdata;
-  output [11:0] ram_wdata;
-  output ram_wen;
 
   assign ram_wen = wb_trans & wb_ram & wb_we_i;
   assign ram_waddr = wb_adr_i[6:0];

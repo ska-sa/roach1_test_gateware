@@ -2,5 +2,6 @@ module BIBUF(
   D,E,Y,PAD
   );
   input D,E;
-  output Y,PAD;
+  output Y;
+  inout PAD;
 endmodule
