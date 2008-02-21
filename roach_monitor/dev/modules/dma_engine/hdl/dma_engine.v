@@ -1,29 +1,240 @@
 `timescale 1ns/10ps
-`include "memlayout.v"
-`include "parameters.v"
-
 
 module dma_engine(
-    clk, reset,
+    wb_clk_i, wb_rst_i,
     wb_cyc_o, wb_stb_o, wb_we_o,
     wb_adr_o, wb_dat_o, wb_dat_i,
     wb_ack_i, wb_err_i,
-    dma_crash, dma_done
+    soft_reset, dma_crash,
+    dma_done
   );
-  input  clk, reset;
+  parameter FROM_ACM_A        = 16'd0;
+  parameter FROM_LC_A         = 16'd40;
+  parameter LC_THRESHS_A      = 16'd128;
+  parameter ACM_AQUADS_A      = 16'd384;
+  parameter VS_INDIRECT_A     = 16'd512;
+  parameter SYSCONFIG_A       = 16'd576;
+  parameter FLASH_A           = 16'd1024;
+  parameter FLASH_SYSCONFIG_A = 16'hffff;
+
+  input  wb_clk_i, wb_rst_i;
   output wb_cyc_o, wb_stb_o, wb_we_o;
   output [15:0] wb_adr_o;
   output [15:0] wb_dat_o;
   input  [15:0] wb_dat_i;
   input  wb_ack_i, wb_err_i;
 
+  input  soft_reset;
   input  dma_crash;
   output dma_done;
 
+  reg [2:0] mode;
   localparam MODE_FLASH     = 3'd0;
-  localparam MODE_ALC       = 3'd1;
-  localparam MODE_ABCONF    = 3'd2;
+  localparam MODE_LC        = 3'd1;
+  localparam MODE_ACM       = 3'd2;
   localparam MODE_SYSCONFIG = 3'd3;
   localparam MODE_DONE      = 3'd4;
+
+  reg [12:0] progress; //this needs to be big enough to handle max ring buffer size
+
+  reg [15:0] wb_dat_buf;
+
+  reg [1:0] state;
+
+  reg wb_cyc_o, wb_stb_o;
+  reg wb_we_o;
+  reg [15:0] wb_adr_o;
+  assign wb_dat_o = wb_dat_buf;
+
+  assign dma_done = mode == MODE_DONE;
+
+`ifdef DEBUG
+  always @(*) begin
+    $display("dma: mode = %d", mode);
+  end
+`endif
+
+  always @(posedge wb_clk_i) begin
+    wb_cyc_o <= 1'b0;
+    wb_stb_o <= 1'b0;
+    if (wb_rst_i) begin
+      mode <= MODE_LC;
+      progress <= 13'd0;
+      state <= 2'b0;
+    end else if (soft_reset) begin
+      mode <= dma_crash ? MODE_FLASH : MODE_LC;
+      progress <= 13'd0;
+      state <= 2'b0;
+    end else begin
+      case (mode) 
+  /***************** Flash Memory Crash Backup State Machine ***************/        
+        MODE_FLASH: begin
+          if (progress == 13'd0) begin
+            case (state)
+              2'd0: begin
+                wb_cyc_o <= 1'b1;
+                wb_stb_o <= 1'b1;
+                wb_we_o  <= 1'b1;
+                wb_adr_o <= VS_INDIRECT_A;
+                wb_dat_buf <= 16'd0; 
+                state <= 2'd1;
+              end
+              2'd1: begin
+                if (wb_ack_i || wb_err_i) begin
+                  progress <= progress + 1;
+                  state <= 2'd0;
+                end
+              end
+            endcase
+          end else begin
+            case (state)
+              2'd0: begin
+                wb_cyc_o <= 1'b1;
+                wb_stb_o <= 1'b1;
+                wb_we_o  <= 1'b0;
+                wb_adr_o <= VS_INDIRECT_A;
+                state <= 2'd1;
+              end
+              2'd1: begin
+                if (wb_ack_i || wb_err_i) begin
+                  wb_dat_buf <= wb_dat_i;
+                  wb_cyc_o <= 1'b1;
+                  wb_stb_o <= 1'b1;
+                  wb_we_o  <= 1'b1;
+                  wb_adr_o <= FLASH_A + progress - 1;
+                  state <= 2'd2;
+                end
+              end
+              2'd2: begin
+                if (wb_ack_i || wb_err_i) begin
+                  if (wb_dat_buf[15] || progress == {13{1'b1}}) begin
+                    wb_cyc_o <= 1'b1;
+                    wb_stb_o <= 1'b1;
+                    wb_we_o  <= 1'b1;
+                    wb_adr_o <= VS_INDIRECT_A;
+                    wb_dat_buf <= 16'hffff; 
+                    state <= 2'd3;
+                  end else begin
+                    state <= 2'd0;
+                    progress <= progress + 1;
+                  end
+                end
+              end
+              2'd3: begin
+                if (wb_ack_i || wb_err_i) begin
+                  state <= 2'd0;
+                  progress <= 13'd0;
+                  mode <= MODE_LC;
+                end
+              end
+            endcase
+          end
+        end
+  /***************** Level Checker Configuration State Machine ***************/        
+        MODE_LC: begin
+          case (state)
+            2'd0: begin
+              wb_cyc_o <= 1'b1;
+              wb_stb_o <= 1'b1;
+              wb_we_o  <= 1'b0;
+              wb_adr_o <= FROM_LC_A + progress;
+              state <= 2'd1;
+            end
+            2'd1: begin
+              if (wb_ack_i || wb_err_i) begin
+                if (wb_dat_i == 16'hff) begin
+                  wb_dat_buf <= 16'hfff; //8'hff in FROM disable too high conditions
+                end else begin
+                  wb_dat_buf <= wb_dat_i << 4;
+                end
+                wb_cyc_o <= 1'b1;
+                wb_stb_o <= 1'b1;
+                wb_we_o  <= 1'b1;
+                wb_adr_o <= LC_THRESHS_A + progress;
+                state <= 2'd2;
+              end
+            end
+            2'd2: begin
+              if (wb_ack_i || wb_err_i) begin
+                if (progress == 13'd63) begin
+                  state <= 2'd0;
+                  progress <= 13'd0;
+                  mode <= MODE_ACM;
+                end else begin
+                  progress <= progress + 1;
+                  state <= 2'd0;
+                end
+              end
+            end
+          endcase
+        end
+  /***************** ACM initialization State Machine ***************/        
+        MODE_ACM: begin
+          case (state)
+            2'd0: begin
+              wb_cyc_o <= 1'b1;
+              wb_stb_o <= 1'b1;
+              wb_we_o  <= 1'b0;
+              wb_adr_o <= FROM_ACM_A + progress;
+              state <= 2'd1;
+            end
+            2'd1: begin
+              if (wb_ack_i || wb_err_i) begin
+                wb_dat_buf <= wb_dat_i;
+                wb_cyc_o <= 1'b1;
+                wb_stb_o <= 1'b1;
+                wb_we_o  <= 1'b1;
+                wb_adr_o <= ACM_AQUADS_A + progress;
+                state <= 2'd2;
+              end
+            end
+            2'd2: begin
+              if (wb_ack_i || wb_err_i) begin
+                if (progress == 13'd39) begin
+                  state <= 2'd0;
+                  progress <= 13'd0;
+                  mode <= MODE_SYSCONFIG;
+                end else begin
+                  progress <= progress + 1;
+                  state <= 2'd0;
+                end
+              end
+            end
+          endcase
+        end
+  /***************** Sys Config State Machine ***************/        
+        MODE_SYSCONFIG: begin
+          case (state)
+            2'd0: begin
+              wb_cyc_o <= 1'b1;
+              wb_stb_o <= 1'b1;
+              wb_we_o  <= 1'b0;
+              wb_adr_o <= FLASH_SYSCONFIG_A;
+              state <= 2'd1;
+            end
+            2'd1: begin
+              if (wb_ack_i || wb_err_i) begin
+                wb_dat_buf <= wb_dat_i;
+                wb_cyc_o <= 1'b1;
+                wb_stb_o <= 1'b1;
+                wb_we_o  <= 1'b1;
+                wb_adr_o <= SYSCONFIG_A;
+                state <= 2'd2;
+              end
+            end
+            2'd2: begin
+              if (wb_ack_i || wb_err_i) begin
+                state <= 2'd0;
+                progress <= 13'd0;
+                mode <= MODE_DONE;
+              end
+            end
+          endcase
+        end
+        MODE_DONE: begin
+        end
+      endcase
+    end
+  end
  
 endmodule
