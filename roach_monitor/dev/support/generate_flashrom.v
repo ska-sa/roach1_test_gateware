@@ -1,5 +1,3 @@
-`define BOARD_ID "ACTELDEV00"
-
 `define VCC_HIGH      8'd255
 `define VCC_LOW       8'd0 
 `define TINT_HIGH     8'd255
@@ -174,142 +172,166 @@
 `define AT8 (`AT_SCALING_FACTOR_8V | `AT_ANALOG_MUX_SELECT_TEMPMON   | `AT_DIRECT_ANALOG_INPUT_OFF | `AT_PRESCALER_MODE_POWERDOWN)
 `define AT9 (`AT_SCALING_FACTOR_8V | `AT_ANALOG_MUX_SELECT_TEMPMON   | `AT_DIRECT_ANALOG_INPUT_OFF | `AT_PRESCALER_MODE_POWERDOWN)
 
-module generate_flash_rom();
- reg [10*8-1:0] board_id;
- reg [10*8-1:0] rev;
- initial begin
-   board_id=`BOARD_ID;
-   $display("%x",board_id[7:0]);
-   $display("%x",board_id[15:8]);
-   $display("%x",board_id[23:16]);
-   $display("%x",board_id[31:24]);
-   $display("%x",board_id[39:32]);
-   $display("%x",board_id[47:40]);
-   $display("%x",board_id[55:48]);
-   $display("%x",board_id[63:56]);
-   $display("%x",board_id[71:64]);
-   $display("%x",board_id[79:72]);
- 
-   rev="`REV_MINOR`REV_MAJOR";
-   $display("%x",rev[7:0]);
-   $display("%x",rev[15:8]);
-   $display("%x",rev[23:16]);
-   $display("%x",rev[31:24]);
-   $display("%x",rev[39:32]);
-   $display("%x",rev[47:40]);
-   $display("%x",rev[55:48]);
-   $display("%x",rev[63:56]);
-   $display("%x",rev[71:64]);
-   $display("%x",rev[79:72]);
 
-   $display("%x",`VCC_HIGH);
-   $display("%x",`VCC_LOW);
-   $display("%x",`AV0_HIGH);
-   $display("%x",`AV0_LOW);
-   $display("%x",`AC0_HIGH);
-   $display("%x",`AC0_LOW);
-   $display("%x",`AT0_HIGH);
-   $display("%x",`AT0_LOW);
-   $display("%x",`AV1_HIGH);
-   $display("%x",`AV1_LOW);
-   $display("%x",`AC1_HIGH);
-   $display("%x",`AC1_LOW);
-   $display("%x",`AT1_HIGH);
-   $display("%x",`AT1_LOW);
-   $display("%x",`AV2_HIGH);
-   $display("%x",`AV2_LOW);
-   $display("%x",`AC2_HIGH);
-   $display("%x",`AC2_LOW);
-   $display("%x",`AT2_HIGH);
-   $display("%x",`AT2_LOW);
-   $display("%x",`AV3_HIGH);
-   $display("%x",`AV3_LOW);
-   $display("%x",`AC3_HIGH);
-   $display("%x",`AC3_LOW);
-   $display("%x",`AT3_HIGH);
-   $display("%x",`AT3_LOW);
-   $display("%x",`AV4_HIGH);
-   $display("%x",`AV4_LOW);
-   $display("%x",`AC4_HIGH);
-   $display("%x",`AC4_LOW);
-   $display("%x",`AT4_HIGH);
-   $display("%x",`AT4_LOW);
-   $display("%x",`AV5_HIGH);
-   $display("%x",`AV5_LOW);
-   $display("%x",`AC5_HIGH);
-   $display("%x",`AC5_LOW);
-   $display("%x",`AT5_HIGH);
-   $display("%x",`AT5_LOW);
-   $display("%x",`AV6_HIGH);
-   $display("%x",`AV6_LOW);
-   $display("%x",`AC6_HIGH);
-   $display("%x",`AC6_LOW);
-   $display("%x",`AT6_HIGH);
-   $display("%x",`AT6_LOW);
-   $display("%x",`AV7_HIGH);
-   $display("%x",`AV7_LOW);
-   $display("%x",`AC7_HIGH);
-   $display("%x",`AC7_LOW);
-   $display("%x",`AT7_HIGH);
-   $display("%x",`AT7_LOW);
-   $display("%x",`AV8_HIGH);
-   $display("%x",`AV8_LOW);
-   $display("%x",`AC8_HIGH);
-   $display("%x",`AC8_LOW);
-   $display("%x",`AT8_HIGH);
-   $display("%x",`AT8_LOW);
-   $display("%x",`AV9_HIGH);
-   $display("%x",`AV9_LOW);
-   $display("%x",`AC9_HIGH);
-   $display("%x",`AC9_LOW);
-   $display("%x",`AT9_HIGH);
-   $display("%x",`AT9_LOW);
-   $display("%x",`TINT_HIGH);
-   $display("%x",`TINT_LOW);
-   $display("%x",`AV0);
-   $display("%x",`AC0);
-   $display("%x",`AG0);
-   $display("%x",`AT0);
-   $display("%x",`AV1);
-   $display("%x",`AC1);
-   $display("%x",`AG1);
-   $display("%x",`AT1);
-   $display("%x",`AV2);
-   $display("%x",`AC2);
-   $display("%x",`AG2);
-   $display("%x",`AT2);
-   $display("%x",`AV3);
-   $display("%x",`AC3);
-   $display("%x",`AG3);
-   $display("%x",`AT3);
-   $display("%x",`AV4);
-   $display("%x",`AC4);
-   $display("%x",`AG4);
-   $display("%x",`AT4);
-   $display("%x",`AV5);
-   $display("%x",`AC5);
-   $display("%x",`AG5);
-   $display("%x",`AT5);
-   $display("%x",`AV6);
-   $display("%x",`AC6);
-   $display("%x",`AG6);
-   $display("%x",`AT6);
-   $display("%x",`AV7);
-   $display("%x",`AC7);
-   $display("%x",`AG7);
-   $display("%x",`AT7);
-   $display("%x",`AV8);
-   $display("%x",`AC8);
-   $display("%x",`AG8);
-   $display("%x",`AT8);
-   $display("%x",`AV9);
-   $display("%x",`AC9);
-   $display("%x",`AG9);
-   $display("%x",`AT9);
-   
-   $display("%x",8'b0);
-   $display("%x",8'b0);
-   $display("%x",8'b0);
-   $display("%x",8'b0);
- end
+module generate_flash_rom();
+ wire [15:0] checksum_int =
+              (`VCC_HIGH) + (`VCC_LOW) + (`AV0_HIGH) + (`AV0_LOW) +
+              (`AC0_HIGH) + (`AC0_LOW) + (`AT0_HIGH) + (`AT0_LOW) +
+              (`AV1_HIGH) + (`AV1_LOW) + (`AC1_HIGH) + (`AC1_LOW) +
+              (`AT1_HIGH) + (`AT1_LOW) + (`AV2_HIGH) + (`AV2_LOW) + 
+              (`AC2_HIGH) + (`AC2_LOW) + (`AT2_HIGH) + (`AT2_LOW) + 
+              (`AV3_HIGH) + (`AV3_LOW) + (`AC3_HIGH) + (`AC3_LOW) + 
+              (`AT3_HIGH) + (`AT3_LOW) + (`AV4_HIGH) + (`AV4_LOW) + 
+              (`AC4_HIGH) + (`AC4_LOW) + (`AT4_HIGH) + (`AT4_LOW) + 
+              (`AV5_HIGH) + (`AV5_LOW) + (`AC5_HIGH) + (`AC5_LOW) + 
+              (`AT5_HIGH) + (`AT5_LOW) + (`AV6_HIGH) + (`AV6_LOW) + 
+              (`AC6_HIGH) + (`AC6_LOW) + (`AT6_HIGH) + (`AT6_LOW) + 
+              (`AV7_HIGH) + (`AV7_LOW) + (`AC7_HIGH) + (`AC7_LOW) + 
+              (`AT7_HIGH) + (`AT7_LOW) + (`AV8_HIGH) + (`AV8_LOW) + 
+              (`AC8_HIGH) + (`AC8_LOW) + (`AT8_HIGH) + (`AT8_LOW) + 
+              (`AV9_HIGH) + (`AV9_LOW) + (`AC9_HIGH) + (`AC9_LOW) + 
+              (`AT9_HIGH) + (`AT9_LOW) + (`TINT_HIGH) +(`TINT_LOW) + 
+              (`AV0) + (`AC0) + (`AG0) + (`AT0) + 
+              (`AV1) + (`AC1) + (`AG1) + (`AT1) + 
+              (`AV2) + (`AC2) + (`AG2) + (`AT2) + 
+              (`AV3) + (`AC3) + (`AG3) + (`AT3) + 
+              (`AV4) + (`AC4) + (`AG4) + (`AT4) + 
+              (`AV5) + (`AC5) + (`AG5) + (`AT5) + 
+              (`AV6) + (`AC6) + (`AG6) + (`AT6) + 
+              (`AV7) + (`AC7) + (`AG7) + (`AT7) + 
+              (`AV8) + (`AC8) + (`AG8) + (`AT8) + 
+              (`AV9) + (`AC9) + (`AG9) + (`AT9);
+
+  wire [7:0] checksum = ~(checksum_int[7:0]) + 1;
+  initial begin
+    #1
+    $display("%x",checksum);
+    $display("%x",`VCC_HIGH);
+    $display("%x",`VCC_LOW);
+    $display("%x",`AV0_HIGH);
+    $display("%x",`AV0_LOW);
+    $display("%x",`AC0_HIGH);
+    $display("%x",`AC0_LOW);
+    $display("%x",`AT0_HIGH);
+    $display("%x",`AT0_LOW);
+    $display("%x",`AV1_HIGH);
+    $display("%x",`AV1_LOW);
+    $display("%x",`AC1_HIGH);
+    $display("%x",`AC1_LOW);
+    $display("%x",`AT1_HIGH);
+    $display("%x",`AT1_LOW);
+    $display("%x",`AV2_HIGH);
+    $display("%x",`AV2_LOW);
+    $display("%x",`AC2_HIGH);
+    $display("%x",`AC2_LOW);
+    $display("%x",`AT2_HIGH);
+    $display("%x",`AT2_LOW);
+    $display("%x",`AV3_HIGH);
+    $display("%x",`AV3_LOW);
+    $display("%x",`AC3_HIGH);
+    $display("%x",`AC3_LOW);
+    $display("%x",`AT3_HIGH);
+    $display("%x",`AT3_LOW);
+    $display("%x",`AV4_HIGH);
+    $display("%x",`AV4_LOW);
+    $display("%x",`AC4_HIGH);
+    $display("%x",`AC4_LOW);
+    $display("%x",`AT4_HIGH);
+    $display("%x",`AT4_LOW);
+    $display("%x",`AV5_HIGH);
+    $display("%x",`AV5_LOW);
+    $display("%x",`AC5_HIGH);
+    $display("%x",`AC5_LOW);
+    $display("%x",`AT5_HIGH);
+    $display("%x",`AT5_LOW);
+    $display("%x",`AV6_HIGH);
+    $display("%x",`AV6_LOW);
+    $display("%x",`AC6_HIGH);
+    $display("%x",`AC6_LOW);
+    $display("%x",`AT6_HIGH);
+    $display("%x",`AT6_LOW);
+    $display("%x",`AV7_HIGH);
+    $display("%x",`AV7_LOW);
+    $display("%x",`AC7_HIGH);
+    $display("%x",`AC7_LOW);
+    $display("%x",`AT7_HIGH);
+    $display("%x",`AT7_LOW);
+    $display("%x",`AV8_HIGH);
+    $display("%x",`AV8_LOW);
+    $display("%x",`AC8_HIGH);
+    $display("%x",`AC8_LOW);
+    $display("%x",`AT8_HIGH);
+    $display("%x",`AT8_LOW);
+    $display("%x",`AV9_HIGH);
+    $display("%x",`AV9_LOW);
+    $display("%x",`AC9_HIGH);
+    $display("%x",`AC9_LOW);
+    $display("%x",`AT9_HIGH);
+    $display("%x",`AT9_LOW);
+    $display("%x",`TINT_HIGH);
+    $display("%x",`TINT_LOW);
+    $display("%x",`AV0);
+    $display("%x",`AC0);
+    $display("%x",`AG0);
+    $display("%x",`AT0);
+    $display("%x",`AV1);
+    $display("%x",`AC1);
+    $display("%x",`AG1);
+    $display("%x",`AT1);
+    $display("%x",`AV2);
+    $display("%x",`AC2);
+    $display("%x",`AG2);
+    $display("%x",`AT2);
+    $display("%x",`AV3);
+    $display("%x",`AC3);
+    $display("%x",`AG3);
+    $display("%x",`AT3);
+    $display("%x",`AV4);
+    $display("%x",`AC4);
+    $display("%x",`AG4);
+    $display("%x",`AT4);
+    $display("%x",`AV5);
+    $display("%x",`AC5);
+    $display("%x",`AG5);
+    $display("%x",`AT5);
+    $display("%x",`AV6);
+    $display("%x",`AC6);
+    $display("%x",`AG6);
+    $display("%x",`AT6);
+    $display("%x",`AV7);
+    $display("%x",`AC7);
+    $display("%x",`AG7);
+    $display("%x",`AT7);
+    $display("%x",`AV8);
+    $display("%x",`AC8);
+    $display("%x",`AG8);
+    $display("%x",`AT8);
+    $display("%x",`AV9);
+    $display("%x",`AC9);
+    $display("%x",`AG9);
+    $display("%x",`AT9);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+    $display("%x",8'b0);
+  end
 endmodule

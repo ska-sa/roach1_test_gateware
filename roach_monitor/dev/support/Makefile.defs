@@ -4,7 +4,6 @@ FROM_SCRIPT=generate_flashrom.v
 UFC_SCRIPT=create_from_ufc
 
 FLASHMEM_EFC=prototype.efc
-FLASHROM_PROTOTYPE=afoocore.ufc
 
 VCC=iverilog
 VSIM=vvp

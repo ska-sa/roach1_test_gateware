@@ -12,7 +12,7 @@ sim: $(SRC)
 	@make -C $(MODULES_DIR) sim
 
 build_parameters: 
-	@make -C $(SUPPORT_DIR) build_parameters \
+	make -C $(SUPPORT_DIR) build_parameters \
 		MODULE_ID=$(MODULE_ID) \
 		REV_MAJOR=$(REV_MAJOR) \
 		REV_MINOR=$(REV_MINOR) \
@@ -20,7 +20,7 @@ build_parameters:
 		FLASHROM_F=$(FLASHROM_F) \
 		FLASHMEM_F=$(FLASHMEM_F) \
 		CHEADER_F=$(CHEADER_F)
-	@cp $(SUPPORT_DIR)/$(CHEADER_F) $(GEN_DIR)/$(CHEADER_F)
+	cp $(SUPPORT_DIR)/$(CHEADER_F) $(GEN_DIR)/$(CHEADER_F)
 
 # Synthesis
 synth: $(GEN_DIR)/$(SYNTH_FILE)
@@ -42,7 +42,8 @@ $(GEN_DIR)/$(BIT_FILE): synth
 		FLASHROM_UFC=../$(SUPPORT_DIR)/$(FLASHROM_F) \
 		FLASHMEM_EFC=../$(SUPPORT_DIR)/$(FLASHMEM_F) \
 		SYNTH_F=../$(GEN_DIR)/$(SYNTH_FILE) \
-		CONSTRAINTS_F=../$(CONSTRAINTS_F) \
+		CONSTRAINTS_P=../$(CONSTRAINTS_P) \
+		CONSTRAINTS_T=../$(CONSTRAINTS_T) \
 		PROJECT=$(PROJECT) \
 		BIT_FILE=$(BIT_FILE)
 	@cp $(PAR_DIR)/$(BIT_FILE) $(GEN_DIR)/$(BIT_FILE)

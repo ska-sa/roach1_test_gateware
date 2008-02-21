@@ -1,5 +1,5 @@
 MODULE_ID=roach_monitor
-REV_MAJOR=ba
+REV_MAJOR=aa
 REV_MINOR:=$(shell svn log|sed -n -e 2p | cut -d " " -f 1 | sed -e 's/r//')
 PROJECT=$(MODULE_ID)_$(REV_MAJOR)
 
@@ -15,7 +15,7 @@ SUPPORT_DIR=support
 # File Defines
 TOPLEVEL=toplevel
 CONSTRAINTS_P=$(CONSTRAINTS_DIR)/$(MODULE_ID).pdc
-CONSTRAINTS_P=$(CONSTRAINTS_DIR)/$(MODULE_ID).pdc
+CONSTRAINTS_T=$(CONSTRAINTS_DIR)/$(MODULE_ID).sdc
 SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/infrastructure/hdl/infrastructure.v \
     ./modules/infrastructure/hdl/clocks.v \
