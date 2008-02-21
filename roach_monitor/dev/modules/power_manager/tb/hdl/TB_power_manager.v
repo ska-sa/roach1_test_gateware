@@ -1,501 +1,319 @@
-/* This test bench runs through 'all' the states associated with the power
- * manager.*/
+`timescale 10ns/1ps
+`define SIM_LENGTH 100000
+`define CLK_PERIOD 2
 
-`timescale 1ns/10ps
-`include "memlayout.v"
-
-`define TB_STATE_WRITE 3'd0
-`define TB_STATE_WAITW 3'd1
-`define TB_STATE_READ 3'd2
-`define TB_STATE_WAITR 3'd3
-`define TB_STATE_IDLE 3'd4
-
-`define TEST_MODE_NOP 5'd0
-`define TEST_MODE_WRITE 5'd1
-`define TEST_MODE_READ 5'd2
-`define TEST_MODE_CRASH_READ 5'd3
-`define TEST_MODE_CHASSIS_ALERT_READ 5'd4
-`define TEST_MODE_CRASH_ACK 5'd5
-`define TEST_MODE_USER_SHUTDOWN 5'd6
-`define TEST_MODE_CHASSIS_ALERT_ACK 5'd7
 
 module TB_power_manager();
   wire clk;
-  reg hard_reset;
+  reg  reset;
+  reg  wb_stb_i, wb_cyc_i, wb_we_i;
+  reg  [15:0] wb_adr_i;
+  reg  [15:0] wb_dat_i;
+  wire [15:0] wb_dat_o;
+  wire wb_ack_o;
 
-  reg lb_rd,lb_wr;
-  reg [15:0] lb_data_in;
-  reg [15:0] lb_addr;
-  wire [15:0] lb_data_out;
-  wire lb_strb;
+  reg  [31:0] sys_health;
+  reg  unsafe_sys_health;
+  wire power_ok;
+  reg  cold_start, dma_done, chs_power_button;
+  wire soft_reset, crash;
+  wire ATX_PS_ON_N;
+  wire ATX_LOAD_RES_OFF;
+  wire TRACK_2V5;
+  wire INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0;
+  wire MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN;
+  wire G12V_EN, G5V_EN, G3V3_EN;
 
-  wire TRACK_2V5,SLP_0V9_0,SLP_0V9_1;
-  wire INHIBIT_1V2,INHIBIT_1V8,INHIBIT_2V5,MARGIN_UP_2V5,MARGIN_DOWN_2V5;
-  reg MGT0_1V2_PG,MGT1_1V2_PG,PG_1V5;
-  wire MGT0_1V2_EN,MGT1_1V2_EN,ENABLE_1V5;
-  wire [9:0] AG_EN;
-  wire [4:0] BP_GA;
-  reg BP_PERST_N,BP_ATNLED;
-  wire BP_PWREN_N,BP_MPWRGD,BP_WAKE_N;
-  reg BP_SCLI,BP_SDAI;
-  wire BP_SCLO,BP_SDAO;
-  wire BP_ALERT_N;
- 
-  reg CHS_ALERT_N;
-  wire CHS_NOTIFY;
-  wire [2:0] PS_LEDS;
-  
-  wire chassis_irq,dma_crash,soft_reset;
-  reg power_down,dma_done;
-
-  wire no_power;
-
-  assign BP_GA=5'b00010;
-
-
-  power_manager power_manager(
-  .hard_reset(hard_reset),
-  .TRACK_2V5(TRACK_2V5),
-  .SLP_0V9_0(SLP_0V9_0),.SLP_0V9_1(SLP_0V9_1),
-  .INHIBIT_1V2(INHIBIT_1V2),.INHIBIT_1V8(INHIBIT_1V8),.INHIBIT_2V5(INHIBIT_2V5),
-  .MARGIN_UP_2V5(MARGIN_UP_2V5),.MARGIN_DOWN_2V5(MARGIN_DOWN_2V5),
-  .MGT0_1V2_PG(MGT0_1V2_PG),.MGT1_1V2_PG(MGT1_1V2_PG),
-  .MGT0_1V2_EN(MGT0_1V2_EN),.MGT1_1V2_EN(MGT1_1V2_EN),
-  .ENABLE_1V5(ENABLE_1V5),.PG_1V5(PG_1V5),
-  .AG_EN(AG_EN),
-  .BP_GA(BP_GA),.BP_PERST_N(BP_PERST_N),.BP_PWREN_N(BP_PWREN_N),
-  .BP_ATNLED(BP_ATNLED),.BP_MPWRGD(BP_MPWRGD),.BP_WAKE_N(BP_WAKE_N),
-  .BP_SCLI(BP_SCLI),.BP_SCLO(BP_SCLO),.BP_SDAI(BP_SDAI),.BP_SDAO(BP_SDAO),.BP_ALERT_N(BP_ALERT_N),
-  .CHS_ALERT_N(CHS_ALERT_N),.CHS_NOTIFY(CHS_NOTIFY),.PS_LEDS(PS_LEDS),
-  .chassis_irq(chassis_irq),.power_down(power_down),.dma_crash(dma_crash),
-  .soft_reset(soft_reset),.dma_done(dma_done),.no_power(no_power),
-  .lb_addr(lb_addr),.lb_data_in(lb_data_in),.lb_data_out(lb_data_out),
-  .lb_rd(lb_rd),.lb_wr(lb_wr),.lb_strb(lb_strb),.lb_clk(clk)
+  power_manager #(
+    .POWER_DOWN_WAIT(32'd1000),
+    .WATCHDOG_OVERFLOW_DEFAULT(5'd1)
+  ) power_manager_inst (
+    .wb_clk_i(clk), .wb_rst_i(reset),
+    .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i),
+    .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
+    .wb_ack_o(wb_ack_o),
+    .sys_health(sys_health), .unsafe_sys_health(unsafe_sys_health),
+    .power_ok(power_ok),
+    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(1'b0),
+    .soft_reset(soft_reset), .crash(crash),
+    .ATX_PS_ON_N(ATX_PS_ON_N), .ATX_PWR_OK(~ATX_PS_ON_N),
+    .ATX_LOAD_RES_OFF(ATX_LOAD_RES_OFF),
+    .TRACK_2V5(TRACK_2V5),
+    .INHIBIT_2V5(INHIBIT_2V5), .INHIBIT_1V8(INHIBIT_1V8), .INHIBIT_1V5(INHIBIT_1V5), .INHIBIT_1V2(INHIBIT_1V2), .INHIBIT_1V0(INHIBIT_1V0),
+    .MGT_AVCC_EN(MGT_AVCC_EN), .MGT_AVTTX_EN(MGT_AVTTX_EN), .MGT_AVCCPLL_EN(MGT_AVCCPLL_EN),
+    .MGT_AVCC_PG(MGT_AVCC_EN), .MGT_AVTTX_PG(MGT_AVTTX_EN), .MGT_AVCCPLL_PG(MGT_AVCCPLL_EN),
+    .AUX_3V3_PG(1'b1),
+    .G12V_EN(G12V_EN), .G5V_EN(G5V_EN), .G3V3_EN(G3V3_EN)
   );
-   
-  reg [31:0] counter;
-  assign clk=counter[7];
 
-  reg dma_got_a_crash;
-  reg got_a_chassis_irq;
-  reg chassis_alert_happened;
-  reg crash_happened;
-  reg soft_reset_reply;
-  reg [7:0] test_mode;
-  reg power_down_event;
+  reg [7:0] clk_counter;
 
   initial begin
+    clk_counter<=8'b0;
+    reset<=1'b1;
 `ifdef DEBUG
-    $display("Starting Simulation");
+    $display("sim: starting sim");
 `endif
-    power_down_event<=1'b0;
-    counter<=32'b0;
-    dma_got_a_crash<=1'b0;
-    got_a_chassis_irq<=1'b0;
-    crash_happened<=1'b0;
-    chassis_alert_happened<=1'b0;
-    soft_reset_reply<=1'b0;
-    CHS_ALERT_N<=1'b1;
-    test_mode<=`TEST_MODE_NOP;
-
-    hard_reset<=1'b1;
-    #512 hard_reset<=1'b0;
-/*TEST: does hard_reset trigger a soft reset? */
+    #5
+    reset<=1'b0;
 `ifdef DEBUG
-  $display("/*TEST: does hard_reset trigger a soft reset? */");
+    $display("sim: clearing reset");
 `endif
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: hard reset didn't generate soft_reset");
-      $finish;
-    end
-    soft_reset_reply<=1'b0;
-/*TEST: trigger user shutdown*/
-`ifdef DEBUG
-  $display("/*TEST: trigger user shutdown*/");
-`endif
-    #512
-    test_mode<=`TEST_MODE_USER_SHUTDOWN;
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: No user shutdown apparent");
-      $finish;
-    end
-/*TEST: check chassis alert flag*/
-`ifdef DEBUG
-  $display("/*TEST: check chassis alert flag*/");
-`endif
-    #300  
-    test_mode<=`TEST_MODE_CHASSIS_ALERT_READ;
-    #5120
-`ifdef DEBUG
-  $display("TEST: asserting chs alert");
-`endif
-    
-    CHS_ALERT_N<=1'b0;
-    #300 chassis_alert_happened<=1'b1;
-    #5120
-/*TEST: chassis alert ack */
-`ifdef DEBUG
-  $display("/*TEST: chassis alert ack */");
-`endif
-    soft_reset_reply<=1'b0;
-    test_mode<=`TEST_MODE_CHASSIS_ALERT_ACK;
-    #512
-    test_mode<=`TEST_MODE_NOP;
-    #51200
-    if (~CHS_NOTIFY || PS_LEDS!=3'b111) begin
-      $display("FAILED: Chassis Shutdown has not occurred");
-      $finish;
-    end
-    if (soft_reset_reply) begin
-      $display("FAILED: spurious reset on chassis shutdown");
-      $finish;
-    end
-    CHS_ALERT_N<=1'b1;
-    hard_reset<=1'b1;
-    #512 hard_reset<=1'b0;
-
-/*TEST: crash flag*/
-`ifdef DEBUG
-  $display("/*TEST: crash flag*/");
-`endif
-    test_mode<=`TEST_MODE_CRASH_READ;
-    #5120
-    test_mode<=`TEST_MODE_NOP;
-/*TEST: crash 0 */
-`ifdef DEBUG
-  $display("/*TEST: crash 0 */");
-`endif
-    power_down_event<=1'b1;
-    #512
-    power_down_event<=1'b0;
-    soft_reset_reply<=1'b0;
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: no crash");
-      $finish;
-    end
-    crash_happened<=1'b1;
-/*TEST: crash flag*/
-`ifdef DEBUG
-  $display("/*TEST: crash flag*/");
-`endif
-    test_mode<=`TEST_MODE_CRASH_READ;
-    #5120
-/*TEST: clear crash flag*/
-`ifdef DEBUG
-  $display("/*TEST: clear crash flag*/");
-`endif
-    test_mode<=`TEST_MODE_CRASH_ACK;
-    #5120
-    test_mode<=`TEST_MODE_NOP;
-/*TEST: crash 1*/
-`ifdef DEBUG
-  $display("/*TEST: crash 1*/");
-`endif
-    power_down_event<=1'b1;
-    #512
-    power_down_event<=1'b0;
-    soft_reset_reply<=1'b0;
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: no crash");
-      $finish;
-    end
-/*TEST: crash 2*/
-`ifdef DEBUG
-  $display("/*TEST: crash 2*/");
-`endif
-    power_down_event<=1'b1;
-    #512
-    power_down_event<=1'b0;
-    soft_reset_reply<=1'b0;
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: no crash");
-      $finish;
-    end
-/*TEST: crash 3*/
-`ifdef DEBUG
-  $display("/*TEST: crash 3*/");
-`endif
-    power_down_event<=1'b1;
-    #512
-    power_down_event<=1'b0;
-    soft_reset_reply<=1'b0;
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: no crash");
-      $finish;
-    end
-/*TEST: crash 4*/
-`ifdef DEBUG
-  $display("/*TEST: crash 4*/");
-`endif
-    power_down_event<=1'b1;
-    #512
-    power_down_event<=1'b0;
-    soft_reset_reply<=1'b0;
-    #5120
-    if (~soft_reset_reply) begin
-      $display("FAILED: no crash");
-      $finish;
-    end
-/*TEST: crash 5*/
-`ifdef DEBUG
-  $display("/*TEST: crash 5*/");
-`endif
-    power_down_event<=1'b1;
-    #512
-    power_down_event<=1'b0;
-    soft_reset_reply<=1'b0;
-    #51200
-    if (~no_power) begin
-      $display("FAILED: no fatal crash");
-      $finish;
-    end
-    test_mode<=`TEST_MODE_WRITE;
-    #80000
-    test_mode<=`TEST_MODE_READ;
-    #80000
-    hard_reset<=1'b1;
-    #512
-    hard_reset<=1'b0;
-    #512
-    soft_reset_reply<=1'b0;
-    #80000
-    if (~soft_reset_reply) begin
-      $display("FAILED: no watchdog timeout");
-      $finish;
-    end
-    #800000
-    soft_reset_reply<=1'b0;
-    #80000
-    if (soft_reset_reply) begin
-      $display("FAILED: watchdog max failure");
-      $finish;
-    end
-    
-
-    $display("PASSED");
+    #`SIM_LENGTH 
+    $display("FAILED: simulation timed out");
     $finish;
   end
 
+  assign clk = clk_counter < ((`CLK_PERIOD) / 2);
+
   always begin
-    #1 counter<=counter+1;
-  end
-/* FAKE ALC MODULE */
-  always @(posedge clk) begin
-    if (soft_reset) begin
-      power_down<=1'b0;
-    end else begin
-      if (power_down_event) begin
-`ifdef DEBUG
-        $display("alc: asserting power_down");
-`endif
-        power_down<=1'b1;
-      end
-    end
+    #1 clk_counter <= (clk_counter == `CLK_PERIOD - 1 ? 32'b0 : clk_counter + 1);
   end
 
-/* FAKE DMA MODULE */
-  reg [4:0] dma_counter;
-`ifdef DEBUG
-  reg dma_start;
-`endif
-  always @(posedge clk) begin
-    if (soft_reset) begin
-      soft_reset_reply<=1'b1;
+  /************ MODE  ***************/
+  reg [3:0] mode;
+`define MODE_START_CHECK      4'd0
+`define MODE_WB_RESTART       4'd1
+`define MODE_WB_SHUTDOWN      4'd2
+`define MODE_WB_POWERUP       4'd3
+`define MODE_CRASH            4'd4
+  reg [3:0] mode_progress;
+  reg [31:0] mode_timer;
 
-      dma_done<=1'b0;
-`ifdef DEBUG
-      dma_start<=1'b1;
-`endif
-      if (dma_crash) begin
-        dma_counter<=5'b111;
-        dma_got_a_crash<=1'b1;
-      end else 
-        dma_counter<=5'b11;
-    end else begin
-`ifdef DEBUG
-      dma_start<=1'b0;
-      if (dma_start)
-        $display("dma: operation start -- crash = %d",dma_counter==5'b111);
-`endif
-      if (dma_counter==5'b0) begin
-        dma_done<=1'b1;
-`ifdef DEBUG
-        if (~dma_done) 
-          $display("dma: operation complete");
-`endif
-      end else 
-        dma_counter<=dma_counter - 5'b1;
-    end
-  end
-/* FAKE IRQ MODULE */
-  always @(posedge clk) begin
-    if (soft_reset) begin
-    end else begin
-      if (chassis_irq) begin
-`ifdef DEBUG        
-       // $display("irq: got chassis irq");
-`endif
-      end
-    end
-  end
+  reg [3:0] mode_done;
 
-  
-/*Fake LBus Controller Module*/ 
-  reg [2:0] state;
-  reg [3:0] fault_countdown;
-  always @ (posedge clk) begin
-    if (soft_reset) begin
-      lb_addr<=16'b0;
-      lb_rd<=1'b0;
-      lb_wr<=1'b0;
-      state<=`TB_STATE_IDLE;
-      fault_countdown<=4'b0;
+  reg got_a_n_pwrok;
+  always @(posedge clk) begin
+    unsafe_sys_health <= 1'b0;
+    if (reset) begin
+      mode <= `MODE_START_CHECK;
+      mode_progress <= 4'b0;
+      mode_timer <= 32'b0;
+
+      sys_health <= {32{1'b0}};
+      cold_start <= 1'b0;
+      dma_done <= 1'b0;
     end else begin
-      case (state)
-        `TB_STATE_IDLE: begin
-          case (test_mode)
-            `TEST_MODE_WRITE: begin
-              lb_addr<=lb_addr+16'b1;
-              lb_data_in<=16'b0;
-              state<=`TB_STATE_WRITE;
+      case (mode)
+        `MODE_START_CHECK: begin
+          mode_timer <= mode_timer + 1;
+          case (mode_progress)
+            4'd0: begin
+              if (mode_timer >= 32'd40) begin
+                dma_done <= 1'b1;
+                mode_timer <= 32'd0;
+                mode_progress <= 4'd1;
+                if (power_ok) begin
+                  $display("FAILED: invalid power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
+                  $finish;
+                end
+              end
             end
-            `TEST_MODE_READ: begin
-              lb_addr<=lb_addr+16'b1;
-              state<=`TB_STATE_READ;
+            4'd1: begin
+              if (mode_timer >= 32'd40) begin
+                sys_health <= {32{1'b1}};
+                mode_timer <= 32'd0;
+                mode_progress <= 4'd2;
+                if (power_ok) begin
+                  $display("FAILED: invalid power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
+                  $finish;
+                end
+              end
             end
-            `TEST_MODE_CRASH_READ: begin
-              lb_addr<=`PC_CRASH_A;
-              state<=`TB_STATE_READ;
-            end
-            `TEST_MODE_CHASSIS_ALERT_READ: begin
-              lb_addr<=`PC_CHASSIS_ALERT_A;
-              state<=`TB_STATE_READ;
-            end
-            `TEST_MODE_CRASH_ACK: begin
-              lb_addr<=`PC_CRASH_A;
-              lb_data_in<=16'b11100111010;
-              state<=`TB_STATE_WRITE;
-            end
-            `TEST_MODE_USER_SHUTDOWN: begin
-              lb_addr<=`PC_SHUTDOWN_A;
-              lb_data_in<=16'b11100111010;
-              state<=`TB_STATE_WRITE;
-            end
-            `TEST_MODE_CHASSIS_ALERT_ACK: begin
-              lb_addr<=`PC_CHASSIS_ALERT_A;
-              lb_data_in<=16'b11100111010;
-              state<=`TB_STATE_WRITE;
-            end
-            `TEST_MODE_NOP: begin
+            4'd2: begin
+              if (power_ok) begin
+                mode_timer <= 32'd0;
+                mode_progress <= 4'd0;
+                mode <= `MODE_WB_RESTART;
+`ifdef DEBUG
+                $display("mode: mode START_CHECK passed");
+`endif
+              end else if (mode_timer >= 32'd4000) begin
+                $display("FAILED: expected power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
+                $finish;
+              end
             end
           endcase
         end
-        `TB_STATE_WRITE: begin
-            lb_wr<=1'b1;
-            state<=`TB_STATE_WAITW;
-`ifdef DESPERATE_DEBUG
-            //$display("lb_wrote_data = %d, ",lb_data_in);
-`endif
-          end
-        `TB_STATE_READ:
-          begin
-            lb_rd<=1'b1;
-            state<=`TB_STATE_WAITR;
-          end
-        `TB_STATE_WAITR:
-          begin
-            if (fault_countdown == 4'b1111) begin
-              state<=`TB_STATE_IDLE;
-              fault_countdown<=4'b0;
-              if (lb_addr >= `PC_A && lb_addr < `PC_A + `PC_L) begin
-                  $display("FAILED: invalid timeout on write: address %x",lb_addr);
-                  $finish;
+        `MODE_WB_RESTART: begin
+          mode_timer <= mode_timer + 1;
+          case (mode_progress)
+            4'd0: begin
+              if (mode_done[0]) begin
+                mode_timer <= 32'd0;
+                mode_progress <= 4'd1;
+                got_a_n_pwrok <= 1'b0;
               end
+            end
+            4'd1: begin
+              if (mode_timer >= 32'd4000) begin
+                $display("FAILED: expected power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
+                $finish;
+              end
+              if (~power_ok)
+                got_a_n_pwrok <= 1'b1;
+              if (power_ok & got_a_n_pwrok) begin
+                mode <= `MODE_WB_SHUTDOWN;
+                mode_progress <= 4'b0;
+                mode_timer <= 32'b0;
 `ifdef DEBUG
-              $display("bus timeout at address: %x", lb_addr);
+                $display("mode: mode WB_RESTART passed");
 `endif
-            end else begin
-              fault_countdown<=fault_countdown + 4'b1;
-              if (lb_rd)
-                lb_rd<=1'b0;
-              if (lb_strb) begin
-                if (lb_addr < `PC_A || lb_addr >= `PC_A + `PC_L) begin
-                  $display("FAILED: invalid reply on write: address %x",lb_addr);
+              end
+            end
+          endcase
+        end
+        `MODE_WB_SHUTDOWN: begin
+          mode_timer <= mode_timer + 1;
+          case (mode_progress)
+            4'd0: begin
+              if (mode_done[0]) begin
+                mode_timer <= 32'd0;
+                mode_progress <= 4'd1;
+                got_a_n_pwrok <= 1'b0;
+              end
+            end
+            4'd1: begin
+              if (mode_timer >= 32'd20) begin
+                if (~power_ok) begin
+                mode <= `MODE_WB_POWERUP;
+                mode_progress <= 4'b0;
+                mode_timer <= 32'b0;
+`ifdef DEBUG
+                $display("mode: mode WB_SHUTDOWN passed");
+`endif
+                end else begin
+                  $display("FAILED: expected ~power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
                   $finish;
                 end
-                state<=`TB_STATE_IDLE;
-                fault_countdown<=4'b0;
-                if (lb_data_out[7:0]===8'hxx)begin
-                  $display("FAILED: test data failure -> lb_data_out === X, addr %x",lb_addr - (`PC_A));
+              end
+            end
+          endcase
+        end
+        `MODE_WB_POWERUP: begin
+          mode_timer <= mode_timer + 1;
+          case (mode_progress)
+            4'd0: begin
+              if (mode_done[0]) begin
+                mode_timer <= 32'd0;
+                mode_progress <= 4'd1;
+                got_a_n_pwrok <= 1'b0;
+              end
+            end
+            4'd1: begin
+              if (mode_timer >= 32'd4000) begin
+                if (power_ok) begin
+                  mode <= `MODE_CRASH;
+                  mode_progress <= 4'b0;
+                  mode_timer <= 32'b0;
+`ifdef DEBUG
+                  $display("mode: mode WB_POWERUP passed");
+`endif
+                end else begin
+                  $display("FAILED: expected power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
+                  $finish;
+                end
+              end
+            end
+          endcase
+        end
+        `MODE_CRASH: begin
+          mode_timer <= mode_timer + 1;
+          case (mode_progress)
+            4'd0: begin
+              unsafe_sys_health <= 1'b1;
+              mode_progress <= 4'd1;
+              mode_timer <= 32'd0;
+            end
+            4'd1: begin
+              if (mode_timer >= 20) begin
+                if (~power_ok) begin
+`ifdef DEBUG
+                  $display("mode: mode CRASH passed");
+`endif
+                  $display("PASSED");
                   $finish;
                 end else begin
-                  case (test_mode)
-                  `TEST_MODE_CRASH_READ: begin
-`ifdef DEBUG
-                    $display("lbus: got crash read");
-`endif
-                    if (crash_happened && lb_data_out != 16'hffff) begin
-                      $display("FAILED: crash flag invalid - should be ffff");
-                      $finish;
-                    end else if (~crash_happened && lb_data_out != 16'b0000) begin
-                      $display("FAILED: crash flag invalid - should be 0000");
-                      $finish;
-                    end
-                  end
-                  `TEST_MODE_CHASSIS_ALERT_READ: begin
-`ifdef DEBUG
-                    $display("lbus: got alert read");
-`endif
-                    if (chassis_alert_happened && lb_data_out != 16'hffff) begin
-                      $display("FAILED: chassis flag invalid - should be ffff");
-                      $finish;
-                    end else if (~chassis_alert_happened && lb_data_out != 16'h0000) begin
-                      $display("FAILED: chassis flag invalid - should be 0000");
-                      $finish;
-                    end
-                  end
-                  endcase
+                  $display("FAILED: expected power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
+                  $finish;
                 end
               end
             end
-          end
-        `TB_STATE_WAITW:
-          begin
-            if (fault_countdown == 4'b1111) begin
-              state<=`TB_STATE_IDLE;
-              fault_countdown<=4'b0;
-              if (lb_addr >= `PC_A && lb_addr < `PC_A + `PC_L) begin
-                  $display("FAILED: invalid timeout on write: address %x",lb_addr);
-                  $finish;
-              end
-`ifdef DEBUG
-              $display("bus timeout at address: %x", lb_addr);
-`endif
-            end else begin
-              fault_countdown<=fault_countdown + 4'b1;
-              if (lb_wr)
-                lb_wr<=1'b0;
-
-              if (lb_strb) begin
-                if (lb_addr < `PC_A || lb_addr >= `PC_A + `PC_L) begin
-                  $display("FAILED: invalid reply on write: address %x",lb_addr);
-                  $finish;
-                end
-`ifdef DEBUG
-              //$display("lbus: write, addr=%d,data=%d", lb_addr, lb_data_in);
-`endif
-                state<=`TB_STATE_IDLE;
-                fault_countdown<=4'b0;
-              end
-            end
-          end
+          endcase
+        end
       endcase
     end
   end
+
+  /************ WB *******************/
+  reg [1:0] wbm_state;
+`define STATE_COMMAND 2'd0
+`define STATE_COLLECT 2'd1
+`define STATE_WAIT    2'd2
+
+  always @(posedge clk) begin
+    wb_cyc_i <= 1'b0;
+    wb_stb_i <= 1'b0;
+    mode_done[0] <= 1'b0;
+
+    if (reset) begin
+      wbm_state <= `STATE_COMMAND;
+      wb_adr_i <= 16'b0;
+    end else begin
+      case (wbm_state)
+        `STATE_COMMAND: begin
+          if (mode_progress == 4'd0) begin
+            case (mode)
+              `MODE_WB_RESTART: begin
+                wb_cyc_i <= 1'b1;
+                wb_stb_i <= 1'b1;
+                wb_we_i  <= 1'b1;
+                wb_adr_i <= 16'd2;
+                wb_dat_i <= 16'd0;
+                wbm_state <= `STATE_COLLECT;
+`ifdef DEBUG
+                $display("wbm: resetting");
+`endif
+              end
+              `MODE_WB_SHUTDOWN: begin
+                wb_cyc_i <= 1'b1;
+                wb_stb_i <= 1'b1;
+                wb_we_i  <= 1'b1;
+                wb_adr_i <= 16'd2;
+                wb_dat_i <= 16'd1;
+                wbm_state <= `STATE_COLLECT;
+`ifdef DEBUG
+                $display("wbm: powering down");
+`endif
+              end
+              `MODE_WB_POWERUP: begin
+                wb_cyc_i <= 1'b1;
+                wb_stb_i <= 1'b1;
+                wb_we_i  <= 1'b1;
+                wb_adr_i <= 16'd1;
+                wb_dat_i <= 16'd1;
+                wbm_state <= `STATE_COLLECT;
+`ifdef DEBUG
+                $display("wbm: powering up");
+`endif
+              end
+            endcase
+          end
+        end
+        `STATE_COLLECT: begin
+          if (wb_ack_o) begin
+            wbm_state <= `STATE_WAIT;
+            mode_done[0] <= 1'b1;
+`ifdef DEBUG
+            $display("wbm: got ack");
+`endif
+          end
+        end
+        `STATE_WAIT: begin
+           wbm_state <= `STATE_COMMAND;
+        end
+      endcase
+    end
+  end 
+
 endmodule

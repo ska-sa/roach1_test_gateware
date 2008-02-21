@@ -3,7 +3,7 @@ MODULE=power_manager
 VCC=iverilog
 VSIM=vvp
 
-INCLUDE_DIR=./include
+INCLUDE_DIR=../hdl
 SRC_DIR=../hdl
 TB_DIR=./hdl
 GEN_DIR=./gen
@@ -15,7 +15,7 @@ DEFINES+=-IVERILOG
 DEFINES+=-DDEBUG 
 DEFINES+=-DDESPERATE_DEBUG
 
-SRC=$(SRC_DIR)/$(MODULE).v $(SRC_DIR)/power_sequence.v
+SRC=$(SRC_DIR)/$(MODULE).v $(SRC_DIR)/sequencer.v
 TB_SRC=$(TB_DIR)/TB_$(MODULE).v
 OBJ=$(GEN_DIR)/$(MODULE).o
 TB_OBJ=$(GEN_DIR)/TB_$(MODULE).o

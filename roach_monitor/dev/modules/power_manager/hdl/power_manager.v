@@ -1,433 +1,372 @@
 `timescale 1ns/10ps
-`include "memlayout.v"
-`include "parameters.v"
-
-`define PM_STATE_INITCONFIG 4'b0
-`define PM_STATE_WAITCONFIG 4'b1
-`define PM_STATE_IDLE 4'd2
-`define PM_STATE_POWERUP 4'd3
-`define PM_STATE_POWERDOWN 4'd4
-`define PM_STATE_POWERDOWN_ANALYSE 4'd5
-`define PM_STATE_NO_POWER 4'd6
-
-`ifdef SIMULATION
-`define USER_POWERUP_WAIT 32'b1 
-`define GLOBAL_ADDRESS_WAIT_SHIFT 1 
-`define WATCHDOG_TIMEOUT 32'd160
-`else
-`define USER_POWERUP_WAIT (`PM_USER_POWERUP_WAIT)
-`define GLOBAL_ADDRESS_WAIT_SHIFT `PM_GLOBAL_ADDRESS_WAIT_SHIFT
-`define WATCHDOG_TIMEOUT (`PM_WATCHDOG_TIMEOUT)
-`endif
+`include "power_manager.vh"
 
 module power_manager(
-  hard_reset,
-  /* Power Control Signals */
-  TRACK_2V5,
-  SLP_0V9_0,SLP_0V9_1,
-  INHIBIT_1V2,INHIBIT_1V8,INHIBIT_2V5,MARGIN_UP_2V5,MARGIN_DOWN_2V5,
-  MGT0_1V2_PG,MGT1_1V2_PG,MGT0_1V2_EN,MGT1_1V2_EN,
-  ENABLE_1V5,PG_1V5,
-  AG_EN,
-  /* Back-plane Signals */
-  ATX_PS_ON_N,
-  XMC_PD_N,
-  BP_GA,BP_PERST_N,BP_PWREN_N,BP_ATNLED,BP_MPWRGD,BP_WAKE_N,
-  BP_SCLI,BP_SCLO,BP_SDAI,BP_SDAO,BP_ALERT_N,
-
-  /* Chassis Signals */
-  CHS_ALERT_N,CHS_NOTIFY,PS_LEDS,
-  /* Interaction Signals */
-  chassis_irq,power_down,dma_crash,soft_reset,dma_done,no_power,
-  /* LBus Signals */
-  lb_addr,lb_data_in,lb_data_out,lb_rd,lb_wr,lb_strb,lb_clk
+    /* Wishbone Interface */
+    wb_clk_i, wb_rst_i,
+    wb_cyc_i, wb_stb_i, wb_we_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
+    /* System Health */
+    sys_health, unsafe_sys_health,
+    /* Informational Signals */
+    power_ok,
+    /* Control Signals */
+    cold_start, dma_done, chs_power_button,
+    soft_reset, crash,
+    /* ATX Power Supply Control */
+    ATX_PS_ON_N, ATX_PWR_OK,
+    ATX_LOAD_RES_OFF,
+    /* Power Supply Control */
+    TRACK_2V5,
+    INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0,
+    MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN,
+    MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG,
+    AUX_3V3_PG,
+    /* FET gate drivers */
+    G12V_EN, G5V_EN, G3V3_EN
   );
-  input hard_reset;
-  /* Power Control Signals */
+  parameter WATCHDOG_OVERFLOW_DEFAULT = 5'b00000; //no watchdog overflows
+  parameter MAX_UNACKED_CRASHES = 3'b011; // 3 crashes
+  parameter MAX_UNACKED_WD_OVERFLOWS = 3'b111; //  7 overflows
+  parameter SYS_HEALTH_POWERUP_MASK = 32'hffff_ffff; //all inputs must be valid
+  parameter POWER_DOWN_WAIT = 32'h003f_ffff; //100ms
+
+  input  wb_clk_i, wb_rst_i;
+  input  wb_cyc_i, wb_stb_i, wb_we_i;
+  input  [15:0] wb_adr_i;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
+  output wb_ack_o;
+  input  [31:0] sys_health;
+  input  unsafe_sys_health;
+  output power_ok;
+  input  cold_start, dma_done, chs_power_button;
+  output soft_reset, crash;
   output ATX_PS_ON_N;
+  input  ATX_PWR_OK;
+  output ATX_LOAD_RES_OFF;
   output TRACK_2V5;
-  output [1:0] SLP_0V9_0;
-  output [1:0] SLP_0V9_1;
-  output INHIBIT_1V2,INHIBIT_1V8,INHIBIT_2V5,MARGIN_UP_2V5,MARGIN_DOWN_2V5;
-  input MGT0_1V2_PG,MGT1_1V2_PG,PG_1V5;
-  output MGT0_1V2_EN,MGT1_1V2_EN,ENABLE_1V5;
-  output [9:0] AG_EN;
-  /* Back-plane Signals */
-  input [1:0] XMC_PD_N;
-  input [4:0] BP_GA;
-  input BP_PERST_N,BP_ATNLED;
-  output BP_PWREN_N,BP_MPWRGD,BP_WAKE_N;
-  input BP_SCLI,BP_SDAI;
-  output BP_SCLO,BP_SDAO;
-  output BP_ALERT_N;
+  output INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0;
+  output MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN;
+  input  MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG;
+  input  AUX_3V3_PG;
+  output G12V_EN, G5V_EN, G3V3_EN;
 
-  /* Chassis Signals */
-  input CHS_ALERT_N;
-  output CHS_NOTIFY;
-  output [2:0] PS_LEDS;
-  /* Interaction Signals */
-  output chassis_irq,dma_crash,soft_reset;
-  input power_down,dma_done;
-  /* LBus Signals */
-  input [15:0] lb_addr;
-  input [15:0] lb_data_in;
-  output [15:0] lb_data_out;
-  input lb_rd,lb_wr;
-  output lb_strb;
-  input lb_clk;
-  output no_power;
+  /************* Common Signals *************/
+  wire chs_powerdown_force; //the chs_powerdown signal was asserted for longer than 3 seconds
+  wire chs_powerdown_strb; //the chs_powerdown signal was asserted briefly
+  reg  power_down_strb; //tell the power-sequencer to startup
+  reg  power_up_strb;   //tell the power-sequencer to shutdown
 
-  wire [9:0] AG_EN;
-  
-  reg CHS_NOTIFY;
+  wire power_down_done; //the power-sequencer has finished shutting down
+  wire power_up_done;   //the power-sequencer has finished powering up
 
+  reg  check_done; //post power-up checks passed
 
-  reg BP_ALERT_N;
-  reg BP_SCLO,BP_SDAO;
-  reg BP_PWREN_N,BP_MPWRGD,BP_WAKE_N;
-  
-  wire addressed=(lb_addr >= `PC_A && lb_addr < `PC_A + `PC_L);
-  reg [15:0] lb_data_out;
-  reg lb_strb;
+  reg  watchdog_overflow; //the watchdog timer was not reset and overflowed
+  reg  chs_powerdown; //the chs powerdown was acknowledged
 
-  reg [3:0] state;
+  reg  wb_powerdown_strb; //wishbone master issues a shutdown command
+  reg  wb_powerup_strb; //wishbone master issues a shutdown command
+  reg  wb_reset_strb;    //wishbone master issues a reset command
 
-  reg soft_reset_reg;
-  assign soft_reset=soft_reset_reg | hard_reset;
-  
-  reg [1:0] user_shutdown;
-  reg chassis_shutdown;
-  reg chassis_shutdown_ack;
-  reg [31:0] chassis_shutdown_timer;
-  reg chassis_irq;
+  reg [2:0] unacked_crashes;
+  reg [2:0] unacked_wd_overflows;
 
-  reg crash_shutdown;
-  reg crash_shutdown_ack;
-  
-  reg [4:0] crash_count;
-  reg [4:0] watchdog_resets;
-  reg [31:0] watchdog_timer;
-
-  reg [31:0] powerup_wait;
-  reg dma_crash;
-
-
-  reg [31:0] beat_counter;
-  reg beat;
-  
-  assign PS_LEDS = 
-`ifdef SIMULATION
-         state == `PM_STATE_NO_POWER ? 3'b111 : 
-`else
-         state == `PM_STATE_NO_POWER ? {1'b0,1'b0,1'b1}: 
-`endif
-         state == `PM_STATE_WAITCONFIG | state == `PM_STATE_POWERUP ? {1'b0,beat,1'b0} :
-                                     {3'b110};
-  
-  reg powered_up;
-  assign no_power=~powered_up;
-  wire sequence_complete;
-  
-  power_sequence power_sequence(
-    .reset(hard_reset), .clk(lb_clk),
-    .power_up(state==`PM_STATE_POWERUP), .power_down(state==`PM_STATE_POWERDOWN),
-    .sequence_complete(sequence_complete),
+  sequencer sequencer_inst(
+    .reset(wb_rst_i), .clk(wb_clk_i),
+    .power_up(power_up_strb), .power_down(power_down_strb),
+    .power_up_done(power_up_done), .power_down_done(),
     /* Power Control Signals */
     .ATX_PS_ON_N(ATX_PS_ON_N),
     .TRACK_2V5(TRACK_2V5),
-    .SLP_0V9_0(SLP_0V9_0),.SLP_0V9_1(SLP_0V9_1),
-    .INHIBIT_1V2(INHIBIT_1V2),.INHIBIT_1V8(INHIBIT_1V8),.INHIBIT_2V5(INHIBIT_2V5),
-    .MARGIN_UP_2V5(MARGIN_UP_2V5),.MARGIN_DOWN_2V5(MARGIN_DOWN_2V5),
-    .MGT0_1V2_EN(MGT0_1V2_EN),.MGT1_1V2_EN(MGT1_1V2_EN),
-    .ENABLE_1V5(ENABLE_1V5),
-    .AG_EN(AG_EN)
-  );  
+    .INHIBIT_2V5(INHIBIT_2V5), .INHIBIT_1V8(INHIBIT_1V8), .INHIBIT_1V5(INHIBIT_1V5), .INHIBIT_1V2(INHIBIT_1V2), .INHIBIT_1V0(INHIBIT_1V0),
+    .MGT_AVCC_EN(MGT_AVCC_EN), .MGT_AVTTX_EN(MGT_AVTTX_EN), .MGT_AVCCPLL_EN(MGT_AVCCPLL_EN),
+    .G12V_EN(G12V_EN), .G5V_EN(G5V_EN), .G3V3_EN(G3V3_EN)
+  );
 
-  reg byebye;
-  reg powerup_strb;
+  /********** Power State Machine ************/
 
-  always @(posedge lb_clk) begin
-    if (hard_reset) begin
-      BP_PWREN_N <= 1'b1;
-      
-      BP_ALERT_N <= 1'b1;
-      BP_SCLO <= 1'b1; 
-      BP_SDAO <= 1'b1;
-      BP_MPWRGD <=1'b1;
-      BP_WAKE_N <=1'b0;
-`ifdef PM_COLD_START
-      byebye<=1'b1;
-`else
-      byebye<=1'b0;
-`endif
+  reg [2:0] power_state;
+  localparam STATE_POWERED_DOWN = 3'd0;
+  localparam STATE_POWERING_UP  = 3'd1;
+  localparam STATE_CHECK        = 3'd2;
+  localparam STATE_POWERED_UP   = 3'd3;
+  localparam STATE_NO_POWER     = 3'd4;
 
-      
-      powered_up<=1'b0;
-      watchdog_timer<=32'b0;
-      watchdog_resets<=5'b0;
-      beat_counter<=32'b0;
-      beat<=1'b1;
-      `ifdef DEBUG
-      $display("pm: got hard reset");
-      `endif
-      lb_strb<=1'b0;
-      lb_data_out<=16'b0;
+  assign power_ok = power_state == STATE_POWERED_UP;
+  assign soft_reset = power_down_strb;
 
-      soft_reset_reg<=1'b1;
-      
-      user_shutdown<=2'b0;
-      
-      crash_shutdown<=1'b0;
-      crash_shutdown_ack<=1'b0;
-      crash_count<=5'b0;
-      
-      chassis_shutdown<=1'b0;
-      chassis_shutdown_ack<=1'b0;
-      chassis_shutdown_timer<=32'b0;
-      chassis_irq<=1'b0;
-      
-      state<=`PM_STATE_INITCONFIG;
-      powerup_wait<={BP_GA, `GLOBAL_ADDRESS_WAIT_SHIFT'b0};
-      dma_crash<=1'b0;
-      CHS_NOTIFY<=1'b0;
-      powerup_strb<=1'b0;
-    end else begin
-      powerup_strb<=1'b0;
-      soft_reset_reg<=1'b0;
-      if (beat_counter == ((`PM_BEAT_PERIOD) >> 1)) begin
-        beat_counter<=32'b0;
-        beat<=~beat;
+  reg [31:0] powered_down_wait;
+  reg crash;
+
+  always @(*) begin
+    $display("ps -> %d", power_state); //, %b", power_state,  {!(sys_health & ~SYS_HEALTH_POWERUP_MASK), dma_done, powered_down_wait == 32'b0});
+  end
+
+  always @(posedge wb_clk_i) begin
+    //strobes
+    crash <= 1'b0;
+    power_up_strb <= 1'b0;
+    power_down_strb <= 1'b0;
+
+    if (wb_rst_i) begin
+      powered_down_wait <= POWER_DOWN_WAIT;
+      if (cold_start) begin
+        power_state <= STATE_NO_POWER;
       end else begin
-        beat_counter<=beat_counter+32'b1;
+        power_state <= STATE_POWERED_DOWN;
       end
-      case (state) 
-        `PM_STATE_INITCONFIG: begin
-`ifdef DEBUG         
-          $display("pm: starting power-up sequence");
-`endif
-          soft_reset_reg<=1'b1;
-          state<=`PM_STATE_WAITCONFIG;
-          if (powerup_wait != 32'b0)
-            powerup_wait<=powerup_wait - 32'b1;
-        end
-        `PM_STATE_WAITCONFIG: begin
-          if (powerup_wait != 32'b0) begin
-            powerup_wait<=powerup_wait - 32'b1;
-          end else begin
-            if (dma_done) begin
-	      if (byebye) begin
-                state<=`PM_STATE_NO_POWER;
-	      end else begin
-                state<=`PM_STATE_POWERUP;
-`ifdef DEBUG         
-          $display("pm: dma tranfer done->waiting for powering up");
-`endif
-	      end
-              dma_crash<=1'b0;
-            end
+    end else begin
+      case (power_state)
+        STATE_POWERED_DOWN: begin
+          if (!(sys_health & ~SYS_HEALTH_POWERUP_MASK) && dma_done && powered_down_wait == 32'b0) begin
+            power_state <= STATE_POWERING_UP;
+            power_up_strb <= 1'b1;
+          end
+          if (powered_down_wait != 32'b0) begin
+            powered_down_wait <= powered_down_wait - 1;
           end
         end
-        `PM_STATE_POWERUP: begin
-          if (sequence_complete) begin
-            state<=`PM_STATE_IDLE;
-	    powered_up<=1'b1;
-`ifdef DEBUG         
-            $display("pm: powered up");
-`endif
+        STATE_POWERING_UP: begin
+          if (power_up_done) begin
+            power_state <= STATE_CHECK;
           end
         end
-        `PM_STATE_POWERDOWN: begin
-          if (sequence_complete) begin
-	    powered_up<=1'b0;
-            state<=`PM_STATE_POWERDOWN_ANALYSE;
-`ifdef DEBUG         
-            $display("pm: powered down");
-`endif
-          end
-        end
-        `PM_STATE_POWERDOWN_ANALYSE: begin
-          if (crash_shutdown && crash_count >= `PM_MAX_CRASHES - 1) begin
-            state<=`PM_STATE_INITCONFIG;
-            dma_crash<=1'b1;
-	    byebye<=1'b1;
-`ifdef DEBUG         
-            $display("pm: crash -> no power");
-`endif
-          end else if (crash_shutdown) begin
-            state<=`PM_STATE_INITCONFIG;
-            powerup_wait<=`USER_POWERUP_WAIT;
-            crash_count<=crash_count + 5'b1;
-            crash_shutdown<=1'b0;
-            dma_crash<=1'b1;
-`ifdef DEBUG         
-            $display("pm: crash -> init_config, crash_count=%d",crash_count);
-`endif
-          end else if (user_shutdown) begin
-            powerup_wait<=`USER_POWERUP_WAIT;
-            user_shutdown<=2'b0;
-            state<=user_shutdown[1] ? `PM_STATE_NO_POWER : `PM_STATE_INITCONFIG;
-`ifdef DEBUG         
-            $display("pm: user_shutdown -> init_config");
-`endif
-          end else if (chassis_shutdown & chassis_shutdown_ack) begin
-`ifdef DEBUG         
-            $display("pm: chassis shutdown -> no power");
-`endif
-            chassis_irq<=1'b0;
-            state<=`PM_STATE_NO_POWER;
-          end else if (watchdog_timer >= `WATCHDOG_TIMEOUT - 32'b1) begin
-`ifdef DEBUG         
-            $display("pm: watchdog overflow, count = %d",watchdog_resets);
-`endif
-	    if (watchdog_resets >= `PM_WATCHDOG_RESETS_MAX - 5'b1) begin
-              state<=`PM_STATE_NO_POWER;
+        STATE_CHECK: begin
+          if (unsafe_sys_health) begin
+            power_down_strb <= 1'b1;
+            crash <= 1'b1;
+            if (unacked_crashes == MAX_UNACKED_CRASHES) begin
+              power_state <= STATE_NO_POWER;
             end else begin
-              watchdog_resets<=watchdog_resets + 5'b1;
-              watchdog_timer<=32'b0;
-              powerup_wait<=`USER_POWERUP_WAIT;
-              state<=`PM_STATE_INITCONFIG;
+              power_state <= STATE_POWERED_DOWN;
             end
-          end else begin
-`ifdef DEBUG         
-            $display("pm: ??? -> no power");
-`endif
-            state<=`PM_STATE_NO_POWER;
+          end else if (check_done) begin
+            power_state <= STATE_POWERED_UP;
           end
         end
-        `PM_STATE_IDLE: begin
-        /* General IO events */
-	  
-          if (power_down) begin
-            crash_shutdown<=1'b1;
-            state<=(powered_up ? `PM_STATE_POWERDOWN : `PM_STATE_POWERDOWN_ANALYSE);
-`ifdef DEBUG         
-            $display("pm: got crash");
-`endif
-          end else if (chassis_shutdown) begin
-	    if (chassis_shutdown_timer >= `PM_SHUTDOWN_WAIT | chassis_shutdown_ack) begin
-              state<=(powered_up ? `PM_STATE_POWERDOWN : `PM_STATE_POWERDOWN_ANALYSE);
-              chassis_shutdown<=1'b0;
-              chassis_shutdown_timer<=32'b0;
-              chassis_shutdown_ack<=1'b0;
-              CHS_NOTIFY<=1'b1;
-`ifdef DEBUG         
-              $display("pm: got chassis power down");
-`endif
-	    end else begin
-	      chassis_shutdown_timer<=chassis_shutdown_timer + 32'b1;
-	    end
-          end else if (user_shutdown) begin
-            state<=(powered_up ? `PM_STATE_POWERDOWN : `PM_STATE_POWERDOWN_ANALYSE);
-          end else begin
-`ifdef PM_WATCHDOG_ENABLE
-	    if (watchdog_timer >= `WATCHDOG_TIMEOUT - 1) begin
-`ifdef DEBUG         
-            $display("pm: watchdog overflow");
-`endif
-              state<=(powered_up ? `PM_STATE_POWERDOWN : `PM_STATE_POWERDOWN_ANALYSE);
+        STATE_POWERED_UP: begin
+          if (wb_reset_strb) begin //lowest priority
+            power_down_strb <= 1'b1;
+            power_state <= STATE_POWERED_DOWN;
+            powered_down_wait <= POWER_DOWN_WAIT;
+          end
+          if (watchdog_overflow) begin
+            power_down_strb <= 1'b1;
+            if (unacked_wd_overflows == MAX_UNACKED_WD_OVERFLOWS) begin
+              power_state <= STATE_NO_POWER;
             end else begin
-	      watchdog_timer<=watchdog_timer + 32'b1;
+              power_state <= STATE_POWERED_DOWN;
+              powered_down_wait <= POWER_DOWN_WAIT;
             end
-`endif
-	  end
-          if (~CHS_ALERT_N & ~chassis_shutdown) begin
-`ifdef DEBUG         
-            $display("pm: got chassis alert, %d",$time);
-`endif
-            chassis_shutdown<=1'b1;
-            chassis_irq<=1'b1;
           end 
-          if (crash_shutdown_ack) begin
-`ifdef DEBUG         
-            $display("pm: clearing crash count");
-`endif
-            crash_shutdown_ack<=1'b0;
-            crash_count<=5'b0;
+          if (unsafe_sys_health) begin
+            power_down_strb <= 1'b1;
+            crash <= 1'b1;
+            if (unacked_crashes == MAX_UNACKED_CRASHES) begin
+              power_state <= STATE_NO_POWER;
+            end else begin
+              power_state <= STATE_POWERED_DOWN;
+              powered_down_wait <= POWER_DOWN_WAIT;
+            end
+          end
+          if (chs_powerdown_force | chs_powerdown | wb_powerdown_strb) begin //highest priority
+            power_down_strb <= 1'b1;
+            power_state <= STATE_NO_POWER;
           end
         end
-        `PM_STATE_NO_POWER: begin
-          if (powerup_strb)
-            state<=`PM_STATE_INITCONFIG;
-`ifdef DEBUG         
-            $display("pm: no power - bye bye");
-`endif
-          /* no beans -- wait to be remove and blink status LEDs*/
+        STATE_NO_POWER: begin
+          if (chs_powerdown_strb | wb_powerup_strb) begin
+            power_state <= STATE_POWERED_DOWN;
+            powered_down_wait <= POWER_DOWN_WAIT;
+          end
         end
       endcase
-      /* LBus stuff */
-      if (addressed & (lb_wr | lb_rd)) begin
-        lb_strb<=1'b1;
-        case (lb_addr)
-	  `PC_GA_A: begin
-	    if (lb_rd) begin
-	      lb_data_out<={11'b0 , BP_GA};
-	    end
-	  end
-	  `PC_PD_A: begin
-	    if (lb_rd) begin
-	      lb_data_out<={14'b0 , ~XMC_PD_N};
-	    end
-	  end
-          `PC_SHUTDOWN_A: begin
-            if (lb_wr && lb_data_in) begin
-              if (lb_data_in) begin
-                user_shutdown<=2'b11;
-              end else begin
-                user_shutdown<=2'b01;
-              end
-`ifdef DEBUG         
-            $display("pm_lbus: user_shutdown");
-`endif
-            end
-          end
-          `PC_CHASSIS_ALERT_A: begin
-            if (lb_wr && lb_data_in && chassis_shutdown) begin
-              chassis_shutdown_ack<=1'b1;
-`ifdef DEBUG         
-            $display("pm_lbus: chassis_ack");
-`endif
-            end else if (lb_rd) begin
-`ifdef DEBUG         
-            $display("pm_lbus: chassis read -- %d, %d",chassis_shutdown, $time);
-`endif
-              if (chassis_shutdown)
-                lb_data_out<=16'hffff;
-              else
-                lb_data_out<=16'h0000;
-            end
-          end
-          `PC_CRASH_A: begin
-            if (lb_rd) begin
-              if (crash_count != 5'b0)
-                lb_data_out<=16'hffff;
-              else
-                lb_data_out<=16'h0000;
-            end else if (lb_wr && lb_data_in) begin
-              crash_shutdown_ack<=1'b1;
-`ifdef DEBUG         
-            $display("pm_lbus: crash_ack");
-`endif
-            end
-          end
-	  `PC_WATCHDOG_A: begin
-	    if (lb_wr) begin
-	      watchdog_timer<=32'b0;
-	      watchdog_resets<=5'b0;
-	    end else begin
-	      lb_data_out<={11'b0,watchdog_resets};
-	    end
-	  end
-	  `PC_POWERUP_A: begin
-	    if (lb_wr) begin
-              powerup_strb<=1'b1;
-              byebye<=1'b0;
-	    end 
-          end
-        endcase
+    end
+  end
+
+  /************** Checking ************************/
+  always @(posedge wb_clk_i) begin
+    check_done <= 1'b1;
+  end
+
+
+  /************** Power Button Ctrl ***************/
+  reg [26:0] power_button_timer;
+
+  assign chs_powerdown_force = power_button_timer == {27{1'b1}};
+  assign chs_powerdown_strb = power_button_timer == 27'b1;
+  
+  always @(posedge wb_clk_i) begin
+    if (wb_rst_i | soft_reset) begin
+      power_button_timer <= 27'b0;
+    end else begin
+      if (chs_power_button) begin
+        power_button_timer <= ~chs_powerdown_force ? power_button_timer + 1 : power_button_timer;
       end else begin
-        lb_strb<=1'b0;
-        lb_data_out<=16'h0000;
+        power_button_timer <= 27'b0;
       end
     end
   end
+
+  /************* Chassis Powerdown Control *********/
+  reg chs_powerdown_pending;
+  reg chs_powerdown_ack;
+
+  always @(posedge wb_clk_i) begin
+    chs_powerdown <= 1'b0;
+    if (wb_rst_i) begin
+      chs_powerdown_pending <= 1'b0;
+    end else begin
+      if (chs_powerdown_pending && chs_powerdown_ack && power_state == STATE_POWERED_UP || power_state == STATE_NO_POWER) begin
+        chs_powerdown <= 1'b1;
+        chs_powerdown_pending <= 1'b0;
+      end
+    end
+  end
+  /************* Watchdog Timer Control *********/
+
+  reg [35:0] watchdog_timer;
+
+  reg  [4:0] watchdog_overflow_conf;
+  reg wd_overflow_ack;
+
+  always @(posedge wb_clk_i) begin
+    watchdog_overflow <= 1'b0;
+
+    if (wd_overflow_ack)
+      unacked_wd_overflows <= 3'b0;
+
+
+    if (wb_rst_i || power_state == STATE_NO_POWER) begin
+      watchdog_timer <= 32'b0;
+      unacked_wd_overflows <= 3'b0;
+    end else if (power_state != STATE_POWERED_UP) begin
+      watchdog_timer <= 32'b0;
+    end else begin
+      if (watchdog_overflow_conf != 5'b0) begin
+        if (watchdog_timer[35:31] == watchdog_overflow_conf) begin
+          watchdog_timer <= 32'b0;
+          watchdog_overflow <= 1'b1;
+          unacked_wd_overflows <= unacked_wd_overflows + 1;
+        end else begin
+          watchdog_timer <= watchdog_timer + 1;
+        end
+      end
+    end
+  end
+ 
+  /************ Crash Control *************/
+  reg crash_ack;
+
+  always @(posedge wb_clk_i) begin
+    if (crash_ack)
+      unacked_crashes <= 3'b0;
+
+    if (wb_rst_i) begin
+      unacked_crashes <= 3'b0;
+    end else begin
+      if (crash && power_state == STATE_POWERED_UP) begin
+        unacked_crashes <= unacked_crashes + 1;
+      end
+    end
+  end
+
+  /************ WishBone Attachment **************/
+
+  reg wb_ack_o;
+  reg [3:0] wb_dat_o_sel;
+  reg atx_load_res_off_reg;
+  assign ATX_LOAD_RES_OFF = atx_load_res_off_reg;
+
+  assign wb_dat_o = wb_dat_o_sel == 4'd0 ? {13'b0, power_state} :
+                    wb_dat_o_sel == 4'd3 ? {13'b0, unacked_crashes} :
+                    wb_dat_o_sel == 4'd4 ? {13'b0, unacked_wd_overflows} :
+                    wb_dat_o_sel == 4'd5 ? {15'b0, chs_powerdown_pending} :
+                    wb_dat_o_sel == 4'd6 ? {15'b0, atx_load_res_off_reg} :
+                    wb_dat_o_sel == 4'd7 ? {11'b0, ATX_PWR_OK, MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG, AUX_3V3_PG} :
+                    wb_dat_o_sel == 4'd8 ? {watchdog_overflow_conf} :
+                    16'b0;
+
+  always @(posedge wb_clk_i) begin
+    wb_ack_o <= 1'b0;
+    wb_powerdown_strb <= 1'b0;
+    wb_powerup_strb <= 1'b0;
+    wb_reset_strb <= 1'b0;
+    crash_ack <= 1'b0;
+    wd_overflow_ack <= 1'b0;
+    chs_powerdown_ack <= 1'b0;
+
+    if (soft_reset) begin
+      atx_load_res_off_reg <= 1'b0;
+    end
+
+    if (wb_rst_i) begin
+      atx_load_res_off_reg <= 1'b0;
+      watchdog_overflow_conf <= WATCHDOG_OVERFLOW_DEFAULT;
+    end else begin
+      if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
+        wb_ack_o <= 1'b1;
+        case (wb_adr_i)
+          `REG_POWERSTATE: begin
+            wb_dat_o_sel <= 4'd0;
+          end
+          `REG_POWERUP: begin
+            wb_dat_o_sel <= 4'd1;
+            if (wb_we_i) begin
+              if (wb_dat_i != 16'd0) begin
+                wb_powerup_strb <= 1'b1;
+              end
+            end
+          end
+          `REG_POWERDOWN: begin
+            wb_dat_o_sel <= 4'd2;
+            if (wb_we_i) begin
+              if (wb_dat_i != 16'd0) begin
+                wb_powerdown_strb <= 1'b1;
+              end else begin
+                wb_reset_strb <= 1'b1;
+              end
+            end
+          end
+          `REG_CRASH_CTRL: begin
+            wb_dat_o_sel <= 4'd3;
+            if (wb_we_i) begin
+              crash_ack <= 1'b1;
+            end
+          end
+          `REG_WATCHDOG_CTRL: begin
+            wb_dat_o_sel <= 4'd4;
+            if (wb_we_i) begin
+              wd_overflow_ack <= 1'b1;
+            end
+          end
+          `REG_CHS_SHUTDOWN_CTRL: begin
+            wb_dat_o_sel <= 4'd5;
+            if (wb_we_i) begin
+              chs_powerdown_ack <= 1'b1;
+            end
+          end
+          `REG_ATXLOADRES_CTRL: begin
+            wb_dat_o_sel <= 4'd6;
+            if (wb_we_i) begin
+              atx_load_res_off_reg <= wb_dat_i[0];
+            end
+          end
+          `REG_PS_POWERGDS: begin
+            wb_dat_o_sel <= 4'd7;
+          end
+          `REG_WATCHDOG_CONF: begin
+            wb_dat_o_sel <= 4'd8;
+            if (wb_we_i) begin
+              watchdog_overflow_conf <= wb_dat_i[4:0];
+            end
+          end
+        endcase
+      end
+    end
+  end
+
 endmodule
