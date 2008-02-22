@@ -9,7 +9,7 @@
 `define PLL_VCO_FREQ        200.00
 
 module clocks(
-    POWERDOWN
+    POWERDOWN,
     CLKA,
     LOCK,
     GLA,

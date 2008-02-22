@@ -11,7 +11,7 @@ PAR_COMMANDS=new_design -name $(PROJECT) -family FUSION;\
              set_device -speed -1 -temprange com -voltrange com;\
              import_source  -merge_physical no -merge_timing no \
              -format pdc {$(CONSTRAINTS_P)} \
-             -format sdc {$(CONSTRAINTS_S)} \
+             -format sdc {$(CONSTRAINTS_T)} \
              -format EDIF -edif_flavor GENERIC {$(SYNTH_F)};\
              compile -pdc_abort_on_error off;\
              layout -incremental OFF;\

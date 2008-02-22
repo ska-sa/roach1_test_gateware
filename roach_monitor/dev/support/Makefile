@@ -14,8 +14,8 @@ $(FLASHROM_MEM): $(FROM_SCRIPT)
 	if [ $$(grep -i '^[0123456789abcdef][0123456789abcdef][^\w]*$$' $@ | wc -l) -ne 128  ] ; then echo "INCORRECT ENTRY IN FLASHROM"; rm $@; false ; fi
 
 
-$(FLASHROM_F): $(FLASHROM_MEM)
-	./$(UFC_SCRIPT) $^ > $@
+$(FLASHROM_F): $(FLASHROM_MEM) $(UFC_SCRIPT)
+	./$(UFC_SCRIPT) $< > $@
 	
 $(FLASHMEM_F):
 	cp $(FLASHMEM_EFC) $@

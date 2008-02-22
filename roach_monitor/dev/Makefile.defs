@@ -1,6 +1,7 @@
 MODULE_ID=roach_monitor
-REV_MAJOR=aa
-REV_MINOR:=$(shell svn log|sed -n -e 2p | cut -d " " -f 1 | sed -e 's/r//')
+REV_MAJOR=0
+REV_MINOR=0
+REV_RCS=0
 PROJECT=$(MODULE_ID)_$(REV_MAJOR)
 
 # Directory Defines

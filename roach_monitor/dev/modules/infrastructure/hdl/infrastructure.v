@@ -1,12 +1,10 @@
 `timescale 1ns/10ps
 module infrastructure(
-    reset,
     gclk40,gclk100,gclk10,
     PLL_LOCK,
     PUB, FPGAGOOD, XTLCLK,
     RTCCLK, SELMODE, RTC_MODE
   );
-  input  reset;
   output gclk40,gclk100,gclk10;
   output PLL_LOCK;
 
