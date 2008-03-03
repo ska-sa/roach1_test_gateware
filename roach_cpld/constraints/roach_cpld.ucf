@@ -1,0 +1,147 @@
+################## Timing Constraints ###################
+
+# Net clk_master TNM_NET = clk_master;
+# TIMESPEC TS_clk_master = PERIOD clk_master 50 MHz;
+# 
+# Net clk_aux TNM_NET = clk_aux;
+# TIMESPEC TS_clk_aux = PERIOD clk_aux 33 MHz;
+# 
+# Net epb_clk TNM_NET = epb_clk;
+# TIMESPEC TS_epb_clk = PERIOD epb_clk 83 MHz;
+
+################## Resets and Clocks ####################
+
+#primary clock pins
+NET "clk_master"       IOSTANDARD = LVCMOS33 | LOC = "38";
+NET "clk_aux"          IOSTANDARD = LVCMOS33 | LOC = "30";
+
+#clock control pins
+NET "clk_master_sel"   IOSTANDARD = LVCMOS33 | LOC = "136";
+NET "clk_aux_en"       IOSTANDARD = LVCMOS33 | LOC = "137";
+
+#input resets
+NET "reset_por_n"      IOSTANDARD = LVCMOS33 | LOC = "143";
+NET "reset_mon"        IOSTANDARD = LVCMOS33 | LOC = "54";
+NET "reset_debug_n"    IOSTANDARD = LVCMOS33 | LOC = "14";
+
+#output resets
+NET "ppc_reset_n"      IOSTANDARD = LVCMOS33 | LOC = "15";
+NET "por_force_n"      IOSTANDARD = LVCMOS33 | LOC = "103";
+
+NET "ppc_ddr2_reset_n" IOSTANDARD = LVCMOS33 | LOC = "139";
+NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
+
+##################### MMC Signals #######################
+
+NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "116";
+NET "mmc_cmd"     IOSTANDARD = LVCMOS33 | LOC = "113";
+NET "mmc_data<7>" IOSTANDARD = LVCMOS33 | LOC = "118";
+NET "mmc_data<6>" IOSTANDARD = LVCMOS33 | LOC = "117";
+NET "mmc_data<5>" IOSTANDARD = LVCMOS33 | LOC = "114";
+NET "mmc_data<4>" IOSTANDARD = LVCMOS33 | LOC = "112";
+NET "mmc_data<3>" IOSTANDARD = LVCMOS33 | LOC = "111";
+NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "110";
+NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "120";
+NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "119";
+NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121";
+NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "115";
+
+################### Virtex5 Config #######################
+
+NET "v5c_rdwr_n"    IOSTANDARD = LVCMOS33 | LOC = "35";
+NET "v5c_din"       IOSTANDARD = LVCMOS33 | LOC = "40";
+NET "v5c_dout_busy" IOSTANDARD = LVCMOS33 | LOC = "41";
+NET "v5c_cs_n"      IOSTANDARD = LVCMOS33 | LOC = "52";
+NET "v5c_prog_n"    IOSTANDARD = LVCMOS33 | LOC = "10";
+NET "v5c_done"      IOSTANDARD = LVCMOS33 | LOC = "11";
+NET "v5c_init_n"    IOSTANDARD = LVCMOS33 | LOC = "131";
+
+NET "v5c_mode<2>"   IOSTANDARD = LVCMOS33 | LOC = "105";
+NET "v5c_mode<1>"   IOSTANDARD = LVCMOS33 | LOC = "106";
+NET "v5c_mode<0>"   IOSTANDARD = LVCMOS33 | LOC = "107";
+
+# cclk control
+NET "v5c_cclk_o"    IOSTANDARD = LVCMOS33 | LOC = "43";
+NET "v5c_cclk_en"   IOSTANDARD = LVCMOS33 | LOC = "42";
+
+####################### PPC EPB ##########################
+
+NET "epb_clk"     IOSTANDARD = LVCMOS33 | LOC = "32";
+NET "epb_reset_n" IOSTANDARD = LVCMOS33 | LOC = "9";
+
+# NOTE: msb -> lsb conversion -- ie epb_data[0] is lsb
+NET "epb_data<7>" IOSTANDARD = LVCMOS33 | LOC = "22";
+NET "epb_data<6>" IOSTANDARD = LVCMOS33 | LOC = "23";
+NET "epb_data<5>" IOSTANDARD = LVCMOS33 | LOC = "24";
+NET "epb_data<4>" IOSTANDARD = LVCMOS33 | LOC = "25";
+NET "epb_data<3>" IOSTANDARD = LVCMOS33 | LOC = "26";
+NET "epb_data<2>" IOSTANDARD = LVCMOS33 | LOC = "33";
+NET "epb_data<1>" IOSTANDARD = LVCMOS33 | LOC = "31";
+NET "epb_data<0>" IOSTANDARD = LVCMOS33 | LOC = "28";
+
+# NOTE: msb -> lsb conversion -- ie epb_addr[0] is lsb
+NET "epb_addr<4>" IOSTANDARD = LVCMOS33 | LOC = "17";
+NET "epb_addr<3>" IOSTANDARD = LVCMOS33 | LOC = "18";
+NET "epb_addr<2>" IOSTANDARD = LVCMOS33 | LOC = "19";
+NET "epb_addr<1>" IOSTANDARD = LVCMOS33 | LOC = "20";
+NET "epb_addr<0>" IOSTANDARD = LVCMOS33 | LOC = "21";
+
+NET "epb_cs_n"    IOSTANDARD = LVCMOS33 | LOC = "12";
+NET "epb_we_n"    IOSTANDARD = LVCMOS33 | LOC = "13";
+NET "epb_be_n"    IOSTANDARD = LVCMOS33 | LOC = "16";
+NET "epb_oen_n"   IOSTANDARD = LVCMOS33 | LOC = "34";
+
+####################### PPC Misc #######################
+NET "ppc_tmr_clk" IOSTANDARD = LVCMOS33 | LOC = "4";
+NET "ppc_syserr"  IOSTANDARD = LVCMOS33 | LOC = "7";
+
+NET "ppc_gpio"    IOSTANDARD = LVCMOS33 | LOC = "50";
+
+################## System Configuration ################
+
+
+# System Config inputs
+NET "sys_config<7>" IOSTANDARD = LVCMOS33 | LOC = "66";
+NET "sys_config<6>" IOSTANDARD = LVCMOS33 | LOC = "64";
+NET "sys_config<5>" IOSTANDARD = LVCMOS33 | LOC = "61";
+NET "sys_config<4>" IOSTANDARD = LVCMOS33 | LOC = "60";
+NET "sys_config<3>" IOSTANDARD = LVCMOS33 | LOC = "59";
+NET "sys_config<2>" IOSTANDARD = LVCMOS33 | LOC = "58";
+NET "sys_config<1>" IOSTANDARD = LVCMOS33 | LOC = "57";
+NET "sys_config<0>" IOSTANDARD = LVCMOS33 | LOC = "56";
+
+NET "user_dip<3>"   IOSTANDARD = LVCMOS33 | LOC = "94";
+NET "user_dip<2>"   IOSTANDARD = LVCMOS33 | LOC = "95";
+NET "user_dip<1>"   IOSTANDARD = LVCMOS33 | LOC = "96";
+NET "user_dip<0>"   IOSTANDARD = LVCMOS33 | LOC = "97";
+
+NET "config_dip<3>" IOSTANDARD = LVCMOS33 | LOC = "87";
+NET "config_dip<2>" IOSTANDARD = LVCMOS33 | LOC = "88";
+NET "config_dip<1>" IOSTANDARD = LVCMOS33 | LOC = "91";
+NET "config_dip<0>" IOSTANDARD = LVCMOS33 | LOC = "92";
+
+# System Config outputs
+NET "boot_conf<2>"  IOSTANDARD = LVCMOS33 | LOC = "126";
+NET "boot_conf<1>"  IOSTANDARD = LVCMOS33 | LOC = "128";
+NET "boot_conf<0>"  IOSTANDARD = LVCMOS33 | LOC = "129";
+NET "boot_conf_oen" IOSTANDARD = LVCMOS33 | LOC = "71";
+
+NET "eeprom_0_wp"   IOSTANDARD = LVCMOS33 | LOC = "46";
+NET "eeprom_1_wp"   IOSTANDARD = LVCMOS33 | LOC = "48";
+
+
+################ System Status ####################
+
+NET "sys_led<1>"    IOSTANDARD = LVCMOS33 | LOC = "98";
+NET "sys_led<0>"    IOSTANDARD = LVCMOS33 | LOC = "100";
+NET "user_led<1>"   IOSTANDARD = LVCMOS33 | LOC = "101";
+NET "user_led<0>"   IOSTANDARD = LVCMOS33 | LOC = "102";
+
+################## Flash Memory ###################
+
+NET "flash_wp_n"   IOSTANDARD = LVCMOS33 | LOC = "45";
+NET "flash_busy_n" IOSTANDARD = LVCMOS33 | LOC = "44";
+
+################ Temp Sensor CTRL #################
+
+NET "tempsense_addr" IOSTANDARD = LVCMOS33 | LOC = "49";
