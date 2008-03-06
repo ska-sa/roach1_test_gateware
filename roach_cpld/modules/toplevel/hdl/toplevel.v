@@ -36,7 +36,8 @@ module toplevel(
   input  reset_por_n, reset_mon, reset_debug_n;
   output ppc_reset_n, por_force_n, ppc_ddr2_reset_n, geth_reset_n;
 
-  output mmc_clk, mmc_cmd;
+  output mmc_clk;
+  inout  mmc_cmd;
   inout  [7:0] mmc_data;
   input  mmc_wp, mmc_cdetect;
 
@@ -80,5 +81,14 @@ module toplevel(
   assign clk_aux_en     = 1'b1;
 
   assign tempsense_addr = 1'b0;
+
+  mmc_ro mmc_ro(
+    .clk(clk_master), .reset(reset_por_n),
+    .mmc_clk(mmc_clk),
+    .mmc_cmd_o(ppc_tmr_clk), .mmc_cmd_i(ppc_syserr), .mmc_cmd_oen(flash_wp_n),
+    .mmc_data_i(mmc_data),
+    .user_data_o(epb_data), .user_data_strb(v5c_din),
+    .user_rdy(epb_cs_n)
+  );
 
 endmodule

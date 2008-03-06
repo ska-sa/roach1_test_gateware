@@ -36,4 +36,4 @@ $(TB_OBJ): $(TB_SRC) $(SRC)
 	$(VCC) $(INCLUDE) $(FLAGS) $(DEFINES) -o $@ $^
 
 clean:
-	rm -Rf ./$(GENDIR)/*
+	rm -Rf ./$(GENDIR)/* *.vcd
