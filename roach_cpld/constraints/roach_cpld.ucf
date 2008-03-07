@@ -1,13 +1,14 @@
 ################## Timing Constraints ###################
 
-# Net clk_master TNM_NET = clk_master;
-# TIMESPEC TS_clk_master = PERIOD clk_master 50 MHz;
+Net clk_master TNM_NET = clk_master;
+TIMESPEC TS_clk_master = PERIOD clk_master 50 MHz;
 # 
 # Net clk_aux TNM_NET = clk_aux;
 # TIMESPEC TS_clk_aux = PERIOD clk_aux 33 MHz;
 # 
 # Net epb_clk TNM_NET = epb_clk;
 # TIMESPEC TS_epb_clk = PERIOD epb_clk 83 MHz;
+#
 
 ################## Resets and Clocks ####################
 
@@ -34,15 +35,15 @@ NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
 ##################### MMC Signals #######################
 
 NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "116";
-NET "mmc_cmd"     IOSTANDARD = LVCMOS33 | LOC = "113";
-NET "mmc_data<7>" IOSTANDARD = LVCMOS33 | LOC = "118";
-NET "mmc_data<6>" IOSTANDARD = LVCMOS33 | LOC = "117";
-NET "mmc_data<5>" IOSTANDARD = LVCMOS33 | LOC = "114";
-NET "mmc_data<4>" IOSTANDARD = LVCMOS33 | LOC = "112";
-NET "mmc_data<3>" IOSTANDARD = LVCMOS33 | LOC = "111";
-NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "110";
-NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "120";
-NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "119";
+NET "mmc_cmd"     IOSTANDARD = LVCMOS33 | LOC = "113" | PULLUP;
+NET "mmc_data<7>" IOSTANDARD = LVCMOS33 | LOC = "118" | PULLUP;
+NET "mmc_data<6>" IOSTANDARD = LVCMOS33 | LOC = "117" | PULLUP;
+NET "mmc_data<5>" IOSTANDARD = LVCMOS33 | LOC = "114" | PULLUP;
+NET "mmc_data<4>" IOSTANDARD = LVCMOS33 | LOC = "112" | PULLUP;
+NET "mmc_data<3>" IOSTANDARD = LVCMOS33 | LOC = "111" | PULLUP;
+NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "110" | PULLUP;
+NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "120" | PULLUP;
+NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "119" | PULLUP;
 NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121";
 NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "115";
 
@@ -62,7 +63,7 @@ NET "v5c_mode<0>"   IOSTANDARD = LVCMOS33 | LOC = "107";
 
 # cclk control
 NET "v5c_cclk_o"    IOSTANDARD = LVCMOS33 | LOC = "43";
-NET "v5c_cclk_en"   IOSTANDARD = LVCMOS33 | LOC = "42";
+NET "v5c_cclk_en_n" IOSTANDARD = LVCMOS33 | LOC = "42";
 
 ####################### PPC EPB ##########################
 

@@ -9,6 +9,7 @@ BITGEN=bitgen-9.1
 CPLDFIT=cpldfit-9.1
 HPREP6=hprep6-9.1
 IMPACT=impact-9.1
+TAEGINE=taengine-9.1
 #xilinx ENV vars
 XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=0
 #XST script commands
@@ -19,7 +20,7 @@ XST_ARGS=run,\
 -ofmt NGC,\
 -top  $(TOPLEVEL_MODULE),\
 -p $(PARTNUM),\
--opt_mode Speed,\
+-opt_mode Area,\
 -opt_level 1,\
 -iuc NO,\
 -keep_hierarchy NO,\
@@ -51,6 +52,8 @@ PAR_FLAGS=-w -ol high
 BITGEN_FLAGS=-w -g DONE_cycle:4 -g DonePipe:Yes -g StartUpClk:JTAGCLK -g DonePin:PULLUP -g Security:NONE -m
 CPLDFIT_FLAGS=
 HPREP6_FLAGS=
+#TAENGINE_FLAGS=-detail
+TAENGINE_FLAGS=
 
 PAR_ENV=XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=1
 MAP_ENV=XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=1

@@ -146,8 +146,6 @@ module mmc_ro(
   end
 
   /************** Data Decode ****************/
-  wire bus_hold;
-
 
   reg wait_crc;
   reg block_started;

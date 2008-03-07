@@ -12,7 +12,15 @@ REV_MINOR=1
 PCFILE=constraints/$(PROJECT).ucf
 # Enter your source files here space seperated
 #      Note: no spaces in filenames
-SRC=./modules/toplevel/hdl/toplevel.v
+SRC=./modules/toplevel/hdl/toplevel.v \
+    ./modules/mmc_ro/hdl/mmc_ro.v \
+    ./modules/mmc_bb/hdl/mmc_bb.v\
+    ./modules/mmc_infrastructure/hdl/mmc_infrastructure.v \
+    ./modules/epb_infrastructure/hdl/epb_infrastructure.v \
+    ./modules/v5c_serial/hdl/v5c_serial.v \
+    ./modules/v5c_sm/hdl/v5c_sm.v \
+    ./modules/v5c_infrastructure/hdl/v5c_infrastructure.v \
+    ./modules/misc/hdl/misc.v
 
 NETLIST_DIRS=
 

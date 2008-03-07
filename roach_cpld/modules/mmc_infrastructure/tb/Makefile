@@ -1,4 +1,4 @@
-MODULE=mmc_bb
+MODULE=mmc_infrastructure
 
 SRCDIR=../hdl
 TBDIR=./hdl
@@ -8,7 +8,7 @@ INC_DIR=./include
 TB_OBJ=$(GENDIR)/TB_$(MODULE).o
 TB_SRC=$(TBDIR)/TB_$(MODULE).v
 OBJ=$(GENDIR)/$(MODULE).o
-SRC=$(SRCDIR)/$(MODULE).v
+SRC=$(SRCDIR)/$(MODULE).v $(TBDIR)/IBUF.v $(TBDIR)/OBUFE.v
 MSG_FILE=$(GENDIR)/msgs.txt
 
 VCC=iverilog
