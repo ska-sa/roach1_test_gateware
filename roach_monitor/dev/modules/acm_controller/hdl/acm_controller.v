@@ -8,7 +8,7 @@ module acm_controller(
     acm_wdata, acm_rdata,
     acm_addr,
     acm_wen,
-    acm_clk, acm_reset,
+    acm_clk, acm_reset
   );
   input  wb_clk_i, wb_rst_i;
   input  wb_cyc_i, wb_stb_i, wb_we_i;

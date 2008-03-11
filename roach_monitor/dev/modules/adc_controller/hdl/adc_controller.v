@@ -148,7 +148,7 @@ module adc_controller(
     //strobes
     wb_ack_o <= 1'b0;
     if (wb_rst_i) begin
-      channel_bypass <= {32{1'b1}};
+      channel_bypass <= {32{1'b0}};
       cmon_en <= {10{1'b0}};
       tmon_en <= {11{1'b0}};
       adc_en <= 1'b0;

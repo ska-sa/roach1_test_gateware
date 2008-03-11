@@ -4,32 +4,32 @@
 
 module toplevel(
     /* ATX Power Supply Control */
-//    ATX_PS_ON_N, ATX_PWR_OK,
-//    ATX_LOAD_RES_OFF,
+    ATX_PS_ON_N, ATX_PWR_OK,
+    ATX_LOAD_RES_OFF,
     /* Power Supply Control */
-//    TRACK_2V5,
-//    INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0,
-//    MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN,
-//    MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG,
-//    AUX_3V3_PG,
+    TRACK_2V5,
+    INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0,
+    MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN,
+    MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG,
+    AUX_3V3_PG,
     /* XPORT Serial */
-//    XPORT_SERIAL_IN, XPORT_SERIAL_OUT,
-//    XPORT_GPIO, XPORT_RESET_N,
+    XPORT_SERIAL_IN, XPORT_SERIAL_OUT,
+    XPORT_GPIO, XPORT_RESET_N,
     /* Controller Interface */
-//    CONTROLLER_I2C_SDA, CONTROLLER_I2C_SCL,
-//    CONTROLLER_IRQ, CONTROLLER_RESET,
+    CONTROLLER_I2C_SDA, CONTROLLER_I2C_SCL,
+    CONTROLLER_IRQ, CONTROLLER_RESET,
     /* Debug Serial Port */
     DEBUG_SERIAL_IN, DEBUG_SERIAL_OUT, DEBUG,
     /*System Configuration*/
-//    SYS_CONFIG,
+    SYS_CONFIG,
     /* Chassis Interface */
-//    CHS_POWERDOWN, CHS_RESET_N,
+    CHS_POWERDOWN, CHS_RESET_N,
     CHS_LED,
     /* Fan Control */
-//    FAN1_SENSE,   FAN2_SENSE,   FAN3_SENSE,
-//    FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
+    FAN1_SENSE,   FAN2_SENSE,   FAN3_SENSE,
+    FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
     /* Analogue Block Interfaces*/
-//    AG, AV, AC, AT, ATRET,
+    AG, AV, AC, AT, ATRET,
     /* Fixed Fusion Signals */
     XTLCLK, PUB, VAREF,
     DEBUG_LED
@@ -37,41 +37,41 @@ module toplevel(
   output DEBUG;
   output DEBUG_LED;
 
-//  output ATX_PS_ON_N;
-//  input  ATX_PWR_OK;
-//  output ATX_LOAD_RES_OFF;
+  output ATX_PS_ON_N;
+  input  ATX_PWR_OK;
+  output ATX_LOAD_RES_OFF;
 
-//  output TRACK_2V5;
-//  output INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0;
-//  output MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN;
-//  input  MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG;
-//  input  AUX_3V3_PG;
+  output TRACK_2V5;
+  output INHIBIT_2V5, INHIBIT_1V8, INHIBIT_1V5, INHIBIT_1V2, INHIBIT_1V0;
+  output MGT_AVCC_EN, MGT_AVTTX_EN, MGT_AVCCPLL_EN;
+  input  MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG;
+  input  AUX_3V3_PG;
 
-//  input  XPORT_SERIAL_IN;
-//  output XPORT_SERIAL_OUT;
-//  inout  XPORT_GPIO;
-//  output XPORT_RESET;
+  input  XPORT_SERIAL_IN;
+  output XPORT_SERIAL_OUT;
+  inout  XPORT_GPIO;
+  output XPORT_RESET;
 
-//  inout  CONTROLLER_I2C_SDA;
-//  input  CONTROLLER_I2C_SCL;
-//  output CONTROLLER_IRQ, CONTROLLER_RESET,
+  inout  CONTROLLER_I2C_SDA;
+  input  CONTROLLER_I2C_SCL;
+  output CONTROLLER_IRQ, CONTROLLER_RESET,
 
-//  output [7:0] SYS_CONFIG;
+  output [7:0] SYS_CONFIG;
 
-//  input  CHS_POWERDOWN, CHS_RESET_N;
+  input  CHS_POWERDOWN, CHS_RESET_N;
   output [1:0] CHS_LED,
 
-//  input  FAN1_SENSE, FAN2_SENSE, FAN3_SENSE;
-//  output FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
+  input  FAN1_SENSE, FAN2_SENSE, FAN3_SENSE;
+  output FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
 
   input  DEBUG_SERIAL_IN;
   output DEBUG_SERIAL_OUT;
 
-//  output [9:0] GA;
-//  input  [9:0] AV;
-//  input  [9:0] AC;
-//  input  [9:0] AT;
-//  input  [4:0] ATRET;
+  output [9:0] GA;
+  input  [9:0] AV;
+  input  [9:0] AC;
+  input  [9:0] AT;
+  input  [4:0] ATRET;
   
   input  XTLCLK, PUB;
   inout  VAREF;
@@ -85,12 +85,12 @@ module toplevel(
   /* Debounce chassis switches */
   wire chs_powerdown, chs_reset_n;
 
-//  debouncer #(
-//    .DELAY(32'h0020_0000)
-//  ) debouncer_inst[1:0] (  
-//    .clk(gclk40), .reset(hard_reset),
-//    .in_switch({CHS_POWERDOWN, CHS_RESET_N}), .out_switch({chs_powerdown, chs_reset_n})
-//  );
+  debouncer #(
+    .DELAY(32'h0020_0000)
+  ) debouncer_inst[1:0] (  
+    .clk(gclk40), .reset(hard_reset),
+    .in_switch({CHS_POWERDOWN, CHS_RESET_N}), .out_switch({chs_powerdown, chs_reset_n})
+  );
 
   /* Reset Control */
   reset_block #(
@@ -111,8 +111,7 @@ module toplevel(
     .gclk40(gclk40),.gclk100(gclk100),.gclk10(gclk10),
     .PLL_LOCK(pll_lock),
     .PUB(PUB), .FPGAGOOD(nc_fpgagood), .XTLCLK(XTLCLK),
-//    .RTCCLK(rtcclk), .SELMODE(selmode), .RTC_MODE(rtc_mode)
-    .RTCCLK(rtcclk), .SELMODE(1'b1), .RTC_MODE(2'b00)
+    .RTCCLK(rtcclk), .SELMODE(selmode), .RTC_MODE(rtc_mode)
   );
 
 
@@ -170,37 +169,13 @@ module toplevel(
     .wb_ack_i(debug_wb_ack_i), .wb_err_i(debug_wb_err_i)
   );
 
-
-
-  reg [3:0] foo;
-
-  reg DEBUG_LED;
-  reg [1:0] CHS_LED;
-
-  always @(posedge gclk40) begin
-    if (debug_wb_cyc_o & debug_wb_stb_o) begin
-      DEBUG_LED <= ~DEBUG_LED;
-    end
-
-    if (hard_reset) begin
-      foo <= 4'b0;
-    end else begin
-      if (foo) begin
-        foo <= foo - 1;
-      end else begin
-        if (ds_as_dstrb_o) begin
-          foo <= 4'b1111;
-        end
-      end
-    end
-  end
 `else
   assign debug_wb_we_o  = 1'b0;
   assign debug_wb_cyc_o = 1'b0;
   assign debug_wb_stb_o = 1'b0;
   assign debug_wb_adr_o = 16'b0;
   assign debug_wb_dat_o = 16'b0;
-  assign DEBUG_SERIAL_OUT = 1'b0;
+  assign DEBUG_SERIAL_OUT = 1'b1; //idle
 `endif
 
   /********* XPORT Interface ***********/
@@ -342,13 +317,6 @@ module toplevel(
 
     .wbm_mask({1'b1,{3{dma_done}}}) //disable the other three masters when dma is not done
   );
-  reg [15:0] test_val;
-  always @(posedge gclk40) begin
-    if (wbm_cyc_o & wbm_stb_o) begin
-      test_val <= wbm_adr_o;
-      CHS_LED[0] <= ~CHS_LED[0];
-    end
-  end
 
 
   /******************** WishBone Slave Arbiter ****************************/
@@ -439,12 +407,6 @@ module toplevel(
     .test_in(test_val)
   );
 
-  always @(posedge gclk40) begin
-    if (wbs_cyc_o[0] & wbs_stb_o[0]) begin
-      CHS_LED[1] <= ~CHS_LED[1];
-    end
-  end
-
   /************** FlashROM Controller ***************/
   wire from_clk;
   wire [6:0] from_addr;
@@ -463,10 +425,243 @@ module toplevel(
     .wb_ack_o(wbs_ack_i[1]),
     .from_clk(from_clk), .from_addr(from_addr), .from_data(from_data)
   );
+  /**************** Analogue Block / ACM *************/
+  wire [9:0] AG;
+  wire [9:0] AG_EN;
+  wire [9:0] AV,AC,AT;
+  wire [4:0] ATRET;
+  wire VAREF;
 
+  wire adc_start,adcreset;
+  wire adc_sample;
+  wire [4:0] adc_chnum;
+  wire adc_calibrate,adc_busy,adc_datavalid;
+  wire [11:0] adc_result;
 
+  wire [7:0] acm_datar;
+  wire [7:0] acm_dataw;
+  wire [7:0] acm_addr;
+  wire acm_clk,acm_wen, acm_reset;
 
+  wire [9:0] cmstrb;
+  wire [9:0] tmstrb;
+  wire tmstrb_int;
 
+  wire rtcmatch_nc, rtcpsmmatch_nc;
 
+  analogue_infrastructure analogue_infrastructure_inst(
+    .SYS_CLK(gclk40),.SYS_RESET(hard_reset),
+    .AG(AG),.AG_EN(AG_EN),.AV(AV),.AC(AC),.AT(AT),.ATRETURN(ATRET),
+    .ADC_START(adc_start),.ADC_SAMPLE(adc_sample),.ADC_CHNUM(adc_chnum),
+    .ADC_CALIBRATE(adc_calibrate),.ADC_BUSY(adc_busy),.ADC_DATAVALID(adc_datavalid),
+    .ADC_RESULT(adc_result),.ADCRESET(hard_reset),
+    .ACM_DATAR(acm_datar),.ACM_DATAW(acm_dataw),.ACM_ADDR(acm_addr),
+    .ACM_CLK(acm_clk),.ACM_WEN(acm_wen), .ACM_RESET(acm_reset),       
+    .RTCCLK(rtcclk),.SELMODE(selmode),
+    .RTCMATCH(rtcmatch_nc),.RTCPSMMATCH(rtcpsmmatch_nc),.RTCXTLMODE(rtc_mode),
+    .VAREF(VAREF),
+    .cmstrb(cmstrb), .tmstrb(tmstrb), .tmstrb_int(tmstrb_int)
+  );
+
+  acm_controller acm_controller_inst(
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[2]), .wb_stb_i(wbs_stb_o[2]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(2 + 1) - 1:16*2]),
+    .wb_ack_o(wbs_ack_i[2]),
+    .acm_wdata(acm_dataw), .acm_rdata(acm_datar),
+    .acm_addr(acm_addr),
+    .acm_wen(acm_wen),
+    .acm_clk(acm_clk), .acm_reset(acm_reset)
+  );
+  /*************** ADC Controller *********************/
+
+  wire [11:0] adc_result;
+  wire  [4:0] adc_channel;
+  wire adc_strb;
+
+  adc_controller adc_controller_inst(
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[3]), .wb_stb_i(wbs_stb_o[3]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(3 + 1) - 1:16*3]),
+    .wb_ack_o(wbs_ack_i[3]),
+    .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
+    .ADC_START(adc_start), .ADC_CHNUM(adc_chnum),
+    .ADC_CALIBRATE(adc_calibrate), .ADC_BUSY(adc_busy), .ADC_DATAVALID(adc_datavalid),
+    .ADC_RESULT(adc_result),
+    .current_stb(cmstrb), .temp_stb({tmstrb_int, tmstrb})
+  );
+
+  /*************** Level Checker *********************/
+  wire soft_reset;
+  wire soft_viol, hard_viol;
+  wire [31:0] v_in_range;
+
+  wire  [6:0] lc_ram_raddr;
+  wire  [6:0] lc_ram_waddr;
+  wire [11:0] lc_ram_rdata;
+  wire [11:0] lc_ram_wdata;
+  wire lc_ram_wen;
+
+  /***********
+         TODO: Level Checker Infrastructure
+                                       **************/
+
+  level_checker level_checker_inst(
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[4]), .wb_stb_i(wbs_stb_o[4]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(4 + 1) - 1:16*4]),
+    .wb_ack_o(wbs_ack_i[4]),
+    .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
+    .soft_reset(soft_reset),
+    .soft_viol(soft_viol), .hard_viol(hard_viol),
+    .v_in_range(v_in_range),
+    .ram_raddr(lc_ram_raddr), .ram_waddr(lc_ram_waddr),
+    .ram_rdata(lc_ram_rdata), .ram_wdata(lc_ram_wdata),
+    .ram_wen(lc_ram_wen)
+  );
+
+  /**************** Value Storage ********************/
+  wire vs_ram_ren, vs_ram_wen;
+  wire [12:0] vs_ram_raddr;
+  wire [12:0] vs_ram_waddr;
+  wire [11:0] vs_ram_rdata;
+  wire [11:0] vs_ram_wdata;
+
+  /***********
+         TODO: VS Infrastructure
+                                       **************/
+  value_storage #(
+    .RAM_HIGH(1024 * 7)
+  ) value_storage_inst (
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[5]), .wb_stb_i(wbs_stb_o[5]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(5 + 1) - 1:16*5]),
+    .wb_ack_o(wbs_ack_i[5]),
+    .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
+    .ram_ren(vs_ram_ren), .ram_wen(vs_ram_wen),
+    .ram_raddr(vs_ram_raddr), .ram_waddr(vs_ram_waddr),
+    .ram_rdata(vs_ram_rdata), .ram_wdata(vs_ram_wdata)
+  );
+
+  /************* Power Manager *********************/
+
+  wire [31:0] sys_health;
+  wire unsafe_sys_health;
+  wire power_ok;
+  wire cold_start, dma_done, chs_power_button;
+  wire soft_reset, crash;
+  wire G12V_EN, G5V_EN, G3V3_EN;
+  /* TODO: complete these assignments */
+
+  power_manager #(
+    .WATCHDOG_OVERFLOW_DEFAULT(`WATCHDOG_OVERFLOW_DEFAULT),
+    .MAX_UNACKED_CRASHES(`MAX_UNACKED_CRASHES),
+    .MAX_UNACKED_WD_OVERFLOWS(`MAX_UNACKED_WD_OVERFLOWS),
+    .SYS_HEALTH_POWERUP_MASK(`SYS_HEALTH_POWERUP_MASK),
+    .POWER_DOWN_WAIT(`POWER_DOWN_WAIT)
+  ) power_manager_inst (
+    /* Wishbone Interface */
+    .wb_cyc_i(wbs_cyc_o[6]), .wb_stb_i(wbs_stb_o[6]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(6 + 1) - 1:16*6]),
+    .wb_ack_o(wbs_ack_i[6]),
+    /* System Health */
+    .sys_health(sys_health), .unsafe_sys_health(unsafe_sys_health),
+    /* Informational Signals */
+    .power_ok(power_ok),
+    /* Control Signals */
+    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_power_button),
+    .soft_reset(soft_reset), .crash(crash),
+    /* ATX Power Supply Control */
+    .ATX_PS_ON_N(ATX_PS_ON_N), .ATX_PWR_OK(ATX_PWR_OK),
+    .ATX_LOAD_RES_OFF(ATX_LOAD_RES_OFF),
+    /* Power Supply Control */
+    .TRACK_2V5(TRACK_2V5),
+    .INHIBIT_2V5(INHIBIT_2V5), .INHIBIT_1V8(INHIBIT_1V8), .INHIBIT_1V5(INHIBIT_1V5),
+    .INHIBIT_1V2(INHIBIT_1V2), .INHIBIT_1V0(INHIBIT_1V0),
+    .MGT_AVCC_EN(MGT_AVCC_EN), .MGT_AVTTX_EN(MGT_AVTTX_EN), .MGT_AVCCPLL_EN(MGT_AVCCPLL_EN),
+    .MGT_AVCC_PG(MGT_AVCC_PG), .MGT_AVTTX_PG(MGT_AVTTX_PG), .MGT_AVCCPLL_PG(MGT_AVCCPLL_PG),
+    .AUX_3V3_PG(AUX_3V3_PG),
+    /* FET gate drivers */
+    .G12V_EN(G12V_EN), .G5V_EN(G5V_EN), .G3V3_EN(G3V3_EN)
+  );
+  /***************** IRQ Controller *****************/
+
+  wire [3:0] irq_i;
+  wire irq_out;
+  /*TODO: complete Assignments */
+
+  irq_controller #(
+    .NUM_SOURCES(4)
+  ) irq_controller_inst (
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[7]), .wb_stb_i(wbs_stb_o[8]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(7 + 1) - 1:16*8]),
+    .wb_ack_o(wbs_ack_i[7]),
+    .irq_i(irq_i), .irq_o(irq_o)
+  );
+
+  /*************** Fan Controller ********************/
+
+  fan_controller #( 
+    .NUM_FANS(3)
+  ) fan_controller_inst (
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[8]), .wb_stb_i(wbs_stb_o[8]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(8 + 1) - 1:16*8]),
+    .wb_ack_o(wbs_ack_i[8]),
+    .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
+    .fan_sense({FAN3_SENSE, FAN2_SENSE, FAN1_SENSE}),
+    .fan_control({FAN3_CONTROL, FAN2_CONTROL, FAN1_CONTROL})
+  );
+
+  /***************** Bus Monitor *********************/
+  bus_monitor bus_monitor_inst(
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[9]), .wb_stb_i(wbs_stb_o[9]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(9 + 1) - 1:16*9]),
+    .wb_ack_o(wbs_ack_i[9]),
+
+    .bm_memv(bm_memv),
+    .bm_timeout(bm_timeout),
+    .bm_wbm_id(bm_wbm_id),
+    .bm_addr(bm_addr),
+    .bm_we(bm_we)
+  );
+
+  /************* FlashMem Controller *****************/
+
+  wire [16:0] FM_ADDR;
+  wire [15:0] FM_WD;
+  wire FM_PAGESTATUS;
+  wire FM_REN, FM_WEN, FM_PROGRAM;
+  wire FM_CLK, FM_RESET;
+  wire [15:0]  FM_RD;
+  wire FM_BUSY;
+  wire [1:0] FM_STATUS;
+
+  flashmem flashmem_inst(
+    .FM_ADDR(FM_ADDR),       
+    .FM_WD(FM_WD),               
+    .FM_REN(FM_REN),              
+    .FM_WEN(FM_WEN),              
+    .FM_PROGRAM(FM_PROGRAM),        
+    .FM_CLK(FM_CLK),             
+    .FM_RESET(FM_RESET),           
+    .FM_RD(FM_RD),              
+    .FM_BUSY(FM_BUSY),            
+    .FM_STATUS(FM_STATUS),
+    .FM_PAGESTATUS(FM_PAGESTATUS)
+  );
+
+  flashmem_controller flashmem_controller_inst(
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[10]), .wb_stb_i(wbs_stb_o[10]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(10 + 1) - 1:16*10]),
+    .wb_ack_o(wbs_ack_i[10]),
+    .FM_CLK(FM_CLK), .FM_RESET(FM_RESET),
+    .FM_ADDR(FM_ADDR), .FM_WD(FM_WD), .FM_RD(FM_RD),
+    .FM_REN(FM_REN), .FM_WEN(FM_WEN), .FM_PROGRAM(FM_PROGRAM),
+    .FM_BUSY(FM_BUSY), .FM_STATUS(FM_STATUS), .FM_PAGESTATUS(FM_PAGESTATUS)
+  );
 
 endmodule

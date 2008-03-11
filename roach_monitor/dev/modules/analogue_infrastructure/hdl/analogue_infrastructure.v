@@ -2,7 +2,7 @@
  
 `define ADC_CLKDIVIDE  8'd0  //SYSCLK = 40 MHZ, ADCCLK/4 = 10MHz
 `define ADC_SAMPLETIME 8'd6 //(6+2) clock cycles sample time 
-`define ADC_MODE       4'b0101    //12bit + nopowerdown 
+`define ADC_MODE       4'b0001    //12bit
 //`define ADC_MODE       4'b0001    //12bit
 
 
@@ -10,7 +10,7 @@ module analogue_infrastructure(
     SYS_CLK,SYS_RESET,
     AG,AG_EN,AV,AC,AT,ATRETURN,
     ADC_START,ADC_SAMPLE,ADC_CHNUM,ADC_CALIBRATE,ADC_BUSY,ADC_DATAVALID,ADC_RESULT,ADCRESET,
-    ACM_DATAR,ACM_DATAW,ACM_ADDR,ACM_CLK,ACM_WEN,        
+    ACM_DATAR,ACM_DATAW,ACM_ADDR,ACM_CLK,ACM_WEN, ACM_RESET,
     RTCCLK,SELMODE,RTCMATCH,RTCPSMMATCH,RTCXTLMODE,
     VAREF,
     cmstrb, tmstrb, tmstrb_int
@@ -31,7 +31,7 @@ module analogue_infrastructure(
   output [7:0] ACM_DATAR;
   input  [7:0] ACM_DATAW;
   input  [7:0] ACM_ADDR;
-  input  ACM_CLK,ACM_WEN;        
+  input  ACM_CLK,ACM_WEN, ACM_RESET;        
   
   input  RTCCLK;
   output [1:0] RTCXTLMODE;
@@ -149,7 +149,7 @@ module analogue_infrastructure(
     //Clock Divide control, Sample Time Control, Sample Mode
     .TVC(`ADC_CLKDIVIDE), .STC(`ADC_SAMPLETIME), .MODE(`ADC_MODE),
     //Analog Configuration MUX [ACM] interface 
-    .ACMRDATA(ACM_DATAR), .ACMWDATA(ACM_DATAW), .ACMADDR(ACM_ADDR), .ACMCLK(ACM_CLK), .ACMWEN(ACM_WEN), .ACMRESET(~SYS_RESET),        
+    .ACMRDATA(ACM_DATAR), .ACMWDATA(ACM_DATAW), .ACMADDR(ACM_ADDR), .ACMCLK(ACM_CLK), .ACMWEN(ACM_WEN), .ACMRESET(ACM_RESET),        
     //Real time clock pins
     .RTCCLK(RTCCLK), .RTCMATCH(RTCMATCH), .RTCPSMMATCH(RTCPSMMATCH), .RTCXTLSEL(SELMODE), .RTCXTLMODE(RTCXTLMODE),
     //reference pins
