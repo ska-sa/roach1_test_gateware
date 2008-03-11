@@ -1,16 +1,17 @@
 SYNTH_BIN=synplify
 SYNTH_F=$(PROJECT).edn
 SYNTH_SCRIPT=$(PROJECT).prj
+SYNTH_FREQ=40.000
 
 
 SYNTH_COMMANDS=impl -add synthesis -type fpga;\
                set_option -technology FUSION;\
                set_option -part AFS600;\
-               set_option -speed_grade -1;\
+               set_option -speed_grade Std;\
                set_option -default_enum_encoding default;\
-               set_option -symbolic_fsm_compiler 1;\
-               set_option -resource_sharing 1;\
-               set_option -frequency 10.000;\
+               set_option -symbolic_fsm_compiler 0;\
+               set_option -resource_sharing 0;\
+               set_option -frequency $(SYNTH_FREQ);\
                set_option -run_prop_extract 1;\
                set_option -fanout_limit 12;\
                set_option -globalthreshold 50;\
@@ -19,7 +20,7 @@ SYNTH_COMMANDS=impl -add synthesis -type fpga;\
                set_option -retiming 0;\
                set_option -report_path 4000;\
                set_option -update_models_cp 0;\
-               set_option -preserve_registers 0;\
+               set_option -preserve_registers 1;\
                set_option -write_verilog 0;\
                set_option -write_vhdl 0;\
                set_option -write_apr_constraint 1;\

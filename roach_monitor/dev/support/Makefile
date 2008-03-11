@@ -1,5 +1,14 @@
 include Makefile.defs
-build_parameters: $(FLASHROM_F) $(FLASHMEM_F) $(CHEADER_F)
+build_parameters: $(INCLUDE)/build_parameters.v $(FLASHROM_F) $(FLASHMEM_F) $(CHEADER_F)
+
+$(INCLUDE)/build_parameters.v: ../Makefile.defs
+	echo "\`ifndef BUILD_PARAMETERS_H" > $@ 
+	echo "\`define BUILD_PARAMETERS_H" >> $@
+	echo "\`define REV_MAJOR 16'd$(REV_MAJOR)" >> $@
+	echo "\`define REV_MINOR 16'd$(REV_MINOR)" >> $@
+	echo "\`define REV_RCS   16'd$(REV_RCS)" >> $@
+	echo "\`endif" >> $@
+
 
 $(CHEADER_F): $(MEMLAYOUT_SCRIPT) $(INCLUDE)/memlayout.v
 	$(VCC) -I$(INCLUDE) -DREV_MAJOR=$(REV_MAJOR) -DREV_MINOR=$(REV_MINOR) -DMODULE_ID=$(MODULE_ID) -I build -o a.out $< 

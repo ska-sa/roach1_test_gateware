@@ -18,11 +18,11 @@
 `define TO_ADDR_0      16'h80
 `define TO_ADDR_1      16'h430
 
-`define RESTRICTION0 ({16'hffff, 16'h1000, 1'b1, 1'b1, 1'b1})
+`define RESTRICTION0 ({{`NUM_MASTERS{1'b1}}, 16'hffff, 16'h1000, 1'b1, 1'b1})
 // no rd or wr to anything from 0x1000 on
-`define RESTRICTION1 ({16'h0, 16'h0, 1'b0, 1'b1, 1'b0})
+`define RESTRICTION1 ({{`NUM_MASTERS{1'b1}},    16'd0,    16'd0, 1'b1, 1'b0})
 // no rd to 0x0 
-`define RESTRICTION2 ({16'd0, 16'd1, 1'b0, 1'b0, 1'b1})
+`define RESTRICTION2 ({{`NUM_MASTERS{1'b1}},    16'd1,    16'd1, 1'b0, 1'b1})
 // no wr to 0x1 
 `define TOCONF0      ({20'd1000, 16'h100, 16'h0  })
 // 1000 cycle delay from 0x100 to 0x0
@@ -77,7 +77,7 @@ module TB_wbs_arbiter();
   reg  [16*(`NUM_SLAVES) - 1:0] wbs_dat_i;
   reg  [`NUM_SLAVES - 1:0] wbs_ack_i;
 
-  wire [`NUM_MASTERS - 1:0] wbm_id = 1;
+  wire [`NUM_MASTERS - 1:0] wbm_id = 0;
   wire bm_memv;
   wire [`NUM_MASTERS - 1:0] bm_wbm_id;
   wire [15:0] bm_addr;
@@ -226,6 +226,7 @@ module TB_wbs_arbiter();
               $display("FAILED: RDWR memory protection error");
               $finish;
             end else begin
+              $display("mode: mode MODE_FAIL_RDWR passed");
               mode<=`MODE_TO_0;
               timer<=32'b0;
             end
@@ -290,6 +291,10 @@ module TB_wbs_arbiter();
           $display("wbs: read  - adr = %x, dat =%x", wbs_adr_o, wbs_dat_i[((`TEST_SL_INDEX) + 1)*16 - 1: (`TEST_SL_INDEX)*16]);
         end
         `endif
+      end else begin
+        if (mode != `MODE_TO_1 && mode != `MODE_TO_0) begin
+          wbs_ack_i<=wbs_cyc_o & wbs_stb_o;
+        end
       end
     end
   end
@@ -355,10 +360,24 @@ module TB_wbs_arbiter();
             mode_done_strb <= 1'b1;
             bus_err <= 1'b0;
             mstate <= `MSTATE_WAIT;
+`ifdef DEBUG
+            if (wbm_we_i) begin
+              $display("wbm: write response, adr = %x", wbm_adr_i);
+            end else begin
+              $display("wbm: read response, adr = %x", wbm_adr_i);
+            end
+`endif
           end else if (wbm_err_o) begin
             mode_done_strb <= 1'b1;
             bus_err <= 1'b1;
             mstate <= `MSTATE_WAIT;
+`ifdef DEBUG
+            if (wbm_we_i) begin
+              $display("wbm: write err, adr = %x", wbm_adr_i);
+            end else begin
+              $display("wbm: read err, adr = %x", wbm_adr_i);
+            end
+`endif
           end
         end
         `MSTATE_WAIT: begin

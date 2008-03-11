@@ -1,3 +1,4 @@
+`include "log2.v"
 `timescale 1ns/10ps
 
 module wbm_arbiter(
@@ -15,7 +16,13 @@ module wbm_arbiter(
     wbm_mask,
     wbm_id
   );
-  parameter NUM_MASTERS = 2;
+  parameter NUM_MASTERS = 4;
+`ifdef  __ICARUS__
+  localparam NUM_MASTERS_LOG2 = NUM_MASTERS - 1;
+`else
+  localparam NUM_MASTERS_LOG2 = `LOG2(NUM_MASTERS);
+`endif
+
 
   input  wb_clk_i, wb_rst_i;
 
@@ -37,7 +44,7 @@ module wbm_arbiter(
   output [NUM_MASTERS - 1:0] wbm_id;
   input  [NUM_MASTERS - 1:0] wbm_mask;
 
-  integer active_master;
+  reg [NUM_MASTERS_LOG2:0]  active_master;
 
   genvar gen_i, gen_j;
 
@@ -65,7 +72,6 @@ module wbm_arbiter(
 
   assign wbm_id = active_master;
 
-  integer i,j;
 
   reg wbs_cyc_o;
   reg wbs_stb_o;
@@ -73,6 +79,18 @@ module wbm_arbiter(
   reg [NUM_MASTERS - 1:0] pending;
 
   reg wb_busy;
+
+  function [NUM_MASTERS - 1:0] sel_active_master;
+    input [NUM_MASTERS - 1:0] pending_i;
+    reg [NUM_MASTERS - 1:0] j;
+    begin
+      for (j=0; j < NUM_MASTERS; j=j+1) begin
+        if (pending_i[j]) begin
+          sel_active_master = j; //last master gets preference
+        end
+      end
+    end
+  endfunction
 
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
@@ -85,14 +103,7 @@ module wbm_arbiter(
       wbs_cyc_o <= 1'b0;
       wbs_stb_o <= 1'b0;
 
-      for (i=0; i < NUM_MASTERS; i=i+1) begin
-        if (wbm_cyc_i[i] & wbm_stb_i[i] & wbm_mask[i]) begin
-          pending[i] <= 1'b1;
-`ifdef DEBUG
-          $display("arb: event on %d, now pending", i);
-`endif
-        end
-      end
+      pending <= pending | wbm_cyc_i & wbm_stb_i & wbm_mask;
 
       if (wbs_ack_i | wbs_err_i) begin
         pending[active_master] <= 1'b0;
@@ -107,11 +118,7 @@ module wbm_arbiter(
           wbs_cyc_o <= 1'b1;
           wbs_stb_o <= 1'b1;
           wb_busy <= 1'b1;
-        end
-        for (j=0; j < NUM_MASTERS; j=j+1) begin
-          if (pending[j]) begin
-            active_master <= j; //last master gets preference
-          end
+          active_master <= sel_active_master(pending);
         end
       end
     end

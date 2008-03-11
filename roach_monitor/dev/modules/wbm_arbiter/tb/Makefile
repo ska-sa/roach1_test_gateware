@@ -10,6 +10,8 @@ SRC_DIR=../hdl
 TB_DIR=./hdl
 GEN_DIR=./gen
 
+INCLUDE=-I$(SRC_DIR)
+
 SRC=$(SRC_DIR)/$(MODULE).v
 TB_SRC=$(TB_DIR)/TB_$(MODULE).v
 OBJ=$(GEN_DIR)/$(MODULE).o

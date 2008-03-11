@@ -1,6 +1,6 @@
 MODULE_ID=roach_monitor
 REV_MAJOR=0
-REV_MINOR=0
+REV_MINOR=1
 REV_RCS=0
 PROJECT=$(MODULE_ID)_$(REV_MAJOR)
 
@@ -25,7 +25,16 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/infrastructure/hdl/xtalclk.v \
     ./modules/reset_block/hdl/reset_block.v \
     ./modules/debouncer/hdl/debouncer.v \
-    ./include/parameters.v 
+    ./modules/serial_uart/hdl/serial_uart.v \
+    ./modules/serial_uart/hdl/log2.v \
+    ./modules/as_wb_bridge/hdl/as_wb_bridge.v \
+    ./modules/wbm_arbiter/hdl/wbm_arbiter.v \
+    ./modules/wbs_arbiter/hdl/wbs_arbiter.v \
+    ./modules/wbs_arbiter/hdl/timeout.v \
+    ./modules/wbs_arbiter/hdl/bus_protect.v \
+    ./modules/sys_config/hdl/sys_config.v \
+    ./modules/from_infrastructure/hdl/flashrom_infrastructure.v \
+    ./modules/from_controller/hdl/from_controller.v
 
 FLASHROM_F = $(PROJECT).ufc
 FLASHMEM_F = $(PROJECT).efc

@@ -1,4 +1,4 @@
-module flashrom_controller(CLK,ADDR,DOUT);
+module flashrom_infrastructure(CLK,ADDR,DOUT);
   input  CLK;
   input  [6:0] ADDR;
   output [7:0] DOUT;

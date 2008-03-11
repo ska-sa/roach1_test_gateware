@@ -5,7 +5,9 @@ module sys_config(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     sys_config_vector
+    ,test_in
   );
+  input [15:0] test_in;
   parameter BOARD_ID  = 0;
   parameter REV_MAJOR = 0;
   parameter REV_MINOR = 0;
@@ -29,7 +31,8 @@ module sys_config(
                     wb_adr_i == `REG_REV_MINOR  ? REV_MINOR :
                     wb_adr_i == `REG_REV_RCS    ? REV_RCS :
                     wb_adr_i == `REG_SYS_CONFIG ? sys_config_vector :
-                    16'b0;
+                    test_in;
+                    //16'b0;
 
   always @(posedge wb_clk_i) begin
     //strobes

@@ -20,9 +20,9 @@ module wbs_arbiter(
   );
   parameter NUM_MASTERS = 4;
 
-  parameter RESTRICTION0 = 35'b0;
-  parameter RESTRICTION1 = 35'b0;
-  parameter RESTRICTION2 = 35'b0;
+  parameter RESTRICTION0 = 38'b0;
+  parameter RESTRICTION1 = 38'b0;
+  parameter RESTRICTION2 = 38'b0;
 
   parameter TOCONF0 = 52'b0;
   parameter TOCONF1 = 52'b0;
@@ -107,11 +107,13 @@ module wbs_arbiter(
   bus_protect #(
     .RESTRICTION0(RESTRICTION0),
     .RESTRICTION1(RESTRICTION1),
-    .RESTRICTION2(RESTRICTION2)
+    .RESTRICTION2(RESTRICTION2),
+    .NUM_MASTERS(NUM_MASTERS)
   ) bus_protect_inst (
     .vcheck(vcheck),
     .vfail(vfail), .vpass(vpass),
-    .adr(wbm_adr_i), .wr_en(wbm_we_i)
+    .adr(wbm_adr_i), .wr_en(wbm_we_i),
+    .wbm_id(wbm_id)
   );
 
   assign bm_memv = vfail;
@@ -147,17 +149,17 @@ module wbs_arbiter(
                    wbm_adr_i[15:6] <= A10_HIGH[15:6] && wbm_adr_i[15:6] >= A10_BASE[15:6] ? (temp << 10) : 
                    {NUM_SLAVES{1'b0}};
 
-  assign wbs_adr_o = wbs_active == (temp << 0)  ? wbm_adr_i - `A0_BASE :
-                     wbs_active == (temp << 1)  ? wbm_adr_i - `A1_BASE :
-                     wbs_active == (temp << 2)  ? wbm_adr_i - `A2_BASE :
-                     wbs_active == (temp << 3)  ? wbm_adr_i - `A3_BASE :
-                     wbs_active == (temp << 4)  ? wbm_adr_i - `A4_BASE :
-                     wbs_active == (temp << 5)  ? wbm_adr_i - `A5_BASE :
-                     wbs_active == (temp << 6)  ? wbm_adr_i - `A6_BASE :
-                     wbs_active == (temp << 7)  ? wbm_adr_i - `A7_BASE :
-                     wbs_active == (temp << 8)  ? wbm_adr_i - `A8_BASE :
-                     wbs_active == (temp << 9)  ? wbm_adr_i - `A8_BASE :
-                     wbs_active == (temp << 10) ? wbm_adr_i - `A8_BASE :
+  assign wbs_adr_o = wbs_active == (temp << 0)  ? wbm_adr_i - A0_BASE  :
+                     wbs_active == (temp << 1)  ? wbm_adr_i - A1_BASE  :
+                     wbs_active == (temp << 2)  ? wbm_adr_i - A2_BASE  :
+                     wbs_active == (temp << 3)  ? wbm_adr_i - A3_BASE  :
+                     wbs_active == (temp << 4)  ? wbm_adr_i - A4_BASE  :
+                     wbs_active == (temp << 5)  ? wbm_adr_i - A5_BASE  :
+                     wbs_active == (temp << 6)  ? wbm_adr_i - A6_BASE  :
+                     wbs_active == (temp << 7)  ? wbm_adr_i - A7_BASE  :
+                     wbs_active == (temp << 8)  ? wbm_adr_i - A8_BASE  :
+                     wbs_active == (temp << 9)  ? wbm_adr_i - A9_BASE  :
+                     wbs_active == (temp << 10) ? wbm_adr_i - A10_BASE :
                      16'b0;
 
   assign wbm_dat_o = wbs_active == (temp << 0)  ? wbs_dat_i[16*(0+1)  - 1:16*0 ] :

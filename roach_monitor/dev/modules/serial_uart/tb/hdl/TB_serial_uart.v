@@ -15,7 +15,8 @@ reg reset;
 
 assign serial_in=serial_out;
 
-serial_uart uart(.serial_in(serial_in), .serial_out(serial_out), .clk(clk), .reset(reset),
+serial_uart #(
+  ) uart(.serial_in(serial_in), .serial_out(serial_out), .clk(clk), .reset(reset),
         .as_data_i(testval), .as_data_o(data_out), .as_dstrb_i(ostrb), .as_busy_o(busy), .as_dstrb_o(gotdata));
 
 reg [5:0] sim_cnt;
@@ -24,6 +25,7 @@ reg [63:0]words_sent;
 reg [63:0]words_received;
 
 initial begin
+  $dumpvars;
   clk<=1'b0;
   words_sent<=64'b0;
   words_received<=64'b0;
