@@ -320,6 +320,7 @@ module toplevel(
 
 
   /******************** WishBone Slave Arbiter ****************************/
+  /* TODO: ENABLE defines for each module */
 
   localparam NUM_SLAVES = 11;
   

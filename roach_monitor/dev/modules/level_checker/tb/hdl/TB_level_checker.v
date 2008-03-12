@@ -74,9 +74,6 @@ module TB_level_checker();
   /* A single port ram is unfortunate as sharing is required, but is unwasteful
    * fusion archicture supports only 8 bit dual ports */
 
-  /* A single port ram is unfortunate as sharing is required, but is unwasteful
-   * fusion archicture supports only 8 bit dual ports */
-
   wire [5:0] ram_rdata_nc;
   RAM512X18 RAM512X18_inst (
     .RESET(~reset),
