@@ -142,7 +142,7 @@ module i2c_slave(
   `define BIT_STATE_ACK_PROC       4'd10
   /* TODO: introduce scheme to reduce state count */
 
-  reg [4:0] bit_state;
+  reg [3:0] bit_state;
 
   wire [6:0] address = idata[7:1];
   reg rw_n;

@@ -4,10 +4,8 @@ module serial_uart(
     clk, reset,
     serial_in, serial_out,
     as_data_i,  as_data_o,
-    as_dstrb_i, as_busy_o, as_dstrb_o,
-    foo
+    as_dstrb_i, as_busy_o, as_dstrb_o
   );
-  output foo;
   parameter BAUD        = 115200;
   parameter CLOCK_RATE  = 40000000;
   /*
@@ -51,19 +49,16 @@ module serial_uart(
 
   reg as_dstrb_o;
 
-  reg foo;
 
   always @(posedge clk) begin
     as_dstrb_o<=1'b0;
     if (reset) begin
       s_i_state<=S_I_STATE_HUNT;
       s_i_counter <= 32'b0;
-      foo <= 1'b0;
     end else begin
       case (s_i_state)
         S_I_STATE_HUNT: begin
           if (serial_in == 1'b0) begin //start bit
-            foo <= 1'b1;
             s_i_counter <= SERIAL_BITWIDTH_DIV_2 - 1;
             s_i_progress <= 4'b0;
             s_i_state <= S_I_STATE_STARTHALF;
@@ -82,7 +77,6 @@ module serial_uart(
             s_i_counter <= s_i_counter - 1;
           end else begin
             if (s_i_progress < 4'd8) begin
-              foo <= ~foo;
               s_i_counter <= SERIAL_BITWIDTH - 1;
               s_i_data[s_i_progress] <= serial_in;
               s_i_progress <= s_i_progress + 1;
@@ -90,7 +84,6 @@ module serial_uart(
                 as_dstrb_o <= 1'b1;
             end else begin
               s_i_state <= S_I_STATE_HUNT;
-              foo <= 1'b0;
             end
           end
         end

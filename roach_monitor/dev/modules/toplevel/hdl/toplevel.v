@@ -19,7 +19,7 @@ module toplevel(
     CONTROLLER_I2C_SDA, CONTROLLER_I2C_SCL,
     CONTROLLER_IRQ, CONTROLLER_RESET,
     /* Debug Serial Port */
-    DEBUG_SERIAL_IN, DEBUG_SERIAL_OUT, DEBUG,
+    DEBUG_SERIAL_IN, DEBUG_SERIAL_OUT,
     /*System Configuration*/
     SYS_CONFIG,
     /* Chassis Interface */
@@ -32,11 +32,10 @@ module toplevel(
     AG, AV, AC, AT, ATRET,
     /* Fixed Fusion Signals */
     XTLCLK, PUB, VAREF,
-    DEBUG_LED
+    fet_disable
   );
-  output DEBUG;
-  output DEBUG_LED;
-
+  output [1:0] fet_disable;
+  assign fet_disable = 2'b00;
   output ATX_PS_ON_N;
   input  ATX_PWR_OK;
   output ATX_LOAD_RES_OFF;
@@ -49,8 +48,8 @@ module toplevel(
 
   input  XPORT_SERIAL_IN;
   output XPORT_SERIAL_OUT;
-  inout  XPORT_GPIO;
-  output XPORT_RESET;
+  input  [2:0] XPORT_GPIO;
+  output XPORT_RESET_N;
 
   inout  CONTROLLER_I2C_SDA;
   input  CONTROLLER_I2C_SCL;
@@ -67,7 +66,7 @@ module toplevel(
   input  DEBUG_SERIAL_IN;
   output DEBUG_SERIAL_OUT;
 
-  output [9:0] GA;
+  output [9:0] AG;
   input  [9:0] AV;
   input  [9:0] AC;
   input  [9:0] AT;
@@ -85,6 +84,8 @@ module toplevel(
   /* Debounce chassis switches */
   wire chs_powerdown, chs_reset_n;
 
+  wire soft_reset;
+
   debouncer #(
     .DELAY(32'h0020_0000)
   ) debouncer_inst[1:0] (  
@@ -98,7 +99,7 @@ module toplevel(
     .WIDTH(32'h2000_00)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(~pll_lock), .reset_i(1'b0),//~CHS_RESET_N,
+    .async_reset_i(~pll_lock), .reset_i(chs_reset_n | (XPORT_GPIO == 3'b111)),
     .reset_o(hard_reset)
   );
 
@@ -157,7 +158,6 @@ module toplevel(
     .serial_in(DEBUG_SERIAL_IN), .serial_out(DEBUG_SERIAL_OUT),
     .as_data_i(ds_as_data_i),  .as_data_o(ds_as_data_o),
     .as_dstrb_i(ds_as_dstrb_i), .as_busy_o(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_o)
-    ,.foo(DEBUG)
   );
   /* Debug WB bridge */
   as_wb_bridge as_wb_bridge_debug(
@@ -179,6 +179,7 @@ module toplevel(
 `endif
 
   /********* XPORT Interface ***********/
+  assign XPORT_RESET_N = ~hard_reset;
 `ifdef ENABLE_XPORT_INTERFACE
   wire [7:0] xp_as_data_i;
   wire [7:0] xp_as_data_o;
@@ -223,9 +224,9 @@ module toplevel(
   wire ctrl_sda_i, ctrl_sda_o, ctrl_sda_oen;
   /* Controller I2C Infrastructure */
   i2c_infrastructure i2c_infrastructure_controller(
-    .sda_i(sda_i), .sda_o(sda_o), .sda_oen(sda_oen),
-    .scl_i(scl_i), .scl_o(scl_o), .scl_oen(scl_oen),
-    .sda_pad(CONTROLLER_I2C_SDA), .scl_pad(CONTROLLER_I2C_SCL)
+    .sda_i(ctrl_sda_i), .sda_o(ctrl_sda_o), .sda_oen(ctrl_sda_oen),
+    .scl_i(ctrl_scl_i), .scl_o(ctrl_scl_o), .scl_oen(ctrl_scl_oen),
+    .sda_buf(CONTROLLER_I2C_SDA), .scl_buf(CONTROLLER_I2C_SCL)
   );
 
   /* Controller I2C Slave */
@@ -265,11 +266,11 @@ module toplevel(
   wire dma_done, dma_crash;
 `ifdef ENABLE_DMA_ENGINE
   dma_engine dma_engine_inst(
-    .clk(gclk40), .reset(hard_reset),
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_o(dma_wb_cyc_o), .wb_stb_o(dma_wb_stb_o), .wb_we_o(dma_wb_we_o),
     .wb_adr_o(dma_wb_adr_o), .wb_dat_o(dma_wb_dat_o), .wb_dat_i(dma_wb_dat_i),
     .wb_ack_i(dma_wb_ack_i), .wb_err_i(dma_wb_err_i),
-    .dma_crash(dma_crash), .dma_done(dma_done)
+    .dma_crash(dma_crash), .dma_done(dma_done), .soft_reset(soft_reset)
   );
 `else
   assign dma_wb_we_o  = 1'b0;
@@ -287,7 +288,7 @@ module toplevel(
   wire [15:0] wbm_dat_o;
   wire [15:0] wbm_dat_i;
   wire wbm_ack_i, wbm_err_i;
-  wire  [3:0] wbm_id;
+  wire  [1:0] wbm_id;
 
   wire [15:0] wbm_dat_i_int;
   assign dma_wb_dat_i = wbm_dat_i_int;
@@ -320,7 +321,6 @@ module toplevel(
 
 
   /******************** WishBone Slave Arbiter ****************************/
-  /* TODO: ENABLE defines for each module */
 
   localparam NUM_SLAVES = 11;
   
@@ -335,13 +335,12 @@ module toplevel(
 
   /* Bus Monitor Signals */
   wire bm_memv;
-  wire  [3:0] bm_wbm_id;
+  wire  [1:0] bm_wbm_id;
   wire [15:0] bm_addr;
   wire bm_we;
   wire bm_timeout;
 
   wbs_arbiter #(
-   .NUM_MASTERS(4),
    .RESTRICTION0(`MEM_RESTRICTION_0),
    .RESTRICTION1(`MEM_RESTRICTION_1),
    .RESTRICTION2(`MEM_RESTRICTION_2),
@@ -390,22 +389,23 @@ module toplevel(
     .bm_timeout(bm_timeout)
   );
 
+  /* TODO: ENABLE defines for each module */
   /************ System Config Controller ***************/
   wire [7:0] sys_config_vector;
+  assign SYS_CONFIG = sys_config_vector;
 
   sys_config #( 
     .BOARD_ID(`BOARD_ID),
     .REV_MAJOR(`REV_MAJOR),
     .REV_MINOR(`REV_MINOR),
     .REV_RCS(`REV_RCS),
-    .DEFAULT_SYS_CONFIG(8'b0)
+    .DEFAULT_SYS_CONFIG(`DEFAULT_SYS_CONFIG)
   ) sys_config_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[0]), .wb_stb_i(wbs_stb_o[0]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(0 + 1) - 1:16*0]),
     .wb_ack_o(wbs_ack_i[0]),
-    .sys_config_vector(sys_config_vector),
-    .test_in(test_val)
+    .sys_config_vector(sys_config_vector)
   );
 
   /************** FlashROM Controller ***************/
@@ -427,17 +427,13 @@ module toplevel(
     .from_clk(from_clk), .from_addr(from_addr), .from_data(from_data)
   );
   /**************** Analogue Block / ACM *************/
-  wire [9:0] AG;
-  wire [9:0] AG_EN;
-  wire [9:0] AV,AC,AT;
-  wire [4:0] ATRET;
-  wire VAREF;
+  wire [9:0] ag_en;
 
-  wire adc_start,adcreset;
-  wire adc_sample;
-  wire [4:0] adc_chnum;
-  wire adc_calibrate,adc_busy,adc_datavalid;
-  wire [11:0] adc_result;
+  wire ADC_START;
+  wire ADC_SAMPLE;
+  wire [4:0] ADC_CHNUM;
+  wire ADC_CALIBRATE,ADC_BUSY_nc,ADC_DATAVALID;
+  wire [11:0] ADC_RESULT;
 
   wire [7:0] acm_datar;
   wire [7:0] acm_dataw;
@@ -451,11 +447,11 @@ module toplevel(
   wire rtcmatch_nc, rtcpsmmatch_nc;
 
   analogue_infrastructure analogue_infrastructure_inst(
-    .SYS_CLK(gclk40),.SYS_RESET(hard_reset),
-    .AG(AG),.AG_EN(AG_EN),.AV(AV),.AC(AC),.AT(AT),.ATRETURN(ATRET),
-    .ADC_START(adc_start),.ADC_SAMPLE(adc_sample),.ADC_CHNUM(adc_chnum),
-    .ADC_CALIBRATE(adc_calibrate),.ADC_BUSY(adc_busy),.ADC_DATAVALID(adc_datavalid),
-    .ADC_RESULT(adc_result),.ADCRESET(hard_reset),
+    .SYS_CLK(gclk40),
+    .AG(AG),.AG_EN(ag_en),.AV(AV),.AC(AC),.AT(AT),.ATRETURN(ATRET),
+    .ADC_START(ADC_START),.ADC_SAMPLE(ADC_SAMPLE),.ADC_CHNUM(ADC_CHNUM),
+    .ADC_CALIBRATE(ADC_CALIBRATE),.ADC_BUSY(ADC_BUSY_nc),.ADC_DATAVALID(ADC_DATAVALID),
+    .ADC_RESULT(ADC_RESULT),.ADCRESET(hard_reset),
     .ACM_DATAR(acm_datar),.ACM_DATAW(acm_dataw),.ACM_ADDR(acm_addr),
     .ACM_CLK(acm_clk),.ACM_WEN(acm_wen), .ACM_RESET(acm_reset),       
     .RTCCLK(rtcclk),.SELMODE(selmode),
@@ -486,14 +482,13 @@ module toplevel(
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(3 + 1) - 1:16*3]),
     .wb_ack_o(wbs_ack_i[3]),
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
-    .ADC_START(adc_start), .ADC_CHNUM(adc_chnum),
-    .ADC_CALIBRATE(adc_calibrate), .ADC_BUSY(adc_busy), .ADC_DATAVALID(adc_datavalid),
-    .ADC_RESULT(adc_result),
+    .ADC_START(ADC_START), .ADC_CHNUM(ADC_CHNUM),
+    .ADC_CALIBRATE(ADC_CALIBRATE), .ADC_DATAVALID(ADC_DATAVALID),
+    .ADC_RESULT(ADC_RESULT),
     .current_stb(cmstrb), .temp_stb({tmstrb_int, tmstrb})
   );
 
   /*************** Level Checker *********************/
-  wire soft_reset;
   wire soft_viol, hard_viol;
   wire [31:0] v_in_range;
 
@@ -503,9 +498,14 @@ module toplevel(
   wire [11:0] lc_ram_wdata;
   wire lc_ram_wen;
 
-  /***********
-         TODO: Level Checker Infrastructure
-                                       **************/
+  lc_infrastructure lc_infrastructure_inst(
+    .clk(gclk40), .reset(hard_reset),
+    .ram_raddr(lc_ram_raddr),
+    .ram_waddr(lc_ram_waddr),
+    .ram_rdata(lc_ram_rdata),
+    .ram_wdata(lc_ram_wdata),
+    .ram_wen(lc_ram_wen)
+  );
 
   level_checker level_checker_inst(
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
@@ -522,56 +522,71 @@ module toplevel(
   );
 
   /**************** Value Storage ********************/
-  wire vs_ram_ren, vs_ram_wen;
+  wire vs_ram_wen;
   wire [12:0] vs_ram_raddr;
   wire [12:0] vs_ram_waddr;
   wire [11:0] vs_ram_rdata;
   wire [11:0] vs_ram_wdata;
 
-  /***********
-         TODO: VS Infrastructure
-                                       **************/
+  vs_infrastructure #(
+    .RAM_HIGH(`RING_BUFFER_SIZE)
+  ) vs_infrastructure (
+    .clk(gclk40), .reset(hard_reset),
+    .ram_raddr(vs_ram_raddr),
+    .ram_waddr(vs_ram_waddr),
+    .ram_rdata(vs_ram_rdata),
+    .ram_wdata(vs_ram_wdata),
+    .ram_wen(vs_ram_wen)
+  );
+
   value_storage #(
-    .RAM_HIGH(1024 * 7)
+    .RAM_HIGH(`RING_BUFFER_SIZE)
   ) value_storage_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[5]), .wb_stb_i(wbs_stb_o[5]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(5 + 1) - 1:16*5]),
     .wb_ack_o(wbs_ack_i[5]),
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
-    .ram_ren(vs_ram_ren), .ram_wen(vs_ram_wen),
+    .ram_wen(vs_ram_wen),
     .ram_raddr(vs_ram_raddr), .ram_waddr(vs_ram_waddr),
     .ram_rdata(vs_ram_rdata), .ram_wdata(vs_ram_wdata)
   );
 
   /************* Power Manager *********************/
 
-  wire [31:0] sys_health;
-  wire unsafe_sys_health;
-  wire power_ok;
-  wire cold_start, dma_done, chs_power_button;
-  wire soft_reset, crash;
+  wire chs_powerdown_pending;
+  wire power_ok, cold_start;
+  wire [1:0] no_power_cause;
   wire G12V_EN, G5V_EN, G3V3_EN;
-  /* TODO: complete these assignments */
+
+  assign CONTROLLER_RESET = ~power_ok;
+
+  assign CHS_LED = {power_ok, no_power_cause == 2'b01};
+
+  assign cold_start = sys_config_vector[0];
+  assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
+                  G3V3_EN, G5V_EN, G12V_EN, 1'b0, 1'b0};
 
   power_manager #(
     .WATCHDOG_OVERFLOW_DEFAULT(`WATCHDOG_OVERFLOW_DEFAULT),
     .MAX_UNACKED_CRASHES(`MAX_UNACKED_CRASHES),
     .MAX_UNACKED_WD_OVERFLOWS(`MAX_UNACKED_WD_OVERFLOWS),
     .SYS_HEALTH_POWERUP_MASK(`SYS_HEALTH_POWERUP_MASK),
-    .POWER_DOWN_WAIT(`POWER_DOWN_WAIT)
+    .POWER_DOWN_WAIT(`POWER_DOWN_WAIT),
+    .POST_POWERUP_WAIT(`POST_POWERUP_WAIT)
   ) power_manager_inst (
     /* Wishbone Interface */
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[6]), .wb_stb_i(wbs_stb_o[6]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(6 + 1) - 1:16*6]),
     .wb_ack_o(wbs_ack_i[6]),
     /* System Health */
-    .sys_health(sys_health), .unsafe_sys_health(unsafe_sys_health),
+    .sys_health(v_in_range), .unsafe_sys_health(hard_viol),
     /* Informational Signals */
-    .power_ok(power_ok),
+    .power_ok(power_ok), .no_power_cause(no_power_cause),
     /* Control Signals */
-    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_power_button),
-    .soft_reset(soft_reset), .crash(crash),
+    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
+    .soft_reset(soft_reset), .crash(dma_crash), .chs_powerdown_pending(chs_powerdown_pending),
     /* ATX Power Supply Control */
     .ATX_PS_ON_N(ATX_PS_ON_N), .ATX_PWR_OK(ATX_PWR_OK),
     .ATX_LOAD_RES_OFF(ATX_LOAD_RES_OFF),
@@ -588,17 +603,16 @@ module toplevel(
   /***************** IRQ Controller *****************/
 
   wire [3:0] irq_i;
-  wire irq_out;
-  /*TODO: complete Assignments */
+  assign irq_i = {bm_timeout, bm_memv, soft_viol, chs_powerdown_pending};
 
   irq_controller #(
     .NUM_SOURCES(4)
   ) irq_controller_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
-    .wb_cyc_i(wbs_cyc_o[7]), .wb_stb_i(wbs_stb_o[8]), .wb_we_i(wbs_we_o),
-    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(7 + 1) - 1:16*8]),
+    .wb_cyc_i(wbs_cyc_o[7]), .wb_stb_i(wbs_stb_o[7]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(7 + 1) - 1:16*7]),
     .wb_ack_o(wbs_ack_i[7]),
-    .irq_i(irq_i), .irq_o(irq_o)
+    .irq_i(irq_i), .irq_o(CONTROLLER_IRQ)
   );
 
   /*************** Fan Controller ********************/

@@ -4,12 +4,12 @@ module vs_infrastructure(
     ram_waddr,
     ram_rdata,
     ram_wdata,
-    ram_wen, ram_ren
+    ram_wen
   );
   parameter RAM_HIGH = 7*1024;
 
   input  clk, reset;
-  input  ram_ren, ram_wen;
+  input  ram_wen;
   input  [12:0] ram_raddr;
   input  [12:0] ram_waddr;
   output [11:0] ram_rdata;
@@ -23,11 +23,13 @@ module vs_infrastructure(
 
   wire [NUM_SRAM_TRIPS - 1:0] ram_rdata_arr [11:0];
 
+`ifndef __ICARUS__
   wire [2:0] r_trip_sel = ram_raddr[12:10];
   genvar gen_i;
   generate for (gen_i=0; gen_i < 12; gen_i=gen_i+1) begin : G0
     assign ram_rdata[gen_i] = ram_rdata_arr[gen_i][r_trip_sel];
   end endgenerate
+`endif
 
 
   RAM4K9 ram_0[NUM_SRAM_TRIPS - 1:0](

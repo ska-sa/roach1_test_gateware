@@ -6,7 +6,7 @@ module value_storage(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     adc_result, adc_channel, adc_strb,
-    ram_ren, ram_wen,
+    ram_wen,
     ram_raddr, ram_waddr,
     ram_rdata, ram_wdata
   );
@@ -22,7 +22,7 @@ module value_storage(
   input   [4:0] adc_channel;
   input  [11:0] adc_result;
 
-  output ram_ren, ram_wen;
+  output ram_wen;
   output [12:0] ram_raddr;
   output [12:0] ram_waddr;
   input  [11:0] ram_rdata;
@@ -47,7 +47,6 @@ module value_storage(
 
   wire [4:0] chan_index = 5'd31  - wb_adr_i[4:0];
   wire [12:0] wb_direct_addr = rb_checkpoint >= chan_index ? rb_checkpoint - chan_index : (RAM_HIGH) - (chan_index - rb_checkpoint);
-  assign ram_ren = wb_cyc_i & wb_stb_i & ~wb_ack_o & ~wb_we_i;
   assign ram_raddr = adc_val_sel ? wb_direct_addr : rb_ctrl_addr;
 
   wire [12:0] rb_ctrl_addr_next = rb_ctrl_addr == 13'b0 ? RAM_HIGH - 1 : rb_ctrl_addr - 1;

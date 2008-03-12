@@ -18,7 +18,8 @@ module wbs_arbiter(
     bm_we,
     bm_timeout
   );
-  parameter NUM_MASTERS = 4;
+  localparam NUM_MASTERS = 4;
+  localparam NUM_MASTERS_LOG2 = 2;
 
   parameter RESTRICTION0 = 38'b0;
   parameter RESTRICTION1 = 38'b0;
@@ -80,10 +81,10 @@ module wbs_arbiter(
   input  [NUM_SLAVES*16 - 1:0] wbs_dat_i;
   input  [NUM_SLAVES - 1:0] wbs_ack_i;
 
-  input  [NUM_MASTERS - 1:0] wbm_id;
+  input  [NUM_MASTERS_LOG2 - 1:0] wbm_id;
 
   output bm_memv;
-  output [NUM_MASTERS - 1:0] bm_wbm_id;
+  output [NUM_MASTERS_LOG2 - 1:0] bm_wbm_id;
   output [15:0] bm_addr;
   output bm_we;
   output bm_timeout;
@@ -107,8 +108,7 @@ module wbs_arbiter(
   bus_protect #(
     .RESTRICTION0(RESTRICTION0),
     .RESTRICTION1(RESTRICTION1),
-    .RESTRICTION2(RESTRICTION2),
-    .NUM_MASTERS(NUM_MASTERS)
+    .RESTRICTION2(RESTRICTION2)
   ) bus_protect_inst (
     .vcheck(vcheck),
     .vfail(vfail), .vpass(vpass),

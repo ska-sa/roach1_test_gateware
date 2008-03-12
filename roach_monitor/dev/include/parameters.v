@@ -3,21 +3,40 @@
 
 `include "memlayout.v"
 
+
 /************* GENERIC Parameters ***************/
-`define BOARD_ID 16'h00_00
-`define MASTER_CLOCK_RATE 40_000_000
+`define BOARD_ID           16'hbe_ef
+`define MASTER_CLOCK_RATE  40_000_000
+`define DEFAULT_SYS_CONFIG 8'b1
 
 /********** WishbBone Masters' Interface Parameters *********/
 `define ENABLE_DEBUG_INTERFACE
-//`define ENABLE_XPORT_INTERFACE
-//`define ENABLE_CONTROLLER_INTERFACE
-//`define ENABLE_DMA_ENGINE
+`define ENABLE_XPORT_INTERFACE
+`define ENABLE_CONTROLLER_INTERFACE
+`define ENABLE_DMA_ENGINE
 
 `define XPORT_SERIAL_BAUD 115200
 `define DEBUG_SERIAL_BAUD 115200
 
 `define I2C_CLOCK_RATE    100_000
 `define I2C_SLAVE_ADDRESS 7'b0001111
+
+/************ Power Manager Parameters ************/
+// 5'b0 -> no overflows, otherwise overflow time = WATCHDOG_OVERFLOW_DEFAULT * 53.7s
+// min = 53.7s, max = 1664.29s [27min]
+`define WATCHDOG_OVERFLOW_DEFAULT 5'd0
+`define MAX_UNACKED_CRASHES       3'd3
+`define MAX_UNACKED_WD_OVERFLOWS  3'd7
+//Which analogue values must be checked and be valid -- 1 check, 0 dont check
+`define SYS_HEALTH_POWERUP_MASK   32'h0000_0000
+//how long the power manager waits before entering the powered_up state
+`define POWER_DOWN_WAIT           32'h003f_ffff
+//how long the power manager waits before starting post power-up checks
+`define POST_POWERUP_WAIT         32'h003f_ffff
+
+/************ Value Storage Parameters ************/
+//the size of the ring buffer -- maximum for afs600 is 7
+`define RING_BUFFER_SIZE          (7*1024)
 
 /********** WB Timeout Values ***********/
 

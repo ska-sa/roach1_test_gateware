@@ -7,7 +7,7 @@
 
 
 module analogue_infrastructure(
-    SYS_CLK,SYS_RESET,
+    SYS_CLK,
     AG,AG_EN,AV,AC,AT,ATRETURN,
     ADC_START,ADC_SAMPLE,ADC_CHNUM,ADC_CALIBRATE,ADC_BUSY,ADC_DATAVALID,ADC_RESULT,ADCRESET,
     ACM_DATAR,ACM_DATAW,ACM_ADDR,ACM_CLK,ACM_WEN, ACM_RESET,
@@ -15,7 +15,7 @@ module analogue_infrastructure(
     VAREF,
     cmstrb, tmstrb, tmstrb_int
   );
-  input  SYS_CLK, SYS_RESET;
+  input  SYS_CLK;
   
   output [9:0] AG;
   input  [9:0] AG_EN;
@@ -141,7 +141,7 @@ module analogue_infrastructure(
     //temperature monitor strobes
     .TMSTB0(tmstrb[0]), .TMSTB1(tmstrb[1]), .TMSTB2(tmstrb[2]), .TMSTB3(tmstrb[3]), .TMSTB4(tmstrb[4]),
     .TMSTB5(tmstrb[5]), .TMSTB6(tmstrb[6]), .TMSTB7(tmstrb[7]), .TMSTB8(tmstrb[8]), .TMSTB9(tmstrb[9]),
-    .TMSTBINT(tmstb_int),
+    .TMSTBINT(tmstrb_int),
     //ADC CONTROL
     .ADCRESET(ADCRESET), .ADCSTART(ADC_START), .CHNUMBER(ADC_CHNUM),
     .CALIBRATE(ADC_CALIBRATE), .SAMPLE(ADC_SAMPLE), .BUSY(ADC_BUSY),

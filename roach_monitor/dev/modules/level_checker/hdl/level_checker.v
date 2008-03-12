@@ -84,8 +84,6 @@ module level_checker(
     if (wb_rst_i) begin
       soft_thresh_valid <= 1'b0;
       hard_thresh_valid <= 1'b0;
-      soft_viol_source <= 6'b0;
-      hard_viol_source <= 6'b0;
     end else if (wb_trans) begin
       wb_ack_o <= 1'b1;
       if (wb_ram) begin
@@ -106,14 +104,14 @@ module level_checker(
           end
           `REG_SOFT_VIOL_SOURCE: begin
             wb_dat_o_src <= 4'd3;
-            clear_soft_viol <= 1'b0;
+            clear_soft_viol <= 1'b1;
           end
           `REG_SOFT_VIOL_VALUE: begin
             wb_dat_o_src <= 4'd4;
           end
           `REG_HARD_VIOL_SOURCE: begin
             wb_dat_o_src <= 4'd5;
-            clear_hard_viol <= 1'b0;
+            clear_hard_viol <= 1'b1;
           end
           `REG_HARD_VIOL_VALUE: begin
             wb_dat_o_src <= 4'd6;

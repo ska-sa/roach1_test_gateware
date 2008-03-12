@@ -8,7 +8,7 @@ module adc_controller(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     adc_result, adc_channel, adc_strb,
-    ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_BUSY, ADC_DATAVALID, ADC_RESULT,
+    ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT,
     current_stb, temp_stb
   );
   input  wb_clk_i, wb_rst_i;
@@ -26,7 +26,7 @@ module adc_controller(
 
   output ADC_START;
   output  [4:0] ADC_CHNUM;
-  input  ADC_CALIBRATE, ADC_BUSY, ADC_DATAVALID;
+  input  ADC_CALIBRATE, ADC_DATAVALID;
   input  [11:0] ADC_RESULT;
 
   /********************* Common Registers ***********************/

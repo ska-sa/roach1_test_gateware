@@ -12,25 +12,24 @@ module bus_protect(
   parameter RESTRICTION1 = 38'b0;
   parameter RESTRICTION2 = 38'b0;
 
-  parameter NUM_MASTERS  = 4;
 
   input  vcheck;
   output vfail, vpass;
   input  [15:0] adr;
   input  wr_en;
-  input   [NUM_MASTERS - 1:0] wbm_id;
+  input   [1:0] wbm_id;
 
   wire addrmatch0 = adr >= RESTRICTION0[17:2] && adr <= RESTRICTION0[33:18] ? 1'b1 : 1'b0;
   wire addrmatch1 = adr >= RESTRICTION1[17:2] && adr <= RESTRICTION1[33:18] ? 1'b1 : 1'b0;
   wire addrmatch2 = adr >= RESTRICTION2[17:2] && adr <= RESTRICTION2[33:18] ? 1'b1 : 1'b0;
 
-  wire [NUM_MASTERS - 1:0] wbm_en_int0 = RESTRICTION0[34 + NUM_MASTERS - 1:34];
-  wire [NUM_MASTERS - 1:0] wbm_en_int1 = RESTRICTION0[34 + NUM_MASTERS - 1:34];
-  wire [NUM_MASTERS - 1:0] wbm_en_int2 = RESTRICTION0[34 + NUM_MASTERS - 1:34];
+  wire [1:0] wbm_en_int0 = RESTRICTION0[34 + 2 - 1:34];
+  wire [1:0] wbm_en_int1 = RESTRICTION1[34 + 2 - 1:34];
+  wire [1:0] wbm_en_int2 = RESTRICTION2[34 + 2 - 1:34];
 
-  wire wbm_en0 = wbm_en_int0[wbm_id];
-  wire wbm_en1 = wbm_en_int0[wbm_id];
-  wire wbm_en2 = wbm_en_int0[wbm_id];
+  wire wbm_en0 = wbm_en_int0 == wbm_id;
+  wire wbm_en1 = wbm_en_int1 == wbm_id;
+  wire wbm_en2 = wbm_en_int2 == wbm_id;
 
   wire err0 = wbm_en0 & addrmatch0 & (RESTRICTION0[`WR_BIT] & wr_en | RESTRICTION0[`RD_BIT] & ~wr_en);
   wire err1 = wbm_en1 & addrmatch1 & (RESTRICTION1[`WR_BIT] & wr_en | RESTRICTION1[`RD_BIT] & ~wr_en);

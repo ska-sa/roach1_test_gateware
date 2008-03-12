@@ -41,8 +41,8 @@ module wbm_arbiter(
   input  [15:0] wbs_dat_i;
   input  wbs_ack_i, wbs_err_i;
 
-  output [NUM_MASTERS - 1:0] wbm_id;
-  input  [NUM_MASTERS - 1:0] wbm_mask;
+  output [NUM_MASTERS_LOG2:0] wbm_id;
+  input  [NUM_MASTERS - 1 :0] wbm_mask;
 
   reg [NUM_MASTERS_LOG2:0]  active_master;
 

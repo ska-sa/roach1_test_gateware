@@ -26,6 +26,7 @@ module TB_power_manager();
 
   power_manager #(
     .POWER_DOWN_WAIT(32'd1000),
+    .POST_POWERUP_WAIT(32'd1000),
     .WATCHDOG_OVERFLOW_DEFAULT(5'd1)
   ) power_manager_inst (
     .wb_clk_i(clk), .wb_rst_i(reset),
@@ -128,7 +129,7 @@ module TB_power_manager();
 `ifdef DEBUG
                 $display("mode: mode START_CHECK passed");
 `endif
-              end else if (mode_timer >= 32'd4000) begin
+              end else if (mode_timer >= 32'd10000) begin
                 $display("FAILED: expected power_ok, mode = %d, mode_progress = %d", mode, mode_progress);
                 $finish;
               end
