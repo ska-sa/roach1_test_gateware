@@ -109,7 +109,7 @@ module TB_adc_controller();
   wire ADC_START;
   wire  [4:0] ADC_CHNUM;
   wire [11:0] ADC_RESULT;
-  wire ADC_BUSY, ADC_CALIBRATE, ADC_DATAVALID;
+  wire ADC_BUSY, ADC_CALIBRATE, ADC_DATAVALID, ADC_SAMPLE;
 
   wire  [9:0] current_stb;
   wire [10:0] temp_stb;
@@ -120,15 +120,20 @@ module TB_adc_controller();
   wire [15:0] wb_dat_o;
   wire wb_ack_o;
 
+  reg [1:0] mode;
+  `define MODE_ACM_CONF   2'd0
+  `define MODE_ADC_CONF   2'd1
+  `define MODE_VALUE_LOAD 2'd2
+  `define MODE_ADC_RUN    2'd3
   adc_controller adc_controller_inst(
-    .wb_clk_i(clk), .wb_rst_i(reset),
+    .wb_clk_i(clk), .wb_rst_i(reset || mode == `MODE_ACM_CONF),
     .wb_stb_i(wb_stb_i), .wb_cyc_i(wb_cyc_i), .wb_we_i(wb_we_i),
     .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
     .wb_ack_o(wb_ack_o),
     .adc_strb(adc_strb), .adc_result(adc_result), .adc_channel(adc_channel),
     .ADC_START(ADC_START), .ADC_CHNUM(ADC_CHNUM),
-    .ADC_CALIBRATE(ADC_CALIBRATE), .ADC_BUSY(ADC_BUSY), .ADC_DATAVALID(ADC_DATAVALID),
-    .ADC_RESULT(ADC_RESULT),
+    .ADC_CALIBRATE(ADC_CALIBRATE), .ADC_DATAVALID(ADC_DATAVALID),
+    .ADC_RESULT(ADC_RESULT), .ADC_BUSY(ADC_BUSY), .ADC_SAMPLE(ADC_SAMPLE),
     .current_stb(current_stb), .temp_stb(temp_stb)
   );
 
@@ -159,11 +164,6 @@ module TB_adc_controller();
 /*************************** Mode Control *********************************/
   reg [11:0] adc_mem [31:0];
 
-  reg [1:0] mode;
-  `define MODE_ACM_CONF   2'd0
-  `define MODE_ADC_CONF   2'd1
-  `define MODE_VALUE_LOAD 2'd2
-  `define MODE_ADC_RUN    2'd3
 
   reg mode_done [3:0];
 
@@ -400,7 +400,7 @@ module TB_adc_controller();
     .TMSTBINT(temp_stb[10]),
     //ADC CONTROL
     .ADCRESET(reset), .ADCSTART(ADC_START), .CHNUMBER(ADC_CHNUM),
-    .CALIBRATE(ADC_CALIBRATE), .SAMPLE(), .BUSY(ADC_BUSY),
+    .CALIBRATE(ADC_CALIBRATE), .SAMPLE(ADC_SAMPLE), .BUSY(ADC_BUSY),
     .DATAVALID(ADC_DATAVALID), .RESULT(ADC_RESULT),
     //Clock Divide control, Sample Time Control, Sample Mode
     .TVC(`ADC_CLKDIVIDE), .STC(`ADC_SAMPLETIME), .MODE(`ADC_MODE),

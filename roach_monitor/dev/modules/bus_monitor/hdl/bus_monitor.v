@@ -33,10 +33,12 @@ module bus_monitor(
 
   reg wb_ack_o;
 
-  assign wb_dat_o = wb_adr_i == `REG_BUS_STATUS_0   ? {bm_status[20:5]} :
-                    wb_adr_i == `REG_BUS_STATUS_1   ? {11'b0, bm_status[4:0]} :
-                    wb_adr_i == `REG_TIMEOUT_COUNT  ? timeout_count :
-                    wb_adr_i == `REG_MEMV_COUNT     ? memv_count :
+  reg [1:0] wb_dat_src;
+
+  assign wb_dat_o = wb_dat_src == 2'd0? {bm_status[20:5]} :
+                    wb_dat_src == 2'd1? {11'b0, bm_status[4:0]} :
+                    wb_dat_src == 2'd2? timeout_count :
+                    wb_dat_src == 2'd3? memv_count :
                     16'b0;
 
   always @(posedge wb_clk_i) begin
@@ -49,22 +51,28 @@ module bus_monitor(
     end else begin
       if (~wb_ack_o & wb_cyc_i & wb_stb_i) begin
         wb_ack_o <= 1'b1;
-        if (wb_we_i) begin
-          case (wb_adr_i)
-            `REG_BUS_STATUS_0: begin
+        case (wb_adr_i)
+          `REG_BUS_STATUS_0: begin
+            if (wb_we_i)
               bm_status <= 32'b0;
-            end
-            `REG_BUS_STATUS_1: begin
+            wb_dat_src <= 2'd0;
+          end
+          `REG_BUS_STATUS_1: begin
+            if (wb_we_i)
               bm_status <= 32'b0;
-            end
-            `REG_TIMEOUT_COUNT: begin
+            wb_dat_src <= 2'd1;
+          end
+          `REG_TIMEOUT_COUNT: begin
+            if (wb_we_i)
               timeout_count <= 16'b0;
-            end
-            `REG_MEMV_COUNT: begin
+            wb_dat_src <= 2'd2;
+          end
+          `REG_MEMV_COUNT: begin
+            if (wb_we_i)
               memv_count <= 16'b0;
-            end
-          endcase
-        end
+            wb_dat_src <= 2'd3;
+          end
+        endcase
       end
     end
     if (bm_timeout | bm_memv) begin

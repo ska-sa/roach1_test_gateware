@@ -8,7 +8,7 @@ module adc_controller(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     adc_result, adc_channel, adc_strb,
-    ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT,
+    ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE,
     current_stb, temp_stb
   );
   input  wb_clk_i, wb_rst_i;
@@ -26,8 +26,12 @@ module adc_controller(
 
   output ADC_START;
   output  [4:0] ADC_CHNUM;
-  input  ADC_CALIBRATE, ADC_DATAVALID;
+  input  ADC_CALIBRATE, ADC_DATAVALID, ADC_BUSY, ADC_SAMPLE;
   input  [11:0] ADC_RESULT;
+
+  always @(*) begin
+    $display("ADC_EVENT: ADC_START = %b, ADC_CALIBRATE = %b, ADC_DATAVALID = %b, ADC_RESULT = %b, ADC_BUSY = %b, ADC_SAMPLE = %b, time = %d", ADC_START, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE, $time);
+  end
 
   /********************* Common Registers ***********************/
   reg [31:0] channel_bypass;
@@ -53,7 +57,7 @@ module adc_controller(
   reg  [4:0] ADC_CHNUM;
   reg ADC_START;
 
-  reg prev_dv;
+  //reg prev_dv;
 
   localparam STB_WIDTH = 400; //400 * 25ns = 10us
 
@@ -70,10 +74,12 @@ module adc_controller(
 
   reg [8:0] stb_counter;
 
+  reg force_skip;
+
   always @(posedge wb_clk_i) begin
     //strobes
     adc_strb<=1'b0;
-    prev_dv<=ADC_DATAVALID;
+//    prev_dv<=ADC_DATAVALID;
 
     if (wb_rst_i) begin
       state<=STATE_IDLE;
@@ -92,6 +98,7 @@ module adc_controller(
               temp_stb <= temp_sel & tmon_en;
             end else begin
               state<=STATE_CONVERT;
+              ADC_START<=1'b1;
             end
 `ifdef DESPERATE_DEBUG
             $display("adc_c: got rqst, channel = %d",adc_channel);
@@ -102,19 +109,25 @@ module adc_controller(
           if (stb_counter) begin
             stb_counter <= stb_counter - 1;
           end else begin
+            ADC_START<=1'b1;
             state <= STATE_CONVERT;
           end
         end
         STATE_CONVERT: begin
-          ADC_START<=1'b1;
-          state<=STATE_WAITING;
+          if (ADC_BUSY | ADC_DATAVALID) begin
+            ADC_START <= 1'b0;
+            state<=STATE_WAITING;
 `ifdef DESPERATE_DEBUG
-          $display("adc_c: waiting for convert: datavalid==%d",ADC_DATAVALID);
+            $display("adc_c: waiting for convert: datavalid==%d, time = %d",ADC_DATAVALID, $time);
 `endif
+          end else if (force_skip) begin
+            current_stb <= 10'b0;
+            temp_stb <= 11'b0;
+            state<=STATE_DONE;
+          end
         end
         STATE_WAITING: begin
-          ADC_START<=1'b0;
-          if (ADC_DATAVALID && ADC_DATAVALID != prev_dv) begin //when DV goes high
+          if (ADC_DATAVALID) begin //when DV goes high
             current_stb <= 10'b0;
             temp_stb <= 11'b0;
             adc_result<=ADC_RESULT;
@@ -123,6 +136,11 @@ module adc_controller(
 `ifdef DEBUG
             $display("adc_c: got value %d, channel %d",ADC_RESULT,ADC_CHNUM);
 `endif
+          end else if (force_skip) begin
+            current_stb <= 10'b0;
+            temp_stb <= 11'b0;
+            ADC_START<=1'b0;
+            state<=STATE_DONE;
           end
         end
         STATE_DONE: begin
@@ -133,6 +151,16 @@ module adc_controller(
     end
   end
 
+  reg [9:0] counter;
+  always @(posedge wb_clk_i) begin
+    if (wb_rst_i) begin
+      counter <= 9'b0;
+    end else begin
+      if (adc_strb) begin
+        counter <= counter + 1;
+      end 
+    end
+  end
   /*********************** WishBone Interface *************************/
   reg wb_ack_o;
   reg [2:0] wb_dat_o_src;
@@ -142,16 +170,18 @@ module adc_controller(
                     wb_dat_o_src == 3'd2 ? {6'b0, cmon_en} :
                     wb_dat_o_src == 3'd3 ? {5'b0, tmon_en} :
                     wb_dat_o_src == 3'd4 ? {15'b0, adc_en} :
-                    16'b0;
+                    wb_dat_o_src == 3'd5 ? {counter, state, ADC_BUSY, ADC_SAMPLE, ADC_DATAVALID, ADC_CALIBRATE} :
+                    16'd0;
 
   always @(posedge wb_clk_i) begin
     //strobes
     wb_ack_o <= 1'b0;
+    force_skip <= 1'b0;
     if (wb_rst_i) begin
       channel_bypass <= {32{1'b0}};
       cmon_en <= {10{1'b0}};
       tmon_en <= {11{1'b0}};
-      adc_en <= 1'b0;
+      adc_en <= 1'b1;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <= 1'b1;
@@ -206,6 +236,11 @@ module adc_controller(
             end else begin
               wb_dat_o_src <= 3'd4;
             end
+          end
+          (`REG_ADC_EN+1): begin
+            wb_dat_o_src <= 3'd5;
+            if (wb_we_i)
+              force_skip <= 1'b1;
           end
         endcase
       end

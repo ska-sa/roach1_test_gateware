@@ -42,8 +42,8 @@ module as_wb_bridge(
   reg [15:0] wb_adr_o;
   reg [15:0] wb_dat_o;
   reg [15:0] wb_dat_i_buf;
-  reg wb_stb_o;
   reg wb_cyc_o;
+  assign wb_stb_o = wb_cyc_o;
   reg wb_we_o;
 
   reg as_dstrb_o;
@@ -53,13 +53,12 @@ module as_wb_bridge(
   //processed
 
   always @(posedge clk) begin
+    wb_cyc_o <= 1'b0;
     if (reset) begin
       state<=`ASWB_STATE_CMND;
 
       as_dstrb_o <= 1'b0;
       
-      wb_stb_o <= 1'b0;
-      wb_cyc_o <= 1'b0;
 
 `ifdef DEBUG
       $display("ciface: RESET");
@@ -67,8 +66,6 @@ module as_wb_bridge(
     end begin
       //strobes
       as_dstrb_o <= 1'b0;
-      wb_stb_o   <= 1'b0;
-      wb_cyc_o   <= 1'b0;
 
 
       case (state)
@@ -114,7 +111,6 @@ module as_wb_bridge(
           end else if (~t_wr_rd_n) begin 
             if (as_dstrb_i) begin
 	      wb_adr_o[15:8] <= as_data_i;
-              wb_stb_o <= 1'b1;
               wb_cyc_o <= 1'b1;
               wb_we_o  <= 1'b0;
 	      state<=`ASWB_STATE_READ;
@@ -148,7 +144,6 @@ module as_wb_bridge(
           if (t_wr_rd_n) begin 
 	    if (as_dstrb_i) begin
               wb_dat_o[15:8]<=as_data_i;
-              wb_stb_o <= 1'b1;
               wb_cyc_o <= 1'b1;
               wb_we_o  <= 1'b1;
               state<=`ASWB_STATE_WRITE;

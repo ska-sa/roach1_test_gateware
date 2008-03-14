@@ -46,7 +46,9 @@ module level_checker(
   assign ram_waddr = wb_adr_i[6:0];
   assign ram_wdata = wb_dat_i[11:0];
 
-  assign ram_wb_r = wb_trans & wb_ram & ~wb_we_i ; //the wishbone slave `takes` the ram read interface
+  reg bus_wait;
+
+  assign ram_wb_r = wb_trans & wb_ram & ~wb_we_i | bus_wait; //the wishbone slave `takes` the ram read interface
   assign ram_raddr = ram_wb_r ? wb_adr_i[6:0] : {thresh_sel_type, adc_channel, thresh_sel_pol};
 
   /******************** WB Slave ********************/
@@ -73,6 +75,7 @@ module level_checker(
   reg clear_soft_viol, clear_hard_viol;
 
   always @(posedge wb_clk_i) begin
+    bus_wait <= 1'b0;
     wb_ack_o <= 1'b0;
     clear_soft_viol <= 1'b0;
     clear_hard_viol <= 1'b0;
@@ -88,6 +91,7 @@ module level_checker(
       wb_ack_o <= 1'b1;
       if (wb_ram) begin
         wb_dat_o_src <= 4'b0;
+        bus_wait <= 1'b1;
       end else begin
         case (wb_adr_i)
           `REG_SOFT_THRESH_VALID: begin

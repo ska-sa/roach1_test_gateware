@@ -38,20 +38,19 @@ module acm_controller(
   assign acm_addr  = wb_adr_i[7:0];
   reg acm_wen;
 
-  assign wb_dat_o = {8'b0, acm_rdata[7:0]};
+  reg [7:0] acm_rdata_reg;
+
+  assign wb_dat_o = {8'b0, acm_rdata_reg[7:0]};
 
   always @(posedge wb_clk_i) begin
     wb_ack_o <= 1'b0;
-    acm_clk_counter<=acm_clk_counter + 2'b1;
 
     if (wb_rst_i) begin
       state <= STATE_IDLE;
       acm_wen <= 1'b0;
-`ifdef SIMULATION
-      if (acm_clk_counter === 2'bxx)
-        acm_clk_counter <= 2'b0;
-`endif
+      acm_clk_counter <= 2'b0;
     end else begin
+      acm_clk_counter <= acm_clk_counter + 2'b1;
       case (state)
         STATE_IDLE: begin
           if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
@@ -66,9 +65,10 @@ module acm_controller(
           end
         end
         STATE_WAITTRANS: begin
-          if (acm_clk_counter == 2'b10) begin
+          if (acm_clk_counter == 2'b11) begin
             acm_wen <= 1'b0;
             wb_ack_o <= 1'b1;
+            acm_rdata_reg <= acm_rdata;
             state <= STATE_IDLE;
           end
         end

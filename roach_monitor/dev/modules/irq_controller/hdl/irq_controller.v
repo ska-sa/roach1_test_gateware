@@ -47,7 +47,7 @@ module irq_controller(
           end
           `REG_IRQC_USER: begin
             if (wb_we_i) begin
-              irq_flag[NUM_SOURCES] <= wb_dat_i == 16'hff_ff;
+              irq_flag[NUM_SOURCES] <= wb_dat_i == 16'hff_ff; // set the user irq bit
             end 
           end
           `REG_IRQC_MASK: begin

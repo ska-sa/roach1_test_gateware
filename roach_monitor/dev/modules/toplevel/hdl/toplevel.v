@@ -58,7 +58,7 @@ module toplevel(
   output [7:0] SYS_CONFIG;
 
   input  CHS_POWERDOWN, CHS_RESET_N;
-  output [1:0] CHS_LED,
+  output [2:0] CHS_LED,
 
   input  FAN1_SENSE, FAN2_SENSE, FAN3_SENSE;
   output FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
@@ -99,7 +99,7 @@ module toplevel(
     .WIDTH(32'h2000_00)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(~pll_lock), .reset_i(chs_reset_n | (XPORT_GPIO == 3'b111)),
+    .async_reset_i(~pll_lock), .reset_i(1'b0), //.reset_i(chs_reset_n | (XPORT_GPIO == 3'b111)),
     .reset_o(hard_reset)
   );
 
@@ -265,7 +265,16 @@ module toplevel(
   /*************************** DMA Engine ***********************************/
   wire dma_done, dma_crash;
 `ifdef ENABLE_DMA_ENGINE
-  dma_engine dma_engine_inst(
+  dma_engine #(
+    .FROM_ACM_A(`MEM_FROM_A + 64 + 1),
+    .FROM_LC_A(`MEM_FROM_A + 1),
+    .LC_THRESHS_A(`MEM_LEVCHK_A + 64),
+    .ACM_AQUADS_A(`MEM_ACM_A + 1),
+    .VS_INDIRECT_A(`MEM_VALS_A + 32),
+    .SYSCONFIG_A(`MEM_SYSCONF_A + 4),
+    .FLASH_A(`MEM_FLASHMEM_A + 64),
+    .FLASH_SYSCONFIG_A(`MEM_FLASHMEM_H)
+  ) dma_engine_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_o(dma_wb_cyc_o), .wb_stb_o(dma_wb_stb_o), .wb_we_o(dma_wb_we_o),
     .wb_adr_o(dma_wb_adr_o), .wb_dat_o(dma_wb_dat_o), .wb_dat_i(dma_wb_dat_i),
@@ -432,7 +441,7 @@ module toplevel(
   wire ADC_START;
   wire ADC_SAMPLE;
   wire [4:0] ADC_CHNUM;
-  wire ADC_CALIBRATE,ADC_BUSY_nc,ADC_DATAVALID;
+  wire ADC_CALIBRATE,ADC_BUSY,ADC_DATAVALID;
   wire [11:0] ADC_RESULT;
 
   wire [7:0] acm_datar;
@@ -484,6 +493,7 @@ module toplevel(
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
     .ADC_START(ADC_START), .ADC_CHNUM(ADC_CHNUM),
     .ADC_CALIBRATE(ADC_CALIBRATE), .ADC_DATAVALID(ADC_DATAVALID),
+    .ADC_SAMPLE(ADC_SAMPLE), .ADC_BUSY(ADC_BUSY),
     .ADC_RESULT(ADC_RESULT),
     .current_stb(cmstrb), .temp_stb({tmstrb_int, tmstrb})
   );
@@ -561,11 +571,12 @@ module toplevel(
 
   assign CONTROLLER_RESET = ~power_ok;
 
-  assign CHS_LED = {power_ok, no_power_cause == 2'b01};
+  assign CHS_LED = {power_ok, hard_reset, ~dma_done};
 
-  assign cold_start = sys_config_vector[0];
-  assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
-                  G3V3_EN, G5V_EN, G12V_EN, 1'b0, 1'b0};
+  assign cold_start = ~sys_config_vector[0];
+  //assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
+  //                G3V3_EN, G5V_EN, G12V_EN, 1'b0, 1'b0};
+  assign ag_en = 10'b0;
 
   power_manager #(
     .WATCHDOG_OVERFLOW_DEFAULT(`WATCHDOG_OVERFLOW_DEFAULT),

@@ -24,11 +24,13 @@ module sys_config(
   reg wb_ack_o;
   reg [7:0] sys_config_vector;
 
-  assign wb_dat_o = wb_adr_i == `REG_BOARD_ID   ? BOARD_ID :
-                    wb_adr_i == `REG_REV_MAJOR  ? REV_MAJOR :
-                    wb_adr_i == `REG_REV_MINOR  ? REV_MINOR :
-                    wb_adr_i == `REG_REV_RCS    ? REV_RCS :
-                    wb_adr_i == `REG_SYS_CONFIG ? sys_config_vector :
+  reg [2:0] wb_dat_src;
+
+  assign wb_dat_o = wb_dat_src == 3'd0 ? BOARD_ID :
+                    wb_dat_src == 3'd1 ? REV_MAJOR :
+                    wb_dat_src == 3'd2 ? REV_MINOR :
+                    wb_dat_src == 3'd3 ? REV_RCS :
+                    wb_dat_src == 3'd4 ? sys_config_vector :
                     16'b0;
 
   always @(posedge wb_clk_i) begin
@@ -40,6 +42,24 @@ module sys_config(
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <=1'b1;
+        case (wb_adr_i)
+          `REG_BOARD_ID: begin
+            wb_dat_src <= 3'd0;
+          end
+          `REG_REV_MAJOR: begin
+            wb_dat_src <= 3'd1;
+          end
+          `REG_REV_MINOR: begin
+            wb_dat_src <= 3'd2;
+          end
+          `REG_REV_RCS: begin
+            wb_dat_src <= 3'd3;
+          end
+          `REG_SYS_CONFIG: begin
+            wb_dat_src <= 3'd4;
+          end
+        endcase
+
         if (wb_we_i) begin
           if (wb_adr_i == `REG_SYS_CONFIG) begin
             sys_config_vector <= wb_dat_i[7:0];

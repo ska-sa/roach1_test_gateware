@@ -56,7 +56,6 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./modules/value_storage/hdl/value_storage.v \
     ./modules/value_storage/hdl/value_storage.vh \
     ./modules/vs_infrastructure/hdl/vs_infrastructure.v \
-    ./modules/wbm_arbiter/hdl/log2.v \
     ./modules/wbm_arbiter/hdl/wbm_arbiter.v \
     ./modules/wbs_arbiter/hdl/bus_protect.v \
     ./modules/wbs_arbiter/hdl/timeout.v \

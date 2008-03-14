@@ -77,9 +77,9 @@ module TB_wbs_arbiter();
   reg  [16*(`NUM_SLAVES) - 1:0] wbs_dat_i;
   reg  [`NUM_SLAVES - 1:0] wbs_ack_i;
 
-  wire [`NUM_MASTERS - 1:0] wbm_id = 0;
+  wire [1:0] wbm_id = 2'b11;
   wire bm_memv;
-  wire [`NUM_MASTERS - 1:0] bm_wbm_id;
+  wire [1:0] bm_wbm_id;
   wire [15:0] bm_addr;
   wire bm_we;
   wire bm_timeout;

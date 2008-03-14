@@ -107,6 +107,8 @@ module power_manager(
 
   reg [1:0] no_power_cause;
 
+  reg first;
+
   always @(posedge wb_clk_i) begin
     //strobes
     crash <= 1'b0;
@@ -115,20 +117,22 @@ module power_manager(
 
     if (wb_rst_i) begin
       powered_down_wait <= POWER_DOWN_WAIT;
-      if (cold_start) begin
-        power_state <= STATE_NO_POWER;
-        no_power_cause <= 2'b00;
-      end else begin
-        power_state <= STATE_POWERED_DOWN;
-      end
+      power_state <= STATE_POWERED_DOWN;
+      first <= 1'b1;
     end else begin
       case (power_state)
         STATE_POWERED_DOWN: begin
           if (powered_down_wait != 32'b0) begin
             powered_down_wait <= powered_down_wait - 1;
           end else if (pre_check_pass) begin
-            power_state <= STATE_POWERING_UP;
-            power_up_strb <= 1'b1;
+            first <= 1'b0;
+            if (cold_start && first) begin
+              power_state <= STATE_NO_POWER;
+              no_power_cause <= 2'b00;
+            end else begin
+              power_state <= STATE_POWERING_UP;
+              power_up_strb <= 1'b1;
+            end
           end
         end
         STATE_POWERING_UP: begin
@@ -274,10 +278,6 @@ module power_manager(
   always @(posedge wb_clk_i) begin
     watchdog_overflow <= 1'b0;
 
-    if (wd_overflow_ack)
-      unacked_wd_overflows <= 3'b0;
-
-
     if (wb_rst_i || power_state == STATE_NO_POWER) begin
       watchdog_timer <= 32'b0;
       unacked_wd_overflows <= 3'b0;
@@ -294,6 +294,12 @@ module power_manager(
         end
       end
     end
+
+    if (wd_overflow_ack) begin
+      unacked_wd_overflows <= 3'b0;
+      watchdog_timer <= 32'b0;
+    end
+
   end
  
   /************ Crash Control *************/
@@ -315,17 +321,18 @@ module power_manager(
   /************ WishBone Attachment **************/
 
   reg wb_ack_o;
-  reg [3:0] wb_dat_o_sel;
   reg atx_load_res_off_reg;
   assign ATX_LOAD_RES_OFF = atx_load_res_off_reg;
 
-  assign wb_dat_o = wb_dat_o_sel == 4'd0 ? {13'b0, power_state} :
-                    wb_dat_o_sel == 4'd3 ? {13'b0, unacked_crashes} :
-                    wb_dat_o_sel == 4'd4 ? {13'b0, unacked_wd_overflows} :
-                    wb_dat_o_sel == 4'd5 ? {15'b0, chs_powerdown_pending} :
-                    wb_dat_o_sel == 4'd6 ? {15'b0, atx_load_res_off_reg} :
-                    wb_dat_o_sel == 4'd7 ? {11'b0, ATX_PWR_OK, MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG, AUX_3V3_PG} :
-                    wb_dat_o_sel == 4'd8 ? {watchdog_overflow_conf} :
+  reg [2:0] wb_dat_sel;
+
+  assign wb_dat_o = wb_dat_sel == 3'd0 ? {6'b0, no_power_cause, 5'b0, power_state} :
+                    wb_dat_sel == 3'd1 ? {13'b0, unacked_crashes} :
+                    wb_dat_sel == 3'd2 ? {13'b0, unacked_wd_overflows} :
+                    wb_dat_sel == 3'd3 ? {15'b0, chs_powerdown_pending} :
+                    wb_dat_sel == 3'd4 ? {15'b0, atx_load_res_off_reg} :
+                    wb_dat_sel == 3'd5 ? {11'b0, ATX_PWR_OK, MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG, AUX_3V3_PG} :
+                    wb_dat_sel == 3'd6 ? {watchdog_overflow_conf} :
                     16'b0;
 
   always @(posedge wb_clk_i) begin
@@ -349,10 +356,9 @@ module power_manager(
         wb_ack_o <= 1'b1;
         case (wb_adr_i)
           `REG_POWERSTATE: begin
-            wb_dat_o_sel <= 4'd0;
+            wb_dat_sel <= 3'd0;
           end
           `REG_POWERUP: begin
-            wb_dat_o_sel <= 4'd1;
             if (wb_we_i) begin
               if (wb_dat_i != 16'd0) begin
                 wb_powerup_strb <= 1'b1;
@@ -360,7 +366,6 @@ module power_manager(
             end
           end
           `REG_POWERDOWN: begin
-            wb_dat_o_sel <= 4'd2;
             if (wb_we_i) begin
               if (wb_dat_i != 16'd0) begin
                 wb_powerdown_strb <= 1'b1;
@@ -370,37 +375,39 @@ module power_manager(
             end
           end
           `REG_CRASH_CTRL: begin
-            wb_dat_o_sel <= 4'd3;
+            wb_dat_sel <= 3'd1;
             if (wb_we_i) begin
               crash_ack <= 1'b1;
             end
           end
           `REG_WATCHDOG_CTRL: begin
-            wb_dat_o_sel <= 4'd4;
+            wb_dat_sel <= 3'd2;
             if (wb_we_i) begin
               wd_overflow_ack <= 1'b1;
             end
           end
           `REG_CHS_SHUTDOWN_CTRL: begin
-            wb_dat_o_sel <= 4'd5;
+            wb_dat_sel <= 3'd3;
             if (wb_we_i) begin
               chs_powerdown_ack <= 1'b1;
             end
           end
           `REG_ATXLOADRES_CTRL: begin
-            wb_dat_o_sel <= 4'd6;
+            wb_dat_sel <= 3'd4;
             if (wb_we_i) begin
               atx_load_res_off_reg <= wb_dat_i[0];
             end
           end
           `REG_PS_POWERGDS: begin
-            wb_dat_o_sel <= 4'd7;
+            wb_dat_sel <= 3'd5;
           end
           `REG_WATCHDOG_CONF: begin
-            wb_dat_o_sel <= 4'd8;
+            wb_dat_sel <= 3'd6;
             if (wb_we_i) begin
               watchdog_overflow_conf <= wb_dat_i[4:0];
             end
+          end
+          default: begin
           end
         endcase
       end

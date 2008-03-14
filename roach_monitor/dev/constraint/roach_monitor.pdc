@@ -189,9 +189,9 @@ set_io AUX_3V3_PG     -pinname F13 -fixed yes -iostd LVTTL
 
 set_io XPORT_SERIAL_IN  -pinname H11 -fixed yes -iostd LVTTL -RES_PULL Up
 set_io XPORT_SERIAL_OUT -pinname E14 -fixed yes -iostd LVTTL -SLEW Low  
-set_io XPORT_GPIO\[0\]    -pinname L1  -fixed yes -iostd LVTTL -RES_PULL Up
-set_io XPORT_GPIO\[1\]    -pinname M2  -fixed yes -iostd LVTTL -RES_PULL Up
-set_io XPORT_GPIO\[2\]    -pinname M3  -fixed yes -iostd LVTTL -RES_PULL Up
+set_io XPORT_GPIO\[0\]    -pinname L1  -fixed yes -iostd LVTTL -RES_PULL Down
+set_io XPORT_GPIO\[1\]    -pinname M2  -fixed yes -iostd LVTTL -RES_PULL Down
+set_io XPORT_GPIO\[2\]    -pinname M3  -fixed yes -iostd LVTTL -RES_PULL Down
 set_io XPORT_RESET_N    -pinname D13 -fixed yes -iostd LVTTL -SLEW Low
 
 #
@@ -220,16 +220,17 @@ set_io SYS_CONFIG\[7\] -pinname K6  -fixed yes -iostd LVTTL -SLEW Low
 # Chassis Interface Signals
 #
 
-set_io CHS_POWERDOWN -pinname H16 -fixed yes -iostd LVTTL
-set_io CHS_RESET_N   -pinname N3  -fixed yes -iostd LVTTL -RES_PULL Up
+set_io CHS_POWERDOWN -pinname K3  -fixed yes -iostd LVTTL -RES_PULL Down
+set_io CHS_RESET_N   -pinname F15 -fixed yes -iostd LVTTL -RES_PULL Up
 set_io CHS_LED\[0\]  -pinname D3  -fixed yes -iostd LVTTL -SLEW Low 
 set_io CHS_LED\[1\]  -pinname D4  -fixed yes -iostd LVTTL -SLEW Low 
+set_io CHS_LED\[2\]  -pinname D6  -fixed yes -iostd LVTTL -SLEW Low 
 
 #
 # Fan Control Signals
 #
 
-set_io FAN1_SENSE   -pinname F15 -fixed yes -iostd LVTTL 
+set_io FAN1_SENSE   -pinname N3  -fixed yes -iostd LVTTL 
 set_io FAN1_CONTROL -pinname J11 -fixed yes -iostd LVTTL -SLEW Low 
 set_io FAN2_SENSE   -pinname F16 -fixed yes -iostd LVTTL 
 set_io FAN2_CONTROL -pinname D14 -fixed yes -iostd LVTTL -SLEW Low 

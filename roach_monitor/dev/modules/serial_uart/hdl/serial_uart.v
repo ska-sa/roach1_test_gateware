@@ -12,10 +12,10 @@ module serial_uart(
    * serial/serial side signals
    */
 
-  input clk;
-  input reset;
+  input  clk;
+  input  reset;
   
-  input serial_in;
+  input  serial_in;
   output serial_out;
   /*
    * Host signals
@@ -29,9 +29,9 @@ module serial_uart(
   localparam SERIAL_BITWIDTH = CLOCK_RATE / BAUD;
   localparam SERIAL_BITWIDTH_DIV_2 = SERIAL_BITWIDTH / 2;
 `ifdef __ICARUS__
-  localparam BITWIDTH_LOG2 = 31;
+  localparam BITWIDTH_BITS = 32;
 `else
-  localparam BITWIDTH_LOG2 = `LOG2(SERIAL_BITWIDTH);
+  localparam BITWIDTH_BITS = `LOG2(SERIAL_BITWIDTH-1) + 1;
 `endif
 
 
@@ -40,7 +40,7 @@ module serial_uart(
   localparam S_I_STATE_STARTHALF = 2'd1;
   localparam S_I_STATE_DATA      = 2'd2;
 
-  reg [BITWIDTH_LOG2:0] s_i_counter;
+  reg  [BITWIDTH_BITS - 1:0] s_i_counter;
   reg  [1:0] s_i_state;
   reg  [3:0] s_i_progress;
   reg  [7:0] s_i_data;
@@ -49,35 +49,54 @@ module serial_uart(
 
   reg as_dstrb_o;
 
+  wire mode_advance = s_i_counter == {BITWIDTH_BITS{1'b0}};
+
+  always @(posedge clk) begin
+    if (reset) begin
+      s_i_counter <= {BITWIDTH_BITS{1'b0}}; 
+    end else begin
+      if (s_i_counter != {BITWIDTH_BITS{1'b0}}) begin
+        s_i_counter <= s_i_counter - 1;
+      end else begin
+        case (s_i_state)
+          S_I_STATE_HUNT: begin
+            if (~serial_in) begin
+              s_i_counter <= SERIAL_BITWIDTH_DIV_2 - 1;
+            end
+          end
+          S_I_STATE_STARTHALF: begin
+            s_i_counter <= SERIAL_BITWIDTH - 1;
+          end
+          S_I_STATE_DATA: begin
+            if (s_i_progress < 4'd8)
+              s_i_counter <= SERIAL_BITWIDTH - 1;
+          end
+        endcase
+      end
+    end
+  end
+
 
   always @(posedge clk) begin
     as_dstrb_o<=1'b0;
     if (reset) begin
       s_i_state<=S_I_STATE_HUNT;
-      s_i_counter <= 32'b0;
     end else begin
       case (s_i_state)
         S_I_STATE_HUNT: begin
           if (serial_in == 1'b0) begin //start bit
-            s_i_counter <= SERIAL_BITWIDTH_DIV_2 - 1;
             s_i_progress <= 4'b0;
             s_i_state <= S_I_STATE_STARTHALF;
           end
         end
         S_I_STATE_STARTHALF: begin
-          if (s_i_counter != 32'b0) begin
-            s_i_counter <= s_i_counter - 1;
-          end else begin
-            s_i_counter <= SERIAL_BITWIDTH - 1;
+          if (mode_advance) begin
             s_i_state <= S_I_STATE_DATA;
           end
         end
         S_I_STATE_DATA: begin
-          if (s_i_counter != 32'b0) begin
-            s_i_counter <= s_i_counter - 1;
-          end else begin
+          if (mode_advance) begin
             if (s_i_progress < 4'd8) begin
-              s_i_counter <= SERIAL_BITWIDTH - 1;
               s_i_data[s_i_progress] <= serial_in;
               s_i_progress <= s_i_progress + 1;
               if (s_i_progress == 4'b0111)
@@ -95,7 +114,7 @@ module serial_uart(
 `define S_O_STATE_WAIT 1'b0
 `define S_O_STATE_SEND 1'b1
 
-  reg [BITWIDTH_LOG2:0] s_o_counter;
+  reg [BITWIDTH_BITS - 1:0] s_o_counter;
   reg s_o_state;
   reg [ 3:0] s_o_progress;
   reg [ 7:0] s_o_data;

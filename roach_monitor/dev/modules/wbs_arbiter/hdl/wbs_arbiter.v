@@ -19,7 +19,7 @@ module wbs_arbiter(
     bm_timeout
   );
   localparam NUM_MASTERS = 4;
-  localparam NUM_MASTERS_LOG2 = 2;
+  localparam NUM_MASTERS_BITS = 2;
 
   parameter RESTRICTION0 = 38'b0;
   parameter RESTRICTION1 = 38'b0;
@@ -81,10 +81,10 @@ module wbs_arbiter(
   input  [NUM_SLAVES*16 - 1:0] wbs_dat_i;
   input  [NUM_SLAVES - 1:0] wbs_ack_i;
 
-  input  [NUM_MASTERS_LOG2 - 1:0] wbm_id;
+  input  [NUM_MASTERS_BITS - 1:0] wbm_id;
 
   output bm_memv;
-  output [NUM_MASTERS_LOG2 - 1:0] bm_wbm_id;
+  output [NUM_MASTERS_BITS - 1:0] bm_wbm_id;
   output [15:0] bm_addr;
   output bm_we;
   output bm_timeout;
@@ -104,6 +104,11 @@ module wbs_arbiter(
   wire [NUM_SLAVES - 1:0] temp = 1;
 
   /************************** Bus Protection **************************/
+
+  wire [3:0] wbm_id_decoded = wbm_id == 2'd0 ? 4'b0001 :
+                              wbm_id == 2'd1 ? 4'b0010 :
+                              wbm_id == 2'd2 ? 4'b0100 :
+                              4'b1000;
   
   bus_protect #(
     .RESTRICTION0(RESTRICTION0),
@@ -113,7 +118,7 @@ module wbs_arbiter(
     .vcheck(vcheck),
     .vfail(vfail), .vpass(vpass),
     .adr(wbm_adr_i), .wr_en(wbm_we_i),
-    .wbm_id(wbm_id)
+    .wbm_id(wbm_id_decoded)
   );
 
   assign bm_memv = vfail;
@@ -149,18 +154,8 @@ module wbs_arbiter(
                    wbm_adr_i[15:6] <= A10_HIGH[15:6] && wbm_adr_i[15:6] >= A10_BASE[15:6] ? (temp << 10) : 
                    {NUM_SLAVES{1'b0}};
 
-  assign wbs_adr_o = wbs_active == (temp << 0)  ? wbm_adr_i - A0_BASE  :
-                     wbs_active == (temp << 1)  ? wbm_adr_i - A1_BASE  :
-                     wbs_active == (temp << 2)  ? wbm_adr_i - A2_BASE  :
-                     wbs_active == (temp << 3)  ? wbm_adr_i - A3_BASE  :
-                     wbs_active == (temp << 4)  ? wbm_adr_i - A4_BASE  :
-                     wbs_active == (temp << 5)  ? wbm_adr_i - A5_BASE  :
-                     wbs_active == (temp << 6)  ? wbm_adr_i - A6_BASE  :
-                     wbs_active == (temp << 7)  ? wbm_adr_i - A7_BASE  :
-                     wbs_active == (temp << 8)  ? wbm_adr_i - A8_BASE  :
-                     wbs_active == (temp << 9)  ? wbm_adr_i - A9_BASE  :
-                     wbs_active == (temp << 10) ? wbm_adr_i - A10_BASE :
-                     16'b0;
+  reg [15:0] wbm_adr_o_reg;
+  assign wbs_adr_o = wbm_adr_o_reg;
 
   assign wbm_dat_o = wbs_active == (temp << 0)  ? wbs_dat_i[16*(0+1)  - 1:16*0 ] :
                      wbs_active == (temp << 1)  ? wbs_dat_i[16*(1+1)  - 1:16*1 ] :
@@ -181,7 +176,7 @@ module wbs_arbiter(
   reg wbm_err_o, wbm_ack_o;
 
   reg [NUM_SLAVES - 1:0] wbs_cyc_o;
-  reg [NUM_SLAVES - 1:0] wbs_stb_o;
+  assign wbs_stb_o = wbs_cyc_o;
 
   reg [1:0] state;
   localparam STATE_IDLE   = 2'd0;
@@ -194,7 +189,6 @@ module wbs_arbiter(
   always @(posedge wb_clk_i) begin
     /* strobes */
     wbs_cyc_o <= {NUM_SLAVES{1'b0}};
-    wbs_stb_o <= {NUM_SLAVES{1'b0}};
     wbm_ack_o <= 1'b0;
     wbm_err_o <= 1'b0;
     vcheck <= 1'b0;
@@ -207,6 +201,44 @@ module wbs_arbiter(
         STATE_IDLE: begin
           if (wbm_cyc_i & wbm_stb_i) begin
             wbs_active <= wbs_sel;
+            case (wbs_sel)
+              (1 << 0): begin
+                wbm_adr_o_reg <= wbm_adr_i - A0_BASE  ;
+              end
+              (1 << 1): begin
+                wbm_adr_o_reg <= wbm_adr_i - A1_BASE  ;
+              end
+              (1 << 2): begin
+                wbm_adr_o_reg <= wbm_adr_i - A2_BASE  ;
+              end
+              (1 << 3): begin
+                wbm_adr_o_reg <= wbm_adr_i - A3_BASE  ;
+              end
+              (1 << 4): begin
+                wbm_adr_o_reg <= wbm_adr_i - A4_BASE  ;
+              end
+              (1 << 5): begin
+                wbm_adr_o_reg <= wbm_adr_i - A5_BASE  ;
+              end
+              (1 << 6): begin
+                wbm_adr_o_reg <= wbm_adr_i - A6_BASE  ;
+              end
+              (1 << 7): begin
+                wbm_adr_o_reg <= wbm_adr_i - A7_BASE  ;
+              end
+              (1 << 8): begin
+                wbm_adr_o_reg <= wbm_adr_i - A8_BASE  ;
+              end
+              (1 << 9): begin
+                wbm_adr_o_reg <= wbm_adr_i - A9_BASE  ;
+              end
+              (1 << 10): begin
+                wbm_adr_o_reg <= wbm_adr_i - A10_BASE ;
+              end
+              default: begin
+                wbm_adr_o_reg <= 16'b0;
+              end
+            endcase
             vcheck <=1'b1;
             state <= STATE_VCHECK;
 `ifdef DEBUG
@@ -219,7 +251,6 @@ module wbs_arbiter(
         end
         STATE_VCHECK: begin
           if (vpass) begin
-            wbs_stb_o <= wbs_active;
             wbs_cyc_o <= wbs_active;
             state <= STATE_WAIT;
 `ifdef DEBUG

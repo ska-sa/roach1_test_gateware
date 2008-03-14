@@ -18,9 +18,9 @@ module wbm_arbiter(
   );
   parameter NUM_MASTERS = 4;
 `ifdef  __ICARUS__
-  localparam NUM_MASTERS_LOG2 = NUM_MASTERS - 1;
+  localparam NUM_MASTERS_BITS = NUM_MASTERS;
 `else
-  localparam NUM_MASTERS_LOG2 = `LOG2(NUM_MASTERS);
+  localparam NUM_MASTERS_BITS = `LOG2(NUM_MASTERS - 1) + 1;
 `endif
 
 
@@ -41,10 +41,10 @@ module wbm_arbiter(
   input  [15:0] wbs_dat_i;
   input  wbs_ack_i, wbs_err_i;
 
-  output [NUM_MASTERS_LOG2:0] wbm_id;
+  output [NUM_MASTERS_BITS - 1:0] wbm_id;
   input  [NUM_MASTERS - 1 :0] wbm_mask;
 
-  reg [NUM_MASTERS_LOG2:0]  active_master;
+  reg [NUM_MASTERS_BITS -1:0]  active_master;
 
   genvar gen_i, gen_j;
 
@@ -74,7 +74,7 @@ module wbm_arbiter(
 
 
   reg wbs_cyc_o;
-  reg wbs_stb_o;
+  assign wbs_stb_o = wbs_cyc_o;
 
   reg [NUM_MASTERS - 1:0] pending;
 
@@ -93,15 +93,12 @@ module wbm_arbiter(
   endfunction
 
   always @(posedge wb_clk_i) begin
+    wbs_cyc_o <= 1'b0;
     if (wb_rst_i) begin
-      wbs_cyc_o <= 1'b0;
-      wbs_stb_o <= 1'b0;
       pending <= {NUM_MASTERS{1'b0}};
       wb_busy <= 1'b0;
       active_master <= 1'b1;
     end else begin
-      wbs_cyc_o <= 1'b0;
-      wbs_stb_o <= 1'b0;
 
       pending <= pending | wbm_cyc_i & wbm_stb_i & wbm_mask;
 
@@ -116,7 +113,6 @@ module wbm_arbiter(
       if (~wb_busy) begin
         if (pending) begin
           wbs_cyc_o <= 1'b1;
-          wbs_stb_o <= 1'b1;
           wb_busy <= 1'b1;
           active_master <= sel_active_master(pending);
         end

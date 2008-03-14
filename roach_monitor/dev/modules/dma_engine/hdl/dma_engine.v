@@ -41,7 +41,8 @@ module dma_engine(
 
   reg [1:0] state;
 
-  reg wb_cyc_o, wb_stb_o;
+  reg wb_cyc_o;
+  assign wb_stb_o = wb_cyc_o;
   reg wb_we_o;
   reg [15:0] wb_adr_o;
   assign wb_dat_o = wb_dat_buf;
@@ -56,7 +57,6 @@ module dma_engine(
 
   always @(posedge wb_clk_i) begin
     wb_cyc_o <= 1'b0;
-    wb_stb_o <= 1'b0;
     if (wb_rst_i) begin
       mode <= MODE_LC;
       progress <= 13'd0;
@@ -73,7 +73,6 @@ module dma_engine(
             case (state)
               2'd0: begin
                 wb_cyc_o <= 1'b1;
-                wb_stb_o <= 1'b1;
                 wb_we_o  <= 1'b1;
                 wb_adr_o <= VS_INDIRECT_A;
                 wb_dat_buf <= 16'd0; 
@@ -90,7 +89,6 @@ module dma_engine(
             case (state)
               2'd0: begin
                 wb_cyc_o <= 1'b1;
-                wb_stb_o <= 1'b1;
                 wb_we_o  <= 1'b0;
                 wb_adr_o <= VS_INDIRECT_A;
                 state <= 2'd1;
@@ -99,7 +97,6 @@ module dma_engine(
                 if (wb_ack_i || wb_err_i) begin
                   wb_dat_buf <= wb_dat_i;
                   wb_cyc_o <= 1'b1;
-                  wb_stb_o <= 1'b1;
                   wb_we_o  <= 1'b1;
                   wb_adr_o <= FLASH_A + progress - 1;
                   state <= 2'd2;
@@ -109,7 +106,6 @@ module dma_engine(
                 if (wb_ack_i || wb_err_i) begin
                   if (wb_dat_buf[15] || progress == {13{1'b1}}) begin
                     wb_cyc_o <= 1'b1;
-                    wb_stb_o <= 1'b1;
                     wb_we_o  <= 1'b1;
                     wb_adr_o <= VS_INDIRECT_A;
                     wb_dat_buf <= 16'hffff; 
@@ -135,7 +131,6 @@ module dma_engine(
           case (state)
             2'd0: begin
               wb_cyc_o <= 1'b1;
-              wb_stb_o <= 1'b1;
               wb_we_o  <= 1'b0;
               wb_adr_o <= FROM_LC_A + progress;
               state <= 2'd1;
@@ -148,7 +143,6 @@ module dma_engine(
                   wb_dat_buf <= wb_dat_i << 4;
                 end
                 wb_cyc_o <= 1'b1;
-                wb_stb_o <= 1'b1;
                 wb_we_o  <= 1'b1;
                 wb_adr_o <= LC_THRESHS_A + progress;
                 state <= 2'd2;
@@ -173,7 +167,6 @@ module dma_engine(
           case (state)
             2'd0: begin
               wb_cyc_o <= 1'b1;
-              wb_stb_o <= 1'b1;
               wb_we_o  <= 1'b0;
               wb_adr_o <= FROM_ACM_A + progress;
               state <= 2'd1;
@@ -182,7 +175,6 @@ module dma_engine(
               if (wb_ack_i || wb_err_i) begin
                 wb_dat_buf <= wb_dat_i;
                 wb_cyc_o <= 1'b1;
-                wb_stb_o <= 1'b1;
                 wb_we_o  <= 1'b1;
                 wb_adr_o <= ACM_AQUADS_A + progress;
                 state <= 2'd2;
@@ -207,7 +199,6 @@ module dma_engine(
           case (state)
             2'd0: begin
               wb_cyc_o <= 1'b1;
-              wb_stb_o <= 1'b1;
               wb_we_o  <= 1'b0;
               wb_adr_o <= FLASH_SYSCONFIG_A;
               state <= 2'd1;
@@ -216,7 +207,6 @@ module dma_engine(
               if (wb_ack_i || wb_err_i) begin
                 wb_dat_buf <= wb_dat_i;
                 wb_cyc_o <= 1'b1;
-                wb_stb_o <= 1'b1;
                 wb_we_o  <= 1'b1;
                 wb_adr_o <= SYSCONFIG_A;
                 state <= 2'd2;

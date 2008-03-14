@@ -20,7 +20,7 @@ module TB_value_storage();
   reg   [4:0] adc_channel;
   reg  [11:0] adc_result;
 
-  wire ram_ren, ram_wen;
+  wire ram_wen;
   wire [12:0] ram_raddr;
   wire [12:0] ram_waddr;
   wire [11:0] ram_rdata;
@@ -35,7 +35,7 @@ module TB_value_storage();
     .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
     .wb_ack_o(wb_ack_o),
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
-    .ram_ren(ram_ren), .ram_wen(ram_wen),
+    .ram_wen(ram_wen),
     .ram_raddr(ram_raddr), .ram_waddr(ram_waddr),
     .ram_rdata(ram_rdata), .ram_wdata(ram_wdata)
   );
