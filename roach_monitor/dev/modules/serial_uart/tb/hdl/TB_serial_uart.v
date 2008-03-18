@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-`define SIMLENGTH 640000
+`define SIMLENGTH 64000
 module TB_serial_uart();
 
 wire serial_in;

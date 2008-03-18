@@ -4,7 +4,8 @@ module serial_uart(
     clk, reset,
     serial_in, serial_out,
     as_data_i,  as_data_o,
-    as_dstrb_i, as_busy_o, as_dstrb_o
+    as_dstrb_i, as_busy_o, as_dstrb_o,
+    status
   );
   parameter BAUD        = 115200;
   parameter CLOCK_RATE  = 40000000;
@@ -25,6 +26,7 @@ module serial_uart(
   input  as_dstrb_i;
   output as_busy_o;
   output as_dstrb_o;
+  output status;
   
   localparam SERIAL_BITWIDTH = CLOCK_RATE / BAUD;
   localparam SERIAL_BITWIDTH_DIV_2 = SERIAL_BITWIDTH / 2;
@@ -40,63 +42,57 @@ module serial_uart(
   localparam S_I_STATE_STARTHALF = 2'd1;
   localparam S_I_STATE_DATA      = 2'd2;
 
-  reg  [BITWIDTH_BITS - 1:0] s_i_counter;
+  reg  [BITWIDTH_BITS - 2:0] s_i_counter; // synthesis syn_preserve=1
   reg  [1:0] s_i_state;
   reg  [3:0] s_i_progress;
   reg  [7:0] s_i_data;
+
+  assign status = s_i_counter[0] ^ s_i_counter[BITWIDTH_BITS - 2];
 
   assign as_data_o = s_i_data;
 
   reg as_dstrb_o;
 
-  wire mode_advance = s_i_counter == {BITWIDTH_BITS{1'b0}};
+  reg count_start;
 
   always @(posedge clk) begin
-    if (reset) begin
-      s_i_counter <= {BITWIDTH_BITS{1'b0}}; 
+    if (reset | count_start) begin
+      s_i_counter <= {BITWIDTH_BITS-1{1'b0}};
     end else begin
-      if (s_i_counter != {BITWIDTH_BITS{1'b0}}) begin
-        s_i_counter <= s_i_counter - 1;
-      end else begin
-        case (s_i_state)
-          S_I_STATE_HUNT: begin
-            if (~serial_in) begin
-              s_i_counter <= SERIAL_BITWIDTH_DIV_2 - 1;
-            end
-          end
-          S_I_STATE_STARTHALF: begin
-            s_i_counter <= SERIAL_BITWIDTH - 1;
-          end
-          S_I_STATE_DATA: begin
-            if (s_i_progress < 4'd8)
-              s_i_counter <= SERIAL_BITWIDTH - 1;
-          end
-        endcase
-      end
+      s_i_counter <= s_i_counter + 1;
     end
   end
+  
+  wire count_done = (~count_start) && (s_i_counter == SERIAL_BITWIDTH_DIV_2 - 2);
 
+  reg count_double;
 
   always @(posedge clk) begin
-    as_dstrb_o<=1'b0;
+    as_dstrb_o  <= 1'b0;
+    count_start <= 1'b0;
     if (reset) begin
       s_i_state<=S_I_STATE_HUNT;
+      count_double <= 1'b0;
     end else begin
       case (s_i_state)
         S_I_STATE_HUNT: begin
           if (serial_in == 1'b0) begin //start bit
             s_i_progress <= 4'b0;
+            count_start <= 1'b1;
             s_i_state <= S_I_STATE_STARTHALF;
           end
         end
         S_I_STATE_STARTHALF: begin
-          if (mode_advance) begin
+          if (count_done) begin
             s_i_state <= S_I_STATE_DATA;
+            count_start <= 1'b1;
+            count_double <= 1'b0;
           end
         end
         S_I_STATE_DATA: begin
-          if (mode_advance) begin
+          if (count_done & count_double) begin
             if (s_i_progress < 4'd8) begin
+              count_start <= 1'b1;
               s_i_data[s_i_progress] <= serial_in;
               s_i_progress <= s_i_progress + 1;
               if (s_i_progress == 4'b0111)
@@ -104,6 +100,10 @@ module serial_uart(
             end else begin
               s_i_state <= S_I_STATE_HUNT;
             end
+            count_double <= 1'b0;
+          end else if (count_done & ~count_double) begin
+            count_double <= 1'b1;
+            count_start <= 1'b1;
           end
         end
       endcase
@@ -167,3 +167,5 @@ module serial_uart(
   end 
 
 endmodule
+
+

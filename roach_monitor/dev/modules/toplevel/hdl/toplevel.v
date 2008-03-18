@@ -53,6 +53,7 @@ module toplevel(
 
   inout  CONTROLLER_I2C_SDA;
   input  CONTROLLER_I2C_SCL;
+
   output CONTROLLER_IRQ, CONTROLLER_RESET,
 
   output [7:0] SYS_CONFIG;
@@ -157,8 +158,10 @@ module toplevel(
     .clk(gclk40), .reset(hard_reset),
     .serial_in(DEBUG_SERIAL_IN), .serial_out(DEBUG_SERIAL_OUT),
     .as_data_i(ds_as_data_i),  .as_data_o(ds_as_data_o),
-    .as_dstrb_i(ds_as_dstrb_i), .as_busy_o(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_o)
+    .as_dstrb_i(ds_as_dstrb_i), .as_busy_o(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_o),
+    .status(uart_status)
   );
+
   /* Debug WB bridge */
   as_wb_bridge as_wb_bridge_debug(
     .clk(gclk40), .reset(hard_reset), 
@@ -223,11 +226,13 @@ module toplevel(
   wire ctrl_scl_i, ctrl_scl_o, ctrl_scl_oen;
   wire ctrl_sda_i, ctrl_sda_o, ctrl_sda_oen;
   /* Controller I2C Infrastructure */
+  
   i2c_infrastructure i2c_infrastructure_controller(
     .sda_i(ctrl_sda_i), .sda_o(ctrl_sda_o), .sda_oen(ctrl_sda_oen),
     .scl_i(ctrl_scl_i), .scl_o(ctrl_scl_o), .scl_oen(ctrl_scl_oen),
     .sda_buf(CONTROLLER_I2C_SDA), .scl_buf(CONTROLLER_I2C_SCL)
   );
+  
 
   /* Controller I2C Slave */
   wire nc_i2c_cmnd_strb_o;
@@ -651,7 +656,9 @@ module toplevel(
     .bm_timeout(bm_timeout),
     .bm_wbm_id(bm_wbm_id),
     .bm_addr(bm_addr),
-    .bm_we(bm_we)
+    .bm_we(bm_we),
+
+    .uart_status(uart_status)
   );
 
   /************* FlashMem Controller *****************/
@@ -691,3 +698,5 @@ module toplevel(
   );
 
 endmodule
+
+

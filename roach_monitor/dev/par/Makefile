@@ -7,7 +7,7 @@ $(PAR_F): $(SYNTH_F) $(PAR_SCRIPT) $(CONSTRAINTS_P) $(CONSTRAINTS_T)
 	$(PAR_BIN) SCRIPT:$(PAR_SCRIPT) > $(PAR_MSGS)
 
 
-$(PROG_SCRIPT): 
+$(PROG_SCRIPT):  
 	@echo "$(PROG_COMMANDS)" | sed -e 's/ *; */\n/g' > $@
 $(PAR_SCRIPT): 
 	@echo '$(PAR_COMMANDS)' | sed -e 's/ *; */\n/g' > $@

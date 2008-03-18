@@ -1,6 +1,6 @@
 MODULE_ID=roach_monitor
-REV_MAJOR=0
-REV_MINOR=1
+REV_MAJOR=1
+REV_MINOR=0
 REV_RCS=0
 PROJECT=$(MODULE_ID)_$(REV_MAJOR)
 
@@ -60,6 +60,8 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./modules/wbs_arbiter/hdl/bus_protect.v \
     ./modules/wbs_arbiter/hdl/timeout.v \
     ./modules/wbs_arbiter/hdl/wbs_arbiter.v
+
+
 
 FLASHROM_F = $(PROJECT).ufc
 FLASHMEM_F = $(PROJECT).efc

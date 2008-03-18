@@ -11,8 +11,10 @@ module bus_monitor(
     bm_timeout,
     bm_wbm_id,
     bm_addr,
-    bm_we
+    bm_we,
+    uart_status
   );
+  input  uart_status;
   input  wb_clk_i, wb_rst_i;
   input  wb_stb_i, wb_cyc_i, wb_we_i;
   input  [15:0] wb_adr_i;
@@ -33,12 +35,13 @@ module bus_monitor(
 
   reg wb_ack_o;
 
-  reg [1:0] wb_dat_src;
+  reg [2:0] wb_dat_src;
 
-  assign wb_dat_o = wb_dat_src == 2'd0? {bm_status[20:5]} :
-                    wb_dat_src == 2'd1? {11'b0, bm_status[4:0]} :
-                    wb_dat_src == 2'd2? timeout_count :
-                    wb_dat_src == 2'd3? memv_count :
+  assign wb_dat_o = wb_dat_src == 3'd0 ? {bm_status[20:5]} :
+                    wb_dat_src == 3'd1 ? {11'b0, bm_status[4:0]} :
+                    wb_dat_src == 3'd2 ? timeout_count :
+                    wb_dat_src == 3'd3 ? memv_count :
+                    wb_dat_src == 3'd3 ? {15'b0, uart_status} :
                     16'b0;
 
   always @(posedge wb_clk_i) begin
@@ -55,22 +58,25 @@ module bus_monitor(
           `REG_BUS_STATUS_0: begin
             if (wb_we_i)
               bm_status <= 32'b0;
-            wb_dat_src <= 2'd0;
+            wb_dat_src <= 3'd0;
           end
           `REG_BUS_STATUS_1: begin
             if (wb_we_i)
               bm_status <= 32'b0;
-            wb_dat_src <= 2'd1;
+            wb_dat_src <= 3'd1;
           end
           `REG_TIMEOUT_COUNT: begin
             if (wb_we_i)
               timeout_count <= 16'b0;
-            wb_dat_src <= 2'd2;
+            wb_dat_src <= 3'd2;
           end
           `REG_MEMV_COUNT: begin
             if (wb_we_i)
               memv_count <= 16'b0;
-            wb_dat_src <= 2'd3;
+            wb_dat_src <= 3'd3;
+          end
+          `REG_UART_STATUS: begin
+            wb_dat_src <= 3'd4;
           end
         endcase
       end

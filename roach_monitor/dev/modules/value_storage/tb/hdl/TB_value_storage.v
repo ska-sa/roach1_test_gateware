@@ -1,8 +1,8 @@
 `timescale 10ns/1ps
-`define SIM_LENGTH 10000000
+`define SIM_LENGTH 100000
 `define CLK_PERIOD 2
 
-`define NUM_SRAM_TRIPS 7 
+`define NUM_SRAM_TRIPS 2 
 
 `define RAM_HIGH ((`NUM_SRAM_TRIPS)*1024)
 //`define RAM_HIGH 256
@@ -197,6 +197,9 @@ module TB_value_storage();
               wb_stb_i <= 1'b1;
               wb_we_i  <= 1'b0;
               wb_adr_i <= wbm_progress[15:0];
+`ifdef DESPERATE_DEBUG
+              $display("wbm: direct - %d", wbm_progress[15:0]);
+`endif
               wbm_state <= `STATE_COLLECT;
             end
             `MODE_INDIRECT: begin

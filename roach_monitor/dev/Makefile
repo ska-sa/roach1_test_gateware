@@ -12,7 +12,7 @@ sim: $(SRC)
 	@make -C $(MODULES_DIR) sim
 
 build_parameters: 
-	make -C $(SUPPORT_DIR) build_parameters \
+	@make -C $(SUPPORT_DIR) build_parameters \
 		MODULE_ID=$(MODULE_ID) \
 		REV_MAJOR=$(REV_MAJOR) \
 		REV_MINOR=$(REV_MINOR) \
@@ -21,7 +21,7 @@ build_parameters:
 		FLASHROM_F=$(FLASHROM_F) \
 		FLASHMEM_F=$(FLASHMEM_F) \
 		CHEADER_F=$(CHEADER_F)
-	cp $(SUPPORT_DIR)/$(CHEADER_F) $(GEN_DIR)/$(CHEADER_F)
+	@cp $(SUPPORT_DIR)/$(CHEADER_F) $(GEN_DIR)/$(CHEADER_F)
 
 # Synthesis
 synth: $(GEN_DIR)/$(SYNTH_FILE)
@@ -32,7 +32,8 @@ $(GEN_DIR)/$(SYNTH_FILE): $(SRC) build_parameters
 		TOPLEVEL=$(TOPLEVEL) \
 		SRC="$(addprefix ../,$(SRC))" \
 		INCLUDE="$(addprefix ../,$(INCLUDE_DIR))"
-	@cp $(SYNTH_DIR)/$(SYNTH_FILE) $(GEN_DIR)/$(SYNTH_FILE)
+	@if [ $(GEN_DIR)/$(SYNTH_FILE) -ot $(SYNTH_DIR)/$(SYNTH_FILE) ] ; then \
+	cp $(SYNTH_DIR)/$(SYNTH_FILE) $(GEN_DIR)/$(SYNTH_FILE); fi
 
 # PAR
 

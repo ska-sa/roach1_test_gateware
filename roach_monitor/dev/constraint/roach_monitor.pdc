@@ -200,6 +200,7 @@ set_io XPORT_RESET_N    -pinname D13 -fixed yes -iostd LVTTL -SLEW Low
 
 set_io CONTROLLER_I2C_SDA -pinname G1 -fixed yes -iostd LVTTL -SLEW Low -RES_PULL Up
 set_io CONTROLLER_I2C_SCL -pinname F1 -fixed yes -iostd LVTTL -RES_PULL Up
+# set_io CONTROLLER_IRQ     -pinname G4 -fixed yes -iostd LVTTL -SLEW Low
 set_io CONTROLLER_IRQ     -pinname G4 -fixed yes -iostd LVTTL -SLEW Low
 set_io CONTROLLER_RESET   -pinname N2 -fixed yes -iostd LVTTL -SLEW Low 
 

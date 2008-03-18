@@ -29,9 +29,9 @@ module adc_controller(
   input  ADC_CALIBRATE, ADC_DATAVALID, ADC_BUSY, ADC_SAMPLE;
   input  [11:0] ADC_RESULT;
 
-  always @(*) begin
-    $display("ADC_EVENT: ADC_START = %b, ADC_CALIBRATE = %b, ADC_DATAVALID = %b, ADC_RESULT = %b, ADC_BUSY = %b, ADC_SAMPLE = %b, time = %d", ADC_START, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE, $time);
-  end
+//always @(*) begin
+//  $display("ADC_EVENT: ADC_START = %b, ADC_CALIBRATE = %b, ADC_DATAVALID = %b, ADC_RESULT = %b, ADC_BUSY = %b, ADC_SAMPLE = %b, time = %d", ADC_START, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE, $time);
+//end
 
   /********************* Common Registers ***********************/
   reg [31:0] channel_bypass;
@@ -52,9 +52,9 @@ module adc_controller(
 
   reg adc_strb;
   reg [11:0] adc_result;
-  assign adc_channel = ADC_CHNUM;
 
   reg  [4:0] ADC_CHNUM;
+  assign adc_channel = ADC_CHNUM;
   reg ADC_START;
 
   //reg prev_dv;
@@ -179,8 +179,8 @@ module adc_controller(
     force_skip <= 1'b0;
     if (wb_rst_i) begin
       channel_bypass <= {32{1'b0}};
-      cmon_en <= {10{1'b0}};
-      tmon_en <= {11{1'b0}};
+      cmon_en <= {10{1'b1}};
+      tmon_en <= {11{1'b1}};
       adc_en <= 1'b1;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
