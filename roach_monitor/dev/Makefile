@@ -61,6 +61,4 @@ clean:
 		FLASHROM_F=$(FLASHROM_F) \
 		FLASHMEM_F=$(FLASHMEM_F) \
 		CHEADER_F=$(CHEADER_F)
-	rm -rf ./$(GEN_DIR)/$(SYNTH_FILE)
-	rm -rf ./$(GEN_DIR)/$(BIT_FILE)
-	rm -rf ./$(GEN_DIR)/$(CHEADER_F)
+	rm -rf ./$(GEN_DIR)/*

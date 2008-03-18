@@ -13,5 +13,4 @@ $(PAR_SCRIPT):
 	@echo '$(PAR_COMMANDS)' | sed -e 's/ *; */\n/g' > $@
 
 clean:
-	rm -rf $(PROG_SCRIPT) $(PAR_SCRIPT) $(BIT_FILE) $(PAR_F) $(PAR_MSGS) $(PROG_MSGS) 
-	rm -rf *.dtf/ *.tmp *.lok *.map *.ufcc
+	rm -rf *.dtf/ *.tmp *.lok *.map *.ufcc *.rpt *.txt *.tcl *.log *.stp *.depends *.pdb *.adb *.ini *.efc1
