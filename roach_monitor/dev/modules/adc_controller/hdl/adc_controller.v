@@ -1,6 +1,7 @@
 `timescale 1ns/10ps
 
 `include "adc_controller.vh"
+`include "log2.v"
 
 module adc_controller(
     wb_clk_i, wb_rst_i,
@@ -11,6 +12,7 @@ module adc_controller(
     ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE,
     current_stb, temp_stb
   );
+  parameter SAMPLE_AVERAGING = 16;
   input  wb_clk_i, wb_rst_i;
   input  wb_stb_i, wb_cyc_i, wb_we_i;
   input  [15:0] wb_adr_i;
@@ -76,6 +78,9 @@ module adc_controller(
 
   reg force_skip;
 
+  reg [4:0] averaging;
+  reg [4:0] averaged_value;
+
   always @(posedge wb_clk_i) begin
     //strobes
     adc_strb<=1'b0;
@@ -85,9 +90,11 @@ module adc_controller(
       state<=STATE_IDLE;
       ADC_START<=1'b0;
       ADC_CHNUM<=5'b0;
+      averaging <= 5'b0;
     end else begin
       case (state)
         STATE_IDLE: begin
+          averaging <= 5'b0;
           if (adc_en & ~ADC_CALIBRATE) begin
             if (channel_bypass[ADC_CHNUM]) begin
               state<=STATE_DONE;
@@ -144,6 +151,8 @@ module adc_controller(
           end
         end
         STATE_DONE: begin
+          if (force_skip || channel_bypass[ADC_CHNUM] || averaging == SAMPLE_AVERAGING) begin
+          end
           ADC_CHNUM <= ADC_CHNUM + 1;
           state<=STATE_IDLE;
         end
