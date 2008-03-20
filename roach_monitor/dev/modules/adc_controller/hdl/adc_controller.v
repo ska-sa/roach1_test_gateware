@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 
 `include "adc_controller.vh"
-`include "log2.v"
+`include "log2_up.v"
 
 module adc_controller(
     wb_clk_i, wb_rst_i,
@@ -12,7 +12,7 @@ module adc_controller(
     ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE,
     current_stb, temp_stb
   );
-  parameter SAMPLE_AVERAGING = 16;
+  parameter DEFAULT_SAMPLE_AVERAGING = 16;
   input  wb_clk_i, wb_rst_i;
   input  wb_stb_i, wb_cyc_i, wb_we_i;
   input  [15:0] wb_adr_i;
@@ -53,17 +53,14 @@ module adc_controller(
   reg [10:0] temp_stb;
 
   reg adc_strb;
-  reg [11:0] adc_result;
 
   reg  [4:0] ADC_CHNUM;
   assign adc_channel = ADC_CHNUM;
   reg ADC_START;
 
-  //reg prev_dv;
-
   localparam STB_WIDTH = 400; //400 * 25ns = 10us
 
-  wire [31:0] adc_chnum_decoded = (1 << ADC_CHNUM); //this might be a timing liability
+  wire [31:0] adc_chnum_decoded = (1 << ADC_CHNUM);
 
   wire [9:0] current_sel = {adc_chnum_decoded[29], adc_chnum_decoded[26],
                             adc_chnum_decoded[23], adc_chnum_decoded[20],
@@ -76,25 +73,30 @@ module adc_controller(
 
   reg [8:0] stb_counter;
 
-  reg force_skip;
+  reg [3:0] averaging;
+  reg [3:0] sample_averaging;
 
-  reg [4:0] averaging;
-  reg [4:0] averaged_value;
+  wire [1:0] averaging_bits = (`LOG2_UP(sample_averaging));
+
+  reg [12 + 2 - 1:0] averaged_value;
+
+  assign adc_result = averaging_bits == 0 ? averaged_value[12 + 0 - 1: 0 + 0] :
+                      averaging_bits == 1 ? averaged_value[12 + 1 - 1: 0 + 1] :
+                      averaging_bits == 2 ? averaged_value[12 + 2 - 1: 0 + 2] :
+                                            averaged_value[12 + 3 - 1: 0 + 3];
 
   always @(posedge wb_clk_i) begin
     //strobes
     adc_strb<=1'b0;
-//    prev_dv<=ADC_DATAVALID;
 
     if (wb_rst_i) begin
       state<=STATE_IDLE;
       ADC_START<=1'b0;
       ADC_CHNUM<=5'b0;
-      averaging <= 5'b0;
+      averaging <= 4'b0;
     end else begin
       case (state)
         STATE_IDLE: begin
-          averaging <= 5'b0;
           if (adc_en & ~ADC_CALIBRATE) begin
             if (channel_bypass[ADC_CHNUM]) begin
               state<=STATE_DONE;
@@ -121,83 +123,78 @@ module adc_controller(
           end
         end
         STATE_CONVERT: begin
+          if (averaging == 4'b0) begin //if this is the first value to be averaged
+            averaged_value <= {12 + 2 {1'b0}}; //clear the averaged value
+          end
           if (ADC_BUSY | ADC_DATAVALID) begin
             ADC_START <= 1'b0;
             state<=STATE_WAITING;
 `ifdef DESPERATE_DEBUG
             $display("adc_c: waiting for convert: datavalid==%d, time = %d",ADC_DATAVALID, $time);
 `endif
-          end else if (force_skip) begin
-            current_stb <= 10'b0;
-            temp_stb <= 11'b0;
-            state<=STATE_DONE;
           end
         end
         STATE_WAITING: begin
           if (ADC_DATAVALID) begin //when DV goes high
             current_stb <= 10'b0;
             temp_stb <= 11'b0;
-            adc_result<=ADC_RESULT;
-            adc_strb<=1'b1;
+            averaged_value<= averaged_value + ADC_RESULT;
             state<=STATE_DONE;
+            if (averaging >= sample_averaging)
+              adc_strb <= 1'b1;
+
 `ifdef DEBUG
             $display("adc_c: got value %d, channel %d",ADC_RESULT,ADC_CHNUM);
 `endif
-          end else if (force_skip) begin
-            current_stb <= 10'b0;
-            temp_stb <= 11'b0;
-            ADC_START<=1'b0;
-            state<=STATE_DONE;
           end
         end
         STATE_DONE: begin
-          if (force_skip || channel_bypass[ADC_CHNUM] || averaging == SAMPLE_AVERAGING) begin
+          if (channel_bypass[ADC_CHNUM]) begin
+            averaging <= 4'b0;
+            ADC_CHNUM <= ADC_CHNUM + 1;
+          end else begin
+            if (averaging < sample_averaging) begin
+              averaging <= averaging + 1;
+            end else begin
+              averaging <= 4'b0;
+              ADC_CHNUM <= ADC_CHNUM + 1;
+            end
           end
-          ADC_CHNUM <= ADC_CHNUM + 1;
           state<=STATE_IDLE;
         end
       endcase
     end
   end
 
-  reg [9:0] counter;
-  always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
-      counter <= 9'b0;
-    end else begin
-      if (adc_strb) begin
-        counter <= counter + 1;
-      end 
-    end
-  end
   /*********************** WishBone Interface *************************/
   reg wb_ack_o;
   reg [2:0] wb_dat_o_src;
 
-  assign wb_dat_o = wb_dat_o_src == 3'd0 ? channel_bypass[15:0] :
-                    wb_dat_o_src == 3'd1 ? channel_bypass[31:16] :
+  assign wb_dat_o = wb_dat_o_src == 3'd0 ? channel_bypass[31:16] :
+                    wb_dat_o_src == 3'd1 ? channel_bypass[15:0] :
                     wb_dat_o_src == 3'd2 ? {6'b0, cmon_en} :
                     wb_dat_o_src == 3'd3 ? {5'b0, tmon_en} :
                     wb_dat_o_src == 3'd4 ? {15'b0, adc_en} :
-                    wb_dat_o_src == 3'd5 ? {counter, state, ADC_BUSY, ADC_SAMPLE, ADC_DATAVALID, ADC_CALIBRATE} :
+                    wb_dat_o_src == 3'd5 ? {12'b0, sample_averaging} :
+                    wb_dat_o_src == 3'd6 ? {9'b0, state, ADC_BUSY, ADC_SAMPLE, ADC_DATAVALID, ADC_CALIBRATE} :
                     16'd0;
 
   always @(posedge wb_clk_i) begin
     //strobes
     wb_ack_o <= 1'b0;
-    force_skip <= 1'b0;
     if (wb_rst_i) begin
       channel_bypass <= {32{1'b0}};
       cmon_en <= {10{1'b1}};
       tmon_en <= {11{1'b1}};
       adc_en <= 1'b1;
+      sample_averaging <= DEFAULT_SAMPLE_AVERAGING;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <= 1'b1;
         case (wb_adr_i)
           `REG_ADC_CHANNEL_BYPASS_0: begin
             if (wb_we_i) begin
-              channel_bypass[15:0] <= wb_dat_i;
+              channel_bypass[31:16] <= wb_dat_i;
 `ifdef DEBUG
               $display("adc_c: chan bypass 0 set to %b", wb_dat_i);
 `endif
@@ -207,7 +204,7 @@ module adc_controller(
           end
           `REG_ADC_CHANNEL_BYPASS_1: begin
             if (wb_we_i) begin
-              channel_bypass[31:16] <= wb_dat_i;
+              channel_bypass[15:0] <= wb_dat_i;
 `ifdef DEBUG
               $display("adc_c: chan bypass 1 set to %b", wb_dat_i);
 `endif
@@ -246,10 +243,14 @@ module adc_controller(
               wb_dat_o_src <= 3'd4;
             end
           end
-          (`REG_ADC_EN+1): begin
+          `REG_AVG_CONF: begin
             wb_dat_o_src <= 3'd5;
-            if (wb_we_i)
-              force_skip <= 1'b1;
+            if (wb_we_i) begin
+              sample_averaging <= wb_dat_i[3:0];
+            end
+          end
+          `REG_ADC_STATUS: begin
+            wb_dat_o_src <= 3'd6;
           end
         endcase
       end
