@@ -3,7 +3,7 @@ module toplevel(
     sys_clk_n, sys_clk_p,
     dly_clk_n, dly_clk_p,
     aux_clk0_n, aux_clk0_p,
-    aux_clk1_n, aux_clk1_p
+    aux_clk1_n, aux_clk1_p,
     led_n,
     // PPC External Peripheral Bus [EPB]
     ppc_irq,
@@ -20,7 +20,7 @@ module toplevel(
     zdok1_clk0_n, zdok1_clk0_p,
     zdok1_clk1_n, zdok1_clk1_p,
     // QDR2 Interfaces
-    qdr0_d,
+    qdr0_d, qdr0_q,
     qdr0_sa,
     qdr0_w_n, qdr0_r_n,
     qdr0_dll_off_n,
@@ -28,7 +28,7 @@ module toplevel(
     qdr0_cq_p, qdr0_cq_n,
     qdr0_k_p, qdr0_k_n,
     qdr0_qvld,
-    qdr1_d,
+    qdr1_d, qdr1_q,
     qdr1_sa,
     qdr1_w_n, qdr1_r_n,
     qdr1_dll_off_n,
@@ -72,12 +72,12 @@ module toplevel(
   output [3:0] led_n;
 
   output ppc_irq;
-  input  epb_clk
+  input  epb_clk;
   inout  [15:0] epb_data;
   input  [22:0] epb_addr;
   input   [5:0] epb_addr_gp;
   input  epb_cs_n, epb_r_w_n, epb_oe_n, epb_blast_n;
-  input  epb_be_n[1:0];
+  input   [1:0] epb_be_n;
   output epb_rdy;
   
   inout  [37:0] zdok0_dp_n;
@@ -126,25 +126,25 @@ module toplevel(
   inout  [18:0] diff_gpio_a_n;
   inout  [18:0] diff_gpio_a_p;
   inout  diff_gpio_a_clk_p, diff_gpio_a_clk_n;
-  inout  [18:0] diff_gpio_b_n
-  inout  [18:0] diff_gpio_b_p
+  inout  [18:0] diff_gpio_b_n;
+  inout  [18:0] diff_gpio_b_p;
   inout  diff_gpio_b_clk_p, diff_gpio_b_clk_n;
 
-  inout  [7:0] e_gpio_a;
-  output e_gpio_a_oen_n;
-  inout  [7:0] e_gpio_b;
-  output e_gpio_b_oen_n;
+  inout  [7:0] se_gpio_a;
+  output se_gpio_a_oen_n;
+  inout  [7:0] se_gpio_b;
+  output se_gpio_b_oen_n;
 
   input  mgt_ref_clk_top_n, mgt_ref_clk_top_p;
   input  mgt_ref_clk_bottom_n, mgt_ref_clk_bottom_p;
 
-  input  [3:0] gt_rx_top_1_n;
-  output [3:0] gt_tx_top_1_p;
-  input  [3:0] gt_rx_top_0_n;
-  output [3:0] gt_tx_top_0_p;
-  input  [3:0] gt_rx_bottom_1_n;
-  output [3:0] gt_tx_bottom_1_p;
-  input  [3:0] gt_rx_bottom_0_n;
-  output [3:0] gt_tx_bottom_0_p;
+  input  [3:0] mgt_rx_top_1_n;
+  output [3:0] mgt_tx_top_1_p;
+  input  [3:0] mgt_rx_top_0_n;
+  output [3:0] mgt_tx_top_0_p;
+  input  [3:0] mgt_rx_bottom_1_n;
+  output [3:0] mgt_tx_bottom_1_p;
+  input  [3:0] mgt_rx_bottom_0_n;
+  output [3:0] mgt_tx_bottom_0_p;
 
 endmodule
