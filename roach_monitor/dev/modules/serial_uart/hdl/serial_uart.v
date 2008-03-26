@@ -67,6 +67,15 @@ module serial_uart(
 
   reg count_double;
 
+  reg serial_in_stable;
+  reg serial_in_reg;
+
+  //TODO: add relative placement constraints
+  always @(posedge clk) begin
+    serial_in_reg <= serial_in;
+    serial_in_stable <= serial_in_reg;
+  end
+
   always @(posedge clk) begin
     as_dstrb_o  <= 1'b0;
     count_start <= 1'b0;
@@ -76,7 +85,7 @@ module serial_uart(
     end else begin
       case (s_i_state)
         S_I_STATE_HUNT: begin
-          if (serial_in == 1'b0) begin //start bit
+          if (serial_in_stable == 1'b0) begin //start bit
             s_i_progress <= 4'b0;
             count_start <= 1'b1;
             s_i_state <= S_I_STATE_STARTHALF;
@@ -93,7 +102,7 @@ module serial_uart(
           if (count_done & count_double) begin
             if (s_i_progress < 4'd8) begin
               count_start <= 1'b1;
-              s_i_data[s_i_progress] <= serial_in;
+              s_i_data[s_i_progress] <= serial_in_stable;
               s_i_progress <= s_i_progress + 1;
               if (s_i_progress == 4'b0111)
                 as_dstrb_o <= 1'b1;

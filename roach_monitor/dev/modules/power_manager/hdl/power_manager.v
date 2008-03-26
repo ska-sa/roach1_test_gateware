@@ -332,7 +332,7 @@ module power_manager(
                     wb_dat_sel == 3'd3 ? {15'b0, chs_powerdown_pending} :
                     wb_dat_sel == 3'd4 ? {15'b0, atx_load_res_off_reg} :
                     wb_dat_sel == 3'd5 ? {11'b0, ATX_PWR_OK, MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG, AUX_3V3_PG} :
-                    wb_dat_sel == 3'd6 ? {watchdog_overflow_conf} :
+                    wb_dat_sel == 3'd6 ? {3'b0, watchdog_overflow_conf} :
                     16'b0;
 
   always @(posedge wb_clk_i) begin

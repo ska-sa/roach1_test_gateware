@@ -1,0 +1,27 @@
+################## Project Specific Entries #######################
+#
+# These values override other definitions
+#
+# Project name
+
+PROJECT=roach_bsp
+MODULE_ID=0
+REV_MAJOR=0
+REV_MINOR=0
+# Pin Constraints
+PCFILE=constraints/$(PROJECT).ucf
+# Enter your source files here space seperated
+#      Note: no spaces in filenames
+SRC=./modules/toplevel/hdl/toplevel.v
+
+NETLIST_DIRS=
+
+# Module name of toplevel entity
+TOPLEVEL_MODULE=toplevel
+# Logic Device Part Number
+PARTNUM=5vsx95t-ff1136-3
+
+# Verilog Include Directory
+VINC=include
+
+GEN_DIR=gen

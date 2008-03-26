@@ -92,8 +92,10 @@ module flashmem_controller(
            end else if (wb_trans) begin
              case (wb_adr_i[5:0]) //adr 0 -> 63 is registers
                `REG_FLASH_STATUS: begin
-		 wb_dat_o_src <= 4'd1; //status bits
-                 wb_ack_o_int <= 1'b1;
+                 if (~wb_we_i) begin
+		   wb_dat_o_src <= 4'd1; //status bits
+                   wb_ack_o_int <= 1'b1;
+                 end
 `ifdef DEBUG
                $display("fc: performing op status read");
 `endif

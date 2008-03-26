@@ -55,7 +55,8 @@
 
 /*
   memory restriction format :
-  wbm mask       [3 bits] (which wb masters do the restriction apply to {controller, xport, debug}),
+  wbm mask       [3 bits] (which wb masters do the restriction apply to
+                           {controller, xport, debug}),
   high address   [16 bits],
   low address    [16 bits],
   read disallow  [1  bit],
