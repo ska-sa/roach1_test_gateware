@@ -1,4 +1,4 @@
-module TB_xaui_infrastructure();
+module TB_xaui_fifo();
   initial begin
     $display("PASSED");
     $finish;

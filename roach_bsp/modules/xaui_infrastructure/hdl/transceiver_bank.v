@@ -47,11 +47,10 @@ module transceiver_bank(
   output  [3:0] syncok;
   output  [7:0] codevalid;
   output  [3:0] rxbufferr;
-
-  input  [1:0] rxeqmix;
-  input  [3:0] rxeqpole;
-  input  [2:0] txpreemphasis;
-  input  [2:0] txdiffctrl;
+  input   [1:0] rxeqmix;
+  input   [3:0] rxeqpole;
+  input   [2:0] txpreemphasis;
+  input   [2:0] txdiffctrl;
 
   wire [2:0] chbond_1_hop;
 
@@ -110,7 +109,7 @@ module transceiver_bank(
 
     .rxdata_1(rxdata[63:48]), .rxdata_0(rxdata[47:32]), 
     .rxcharisk_1(rxcharisk[7:6]), .rxcharisk_0(rxcharisk[5:4]),
-    .txdata_1([63:48]), .txdata_0(txdata[63:48]), 
+    .txdata_1([63:48]), .txdata_0(txdata[47:32]), 
     .txcharisk_1(txcharisk[7:6]), .txcharisk_0(txcharisk[5:4]),
     .code_comma_1(code_comma[7:6]), .code_comma_0(code_comma[5:4]),
     .enchansync_1(enchansync), .enchansync_0(enchansync),

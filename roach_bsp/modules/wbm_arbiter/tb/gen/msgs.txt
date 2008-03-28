@@ -1,0 +1,20 @@
+sys: reset cleared
+wbm: sent block of writes, data = 0003000200010000
+wbs: got write, addr = 0000, data = 0003, sindex == 0000
+arb: got response, clearing pending on  3
+wbs: got write, addr = 0000, data = 0002, sindex == 0001
+arb: got response, clearing pending on  2
+wbs: got write, addr = 0000, data = 0001, sindex == 0002
+arb: got response, clearing pending on  1
+wbs: got write, addr = 0000, data = 0000, sindex == 0003
+arb: got response, clearing pending on  0
+mode: WRITE_BLAST mode complete
+wbs: got read, addr = 0000, data = 0003
+arb: got response, clearing pending on  0
+wbs: got read, addr = 0001, data = 0002
+arb: got response, clearing pending on  0
+wbs: got read, addr = 0002, data = 0001
+arb: got response, clearing pending on  0
+wbs: got read, addr = 0003, data = 0000
+arb: got response, clearing pending on  0
+PASSED

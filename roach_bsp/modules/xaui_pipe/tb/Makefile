@@ -1,18 +1,19 @@
-MODULE=xaui_infrastructure
+MODULE=xaui_pipe
+
+VCC=iverilog
+VSIM=vvp
 
 SRCDIR=../hdl
 TBDIR=./hdl
 GENDIR=./gen
-INC_DIR=./include
 
 TB_OBJ=$(GENDIR)/TB_$(MODULE).o
 TB_SRC=$(TBDIR)/TB_$(MODULE).v
 OBJ=$(GENDIR)/$(MODULE).o
-SRC=$(SRCDIR)/$(MODULE).v
+SRC=$(SRCDIR)/$(MODULE).v $(SRCDIR)/xaui_v7_1.v $(SRCDIR)/fifo_generator_v3_3.v
 MSG_FILE=$(GENDIR)/msgs.txt
 
-VCC=iverilog
-INCLUDE=-I ./$(INC_DIR) -I ./$(SRCDIR)
+INCLUDE=-I $(SRCDIR)
 FLAGS=-Wall
 DEFINES=-DIVERILOG
 DEFINES+=-DSIMULATION
@@ -20,16 +21,20 @@ DEFINES+=-DDEBUG
 DEFINES+=-DDESPERATE_DEBUG
 DEFINES+=-DIVERILOG_060807DEV_WORKAROUND
 
-VSIM=vvp
+
 
 sim: $(MSG_FILE)
 
-$(MSG_FILE): $(TB_OBJ)
+$(MSG_FILE): $(OBJ) $(TB_OBJ) 
 	$(VSIM) $(TB_OBJ) > $@
 	@!(cat $@ | grep FAILED && rm -rf $^)
 	@(cat $@ | grep PASSED)
 
-$(TB_OBJ): $(TB_SRC)
+$(OBJ): $(SRC)
+	$(VCC) $(INCLUDE) $(FLAGS) $(DEFINES) -o $@ $^
+
+#$(TB_OBJ): $(TB_SRC) $(SRC)
+$(TB_OBJ): $(TB_SRC) $(SRC)
 	$(VCC) $(INCLUDE) $(FLAGS) $(DEFINES) -o $@ $^
 
 clean:

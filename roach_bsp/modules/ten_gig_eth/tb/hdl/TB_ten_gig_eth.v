@@ -1,4 +1,4 @@
-module TB_xaui_infrastructure();
+module TB_ten_gig_eth();
   initial begin
     $display("PASSED");
     $finish;

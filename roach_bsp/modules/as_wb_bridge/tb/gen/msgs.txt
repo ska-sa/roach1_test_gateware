@@ -1,0 +1,9 @@
+wb_m: sent write - addr = deadbeef data = feed
+wb_s: got write - addr = deadbeef, data = feed
+wb_m: got write response
+wb_m: sent read - addr = deadbeef
+wb_s: got read - addr = deadbeef, data = xxxx
+wb_m: got read response - data=feed
+as_t: got wb strb - data=feed
+as_t: progress = 1, as_data_o=ed
+PASSED

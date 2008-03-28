@@ -1,0 +1,21 @@
+starting sim
+sent word:   1
+got word:   1
+sent word:   2
+got word:   2
+sent word:   3
+got word:   3
+sent word:   4
+got word:   4
+sent word:   5
+got word:   5
+sent word:   6
+got word:   6
+sent word:   7
+got word:   7
+sent word:   8
+got word:   8
+sent word:   9
+got word:   9
+sent word:  10
+PASSED

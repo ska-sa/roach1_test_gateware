@@ -1,6 +1,7 @@
 module transceiver(
     //mgt resets and clocks
     reset, rx_reset, tx_reset,
+    refclk,
     mgt_clk, mgt_clk_mult_2,
     //mgt rx/tx
     txp_1, txn_1,
@@ -44,7 +45,7 @@ module transceiver(
   parameter DIFF_BOOST = "TRUE";
 
   input  reset, rx_reset, tx_reset;
-  input  mgt_clk, mgt_clk_mult_2;
+  input  refclk, mgt_clk, mgt_clk_mult_2;
 
   output txp_1, txn_1, txp_0, txn_0;
   input  rxp_1, rxn_1, rxp_0, rxn_0;
@@ -95,6 +96,13 @@ module transceiver(
                             LOOPTYPE == LOOPTYPE_FAR_SERIAL    ? 3'b100 :
                             LOOPTYPE == LOOPTYPE_FAR_PARALLEL  ? 3'b110 :
                                                                  3'b000;
+  /************* Polarity Hacks ******************/
+  wire polarity_hack_rx_0 = loopback ? 1'b0 : RX_POLARITY_HACK_0;
+  wire polarity_hack_rx_1 = loopback ? 1'b0 : RX_POLARITY_HACK_1;
+  wire polarity_hack_tx_0 = loopback ? 1'b0 : TX_POLARITY_HACK_0;
+  wire polarity_hack_tx_1 = loopback ? 1'b0 : TX_POLARITY_HACK_1;
+
+
   /*********** Powerdown Definitions *************/
   wire [1:0] powerdown_int = powerdown ? 2'b11 : 2'b00;
 
@@ -390,7 +398,7 @@ module transceiver(
     //------------ Receive Ports - RX Pipe Control for PCI Express -------------
     .PHYSTATUS0(), .PHYSTATUS1(), .RXVALID0(), .RXVALID1(),
     //--------------- Receive Ports - RX Polarity Control Ports ----------------
-    .RXPOLARITY0(RX_POLARITY_HACK_0), .RXPOLARITY1(RX_POLARITY_HACK_1),
+    .RXPOLARITY0(polarity_hack_rx_0), .RXPOLARITY1(polarity_hack_rx_1),
     //----------- Shared Ports - Dynamic Reconfiguration Port (DRP) ------------
     .DADDR(7'b0), .DCLK(1'b0), .DEN(1'b0), .DI(16'b0), .DO(), .DRDY(), .DWE(1'b0),
     //------------------- Shared Ports - Tile and PLL Ports --------------------
@@ -428,7 +436,7 @@ module transceiver(
     //------------------- Transmit Ports - TX PRBS Generator -------------------
     .TXENPRBSTST0(2'b0), .TXENPRBSTST1(2'b0),
     //------------------ Transmit Ports - TX Polarity Control ------------------
-    .TXPOLARITY0(TX_POLARITY_HACK_0), .TXPOLARITY1(TX_POLARITY_HACK_1),
+    .TXPOLARITY0(polarity_hack_tx_0), .TXPOLARITY1(polarity_hack_tx_1),
     //--------------- Transmit Ports - TX Ports for PCI Express ----------------
     .TXDETECTRX0(1'b0), .TXDETECTRX1(1'b0), .TXELECIDLE0(1'b0), .TXELECIDLE1(1'b0),
     //------------------- Transmit Ports - TX Ports for SATA -------------------
