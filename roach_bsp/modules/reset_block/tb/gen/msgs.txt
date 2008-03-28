@@ -1,3 +1,0 @@
-rb: got async reset
-starting sim
-PASSED
