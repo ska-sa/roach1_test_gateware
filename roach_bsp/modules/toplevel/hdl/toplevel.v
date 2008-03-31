@@ -334,8 +334,8 @@ module toplevel(
   wire mgt_clk;
   wire mgt_clk_lock;
 
-  wire mgt_tx_reset             [3:0];
-  wire mgt_rx_reset             [3:0];
+  wire  [3:0] mgt_tx_reset      [3:0];
+  wire  [3:0] mgt_rx_reset      [3:0];
   wire [63:0] mgt_rxdata        [3:0];
   wire  [7:0] mgt_rxcharisk     [3:0];
   wire [63:0] mgt_txdata        [3:0];
@@ -417,8 +417,81 @@ module toplevel(
     .mgt_txpreemphasis_0(mgt_txpreemphasis[0]), .mgt_txdiffctrl_0(mgt_txdiffctrl[0])
   );
 
-  /******************* XAUI 0 **********************/
+  /**** Ten Gigabit Ethernet Fabric Interfaces ****/
+  wire tge_usr_clk               [3:0];
+  wire tge_usr_rst               [3:0];
+  wire tge_tx_valid              [3:0];
+  wire tge_tx_ack                [3:0];
+  wire tge_tx_end_of_frame       [3:0];
+  wire tge_tx_discard            [3:0];
+  wire [63:0] tge_tx_data        [3:0];
+  wire [31:0] tge_tx_dest_ip     [3:0];
+  wire [15:0] tge_tx_dest_port   [3:0];
+  wire tge_rx_valid              [3:0];
+  wire tge_rx_ack                [3:0];
+  wire [63:0] tge_rx_data        [3:0];
+  wire tge_rx_end_of_frame       [3:0];
+  wire [15:0] tge_rx_size        [3:0];
+  wire [31:0] tge_rx_source_ip   [3:0];
+  wire [15:0] tge_rx_source_port [3:0];
+  wire tge_led_up                [3:0];
+  wire tge_led_rx                [3:0];
+  wire tge_led_tx                [3:0];
 
+
+  /******************* XAUI/TGBE 0 **********************/
+
+`ifdef ENABLE_TEN_GB_ETH_0
+  ten_gb_eth ten_gb_eth_0 (
+    .clk(tge_usr_clk[0]), .rst(tge_usr_rst[0]),
+    .tx_valid(tge_tx_valid[0]), .tx_ack(tge_tx_ack[0]),
+    .tx_end_of_frame(tge_tx_end_of_frame[0]), .tx_discard(tge_tx_discard[0]),
+    .tx_data(tge_tx_data[0]), .tx_dest_ip(tge_tx_dest_ip[0]),
+    .tx_dest_port(tge_tx_dest_port[0]),
+    .rx_valid(tge_rx_valid[0]), .rx_ack(tge_rx_ack[0]),
+    .rx_data(tge_rx_data[0]), .rx_end_of_frame(tge_rx_end_of_frame[0]),
+    .rx_size(tge_rx_size[0]),
+    .rx_source_ip(tge_rx_source_ip[0]), .rx_source_port(tge_rx_source_port[0]),
+    .led_up(tge_led_up[0]), .led_rx(tge_led_rx[0]), .led_tx(tge_led_tx[0]),
+
+    .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[0]), .mgt_txcharisk(mgt_txcharisk[0]),
+    .mgt_rxdata(mgt_rxdata[0]), .mgt_rxcharisk(mgt_rxcharisk[0]),
+    .mgt_enable_align(mgt_enable_align[0]),.mgt_en_chan_sync(mgt_enchansync[0]), 
+    .mgt_code_valid(mgt_codevalid[0]), .mgt_code_comma(mgt_code_comma[0]),
+    .mgt_rxlock(mgt_rxlock[0]), .mgt_syncok(mgt_syncok[0]),
+//    .mgt_rxbufferr(mgt_rxbufferr[0]),
+    .mgt_loopback(mgt_loopback[0]), .mgt_powerdown(mgt_powerdown[0]),
+    .mgt_tx_reset(mgt_tx_reset[0]), .mgt_rx_reset(mgt_rx_reset[0]),
+
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[1]), .wb_stb_i(wb_stb_o[1]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
+    .wb_ack_o(wb_ack_i[1])
+  );
+
+  assign mgt_rxeqmix[0]       = 2'b0; 
+  assign mgt_rxeqpole[0]      = 4'b0;
+  assign mgt_txpreemphasis[0] = 3'b0;
+  assign mgt_txdiffctrl[0]    = 3'b0;
+
+`else 
+  // assignments if tengbe is disabled
+  assign tge_tx_ack[0]          = 1'b0;
+  assign tge_rx_valid[0]        = 1'b0;
+  assign tge_rx_data[0]         = 64'b0;
+  assign tge_rx_end_of_frame[0] = 1'b0;
+  assign tge_rx_size[0]         = 16'b0;
+  assign tge_rx_source_ip[0]    = 32'b0;
+  assign tge_rx_source_port[0]  = 16'b0;
+  assign tge_led_up[0]          = 1'b0;          
+  assign tge_led_rx[0]          = 1'b0;
+  assign tge_led_tx[0]          = 1'b0;
+`endif
+
+`ifdef ENABLE_XAUI_0
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
     .DEFAULT_LOOPBACK(1'b1),
@@ -444,9 +517,81 @@ module toplevel(
     .wb_ack_o(wb_ack_i[1]),
     .leds() //rx, tx, linkup
   );
+`endif
 
-  /******************* XAUI 1 **********************/
+`ifndef ENABLE_XAUI_0
+`ifndef ENABLE_TEN_GB_ETH_0
+  assign mgt_txdata[0]        = 64'b0;
+  assign mgt_txcharisk[0]     = 8'b0;
+  assign mgt_enable_align[0]  = 4'b0;
+  assign mgt_enchansync[0]    = 1'b0;
+  assign mgt_loopback[0]      = 1'b0;
+  assign mgt_powerdown[0]     = 1'b1;
+  assign mgt_tx_reset[0]      = 4'b0;
+  assign mgt_rx_reset[0]      = 4'b0;
+  assign mgt_rxeqmix[0]       = 2'b0; 
+  assign mgt_rxeqpole[0]      = 4'b0;
+  assign mgt_txpreemphasis[0] = 3'b0;
+  assign mgt_txdiffctrl[0]    = 3'b0;
 
+  assign wb_ack_i[1] = 1'b0;
+  assign wb_dat_i[16*(1 + 1) - 1: 16*1] = 16'b0;
+`endif
+`endif
+
+
+  /******************* XAUI/TGBE 1 **********************/
+
+`ifdef ENABLE_TEN_GB_ETH_1
+  ten_gb_eth ten_gb_eth_1 (
+    .clk(tge_usr_clk[1]), .rst(tge_usr_rst[1]),
+    .tx_valid(tge_tx_valid[1]), .tx_ack(tge_tx_ack[1]),
+    .tx_end_of_frame(tge_tx_end_of_frame[1]), .tx_discard(tge_tx_discard[1]),
+    .tx_data(tge_tx_data[1]), .tx_dest_ip(tge_tx_dest_ip[1]),
+    .tx_dest_port(tge_tx_dest_port[1]),
+    .rx_valid(tge_rx_valid[1]), .rx_ack(tge_rx_ack[1]),
+    .rx_data(tge_rx_data[1]), .rx_end_of_frame(tge_rx_end_of_frame[1]),
+    .rx_size(tge_rx_size[1]),
+    .rx_source_ip(tge_rx_source_ip[1]), .rx_source_port(tge_rx_source_port[1]),
+    .led_up(tge_led_up[1]), .led_rx(tge_led_rx[1]), .led_tx(tge_led_tx[1]),
+
+    .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[1]), .mgt_txcharisk(mgt_txcharisk[1]),
+    .mgt_rxdata(mgt_rxdata[1]), .mgt_rxcharisk(mgt_rxcharisk[1]),
+    .mgt_enable_align(mgt_enable_align[1]),.mgt_en_chan_sync(mgt_enchansync[1]), 
+    .mgt_code_valid(mgt_codevalid[1]), .mgt_code_comma(mgt_code_comma[1]),
+    .mgt_rxlock(mgt_rxlock[1]), .mgt_syncok(mgt_syncok[1]),
+//    .mgt_rxbufferr(mgt_rxbufferr[1]),
+    .mgt_loopback(mgt_loopback[1]), .mgt_powerdown(mgt_powerdown[1]),
+    .mgt_tx_reset(mgt_tx_reset[1]), .mgt_rx_reset(mgt_rx_reset[1]),
+
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[2]), .wb_stb_i(wb_stb_o[2]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(2 + 1) - 1: 16*2]),
+    .wb_ack_o(wb_ack_i[2])
+  );
+
+  assign mgt_rxeqmix[1]       = 2'b0; 
+  assign mgt_rxeqpole[1]      = 4'b0;
+  assign mgt_txpreemphasis[1] = 3'b0;
+  assign mgt_txdiffctrl[1]    = 3'b0;
+`else 
+  // assignments if tengbe is disabled
+  assign tge_tx_ack[1]          = 1'b0;
+  assign tge_rx_valid[1]        = 1'b0;
+  assign tge_rx_data[1]         = 64'b0;
+  assign tge_rx_end_of_frame[1] = 1'b0;
+  assign tge_rx_size[1]         = 16'b0;
+  assign tge_rx_source_ip[1]    = 32'b0;
+  assign tge_rx_source_port[1]  = 16'b0;
+  assign tge_led_up[1]          = 1'b0;          
+  assign tge_led_rx[1]          = 1'b0;
+  assign tge_led_tx[1]          = 1'b0;
+`endif
+
+`ifdef ENABLE_XAUI_1
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
     .DEFAULT_LOOPBACK(1'b1),
@@ -472,9 +617,80 @@ module toplevel(
     .wb_ack_o(wb_ack_i[2]),
     .leds() //rx, tx, linkup
   );
+`endif
 
-  /******************* XAUI 2 **********************/
+`ifndef ENABLE_XAUI_1
+`ifndef ENABLE_TEN_GB_ETH_1
+  assign mgt_txdata[1]        = 64'b0;
+  assign mgt_txcharisk[1]     = 8'b0;
+  assign mgt_enable_align[1]  = 4'b0;
+  assign mgt_enchansync[1]    = 1'b0;
+  assign mgt_loopback[1]      = 1'b0;
+  assign mgt_powerdown[1]     = 1'b1;
+  assign mgt_tx_reset[1]      = 4'b0;
+  assign mgt_rx_reset[1]      = 4'b0;
+  assign mgt_rxeqmix[1]       = 2'b0; 
+  assign mgt_rxeqpole[1]      = 4'b0;
+  assign mgt_txpreemphasis[1] = 3'b0;
+  assign mgt_txdiffctrl[1]    = 3'b0;
 
+  assign wb_ack_i[2] = 1'b0;
+  assign wb_dat_i[16*(2 + 1) - 1: 16*2] = 16'b0;
+`endif
+`endif
+
+  /******************* XAUI/TGBE 2 **********************/
+
+`ifdef ENABLE_TEN_GB_ETH_2
+  ten_gb_eth ten_gb_eth_2 (
+    .clk(tge_usr_clk[2]), .rst(tge_usr_rst[2]),
+    .tx_valid(tge_tx_valid[2]), .tx_ack(tge_tx_ack[2]),
+    .tx_end_of_frame(tge_tx_end_of_frame[2]), .tx_discard(tge_tx_discard[2]),
+    .tx_data(tge_tx_data[2]), .tx_dest_ip(tge_tx_dest_ip[2]),
+    .tx_dest_port(tge_tx_dest_port[2]),
+    .rx_valid(tge_rx_valid[2]), .rx_ack(tge_rx_ack[2]),
+    .rx_data(tge_rx_data[2]), .rx_end_of_frame(tge_rx_end_of_frame[2]),
+    .rx_size(tge_rx_size[2]),
+    .rx_source_ip(tge_rx_source_ip[2]), .rx_source_port(tge_rx_source_port[2]),
+    .led_up(tge_led_up[2]), .led_rx(tge_led_rx[2]), .led_tx(tge_led_tx[2]),
+
+    .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[2]), .mgt_txcharisk(mgt_txcharisk[2]),
+    .mgt_rxdata(mgt_rxdata[2]), .mgt_rxcharisk(mgt_rxcharisk[2]),
+    .mgt_enable_align(mgt_enable_align[2]),.mgt_en_chan_sync(mgt_enchansync[2]), 
+    .mgt_code_valid(mgt_codevalid[2]), .mgt_code_comma(mgt_code_comma[2]),
+    .mgt_rxlock(mgt_rxlock[2]), .mgt_syncok(mgt_syncok[2]),
+//    .mgt_rxbufferr(mgt_rxbufferr[2]),
+    .mgt_loopback(mgt_loopback[2]), .mgt_powerdown(mgt_powerdown[2]),
+    .mgt_tx_reset(mgt_tx_reset[2]), .mgt_rx_reset(mgt_rx_reset[2]),
+
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[3]), .wb_stb_i(wb_stb_o[3]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(3 + 1) - 1: 16*3]),
+    .wb_ack_o(wb_ack_i[3])
+  );
+
+  assign mgt_rxeqmix[2]       = 2'b0; 
+  assign mgt_rxeqpole[2]      = 4'b0;
+  assign mgt_txpreemphasis[2] = 3'b0;
+  assign mgt_txdiffctrl[2]    = 3'b0;
+`else 
+  // assignments if tengbe is disabled
+  assign tge_tx_ack[2]          = 1'b0;
+  assign tge_rx_valid[2]        = 1'b0;
+  assign tge_rx_data[2]         = 64'b0;
+  assign tge_rx_end_of_frame[2] = 1'b0;
+  assign tge_rx_size[2]         = 16'b0;
+  assign tge_rx_source_ip[2]    = 32'b0;
+  assign tge_rx_source_port[2]  = 16'b0;
+  assign tge_led_up[2]          = 1'b0;          
+  assign tge_led_rx[2]          = 1'b0;
+  assign tge_led_tx[2]          = 1'b0;
+`endif
+
+`ifdef ENABLE_XAUI_2
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
     .DEFAULT_LOOPBACK(1'b1),
@@ -500,9 +716,80 @@ module toplevel(
     .wb_ack_o(wb_ack_i[3]),
     .leds() //rx, tx, linkup
   );
+`endif
 
-  /******************* XAUI 3 **********************/
+`ifndef ENABLE_XAUI_2
+`ifndef ENABLE_TEN_GB_ETH_2
+  assign mgt_txdata[2]        = 64'b0;
+  assign mgt_txcharisk[2]     = 8'b0;
+  assign mgt_enable_align[2]  = 4'b0;
+  assign mgt_enchansync[2]    = 1'b0;
+  assign mgt_loopback[2]      = 1'b0;
+  assign mgt_powerdown[2]     = 1'b1;
+  assign mgt_tx_reset[2]      = 4'b0;
+  assign mgt_rx_reset[2]      = 4'b0;
+  assign mgt_rxeqmix[2]       = 2'b0; 
+  assign mgt_rxeqpole[2]      = 4'b0;
+  assign mgt_txpreemphasis[2] = 3'b0;
+  assign mgt_txdiffctrl[2]    = 3'b0;
 
+  assign wb_ack_i[3] = 1'b0;
+  assign wb_dat_i[16*(3 + 1) - 1: 16*3] = 16'b0;
+`endif
+`endif
+
+  /******************* XAUI/TGBE 3 **********************/
+
+`ifdef ENABLE_TEN_GB_ETH_3
+  ten_gb_eth ten_gb_eth_3 (
+    .clk(tge_usr_clk[3]), .rst(tge_usr_rst[3]),
+    .tx_valid(tge_tx_valid[3]), .tx_ack(tge_tx_ack[3]),
+    .tx_end_of_frame(tge_tx_end_of_frame[3]), .tx_discard(tge_tx_discard[3]),
+    .tx_data(tge_tx_data[3]), .tx_dest_ip(tge_tx_dest_ip[3]),
+    .tx_dest_port(tge_tx_dest_port[3]),
+    .rx_valid(tge_rx_valid[3]), .rx_ack(tge_rx_ack[3]),
+    .rx_data(tge_rx_data[3]), .rx_end_of_frame(tge_rx_end_of_frame[3]),
+    .rx_size(tge_rx_size[3]),
+    .rx_source_ip(tge_rx_source_ip[3]), .rx_source_port(tge_rx_source_port[3]),
+    .led_up(tge_led_up[3]), .led_rx(tge_led_rx[3]), .led_tx(tge_led_tx[3]),
+
+    .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[3]), .mgt_txcharisk(mgt_txcharisk[3]),
+    .mgt_rxdata(mgt_rxdata[3]), .mgt_rxcharisk(mgt_rxcharisk[3]),
+    .mgt_enable_align(mgt_enable_align[3]),.mgt_en_chan_sync(mgt_enchansync[3]), 
+    .mgt_code_valid(mgt_codevalid[3]), .mgt_code_comma(mgt_code_comma[3]),
+    .mgt_rxlock(mgt_rxlock[3]), .mgt_syncok(mgt_syncok[3]),
+//    .mgt_rxbufferr(mgt_rxbufferr[3]),
+    .mgt_loopback(mgt_loopback[3]), .mgt_powerdown(mgt_powerdown[3]),
+    .mgt_tx_reset(mgt_tx_reset[3]), .mgt_rx_reset(mgt_rx_reset[3]),
+
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[4]), .wb_stb_i(wb_stb_o[4]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(4 + 1) - 1: 16*4]),
+    .wb_ack_o(wb_ack_i[4])
+  );
+
+  assign mgt_rxeqmix[3]       = 2'b0; 
+  assign mgt_rxeqpole[3]      = 4'b0;
+  assign mgt_txpreemphasis[3] = 3'b0;
+  assign mgt_txdiffctrl[3]    = 3'b0;
+`else 
+  // assignments if tengbe is disabled
+  assign tge_tx_ack[3]          = 1'b0;
+  assign tge_rx_valid[3]        = 1'b0;
+  assign tge_rx_data[3]         = 64'b0;
+  assign tge_rx_end_of_frame[3] = 1'b0;
+  assign tge_rx_size[3]         = 16'b0;
+  assign tge_rx_source_ip[3]    = 32'b0;
+  assign tge_rx_source_port[3]  = 16'b0;
+  assign tge_led_up[3]          = 1'b0;          
+  assign tge_led_rx[3]          = 1'b0;
+  assign tge_led_tx[3]          = 1'b0;
+`endif
+
+`ifdef ENABLE_XAUI_3
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
     .DEFAULT_LOOPBACK(1'b1),
@@ -528,6 +815,27 @@ module toplevel(
     .wb_ack_o(wb_ack_i[4]),
     .leds() //rx, tx, linkup
   );
+`endif
+
+`ifndef ENABLE_XAUI_3
+`ifndef ENABLE_TEN_GB_ETH_3
+  assign mgt_txdata[3]        = 64'b0;
+  assign mgt_txcharisk[3]     = 8'b0;
+  assign mgt_enable_align[3]  = 4'b0;
+  assign mgt_enchansync[3]    = 1'b0;
+  assign mgt_loopback[3]      = 1'b0;
+  assign mgt_powerdown[3]     = 1'b1;
+  assign mgt_tx_reset[3]      = 4'b0;
+  assign mgt_rx_reset[3]      = 4'b0;
+  assign mgt_rxeqmix[3]       = 2'b0; 
+  assign mgt_rxeqpole[3]      = 4'b0;
+  assign mgt_txpreemphasis[3] = 3'b0;
+  assign mgt_txdiffctrl[3]    = 3'b0;
+
+  assign wb_ack_i[4] = 1'b0;
+  assign wb_dat_i[16*(4 + 1) - 1: 16*4] = 16'b0;
+`endif
+`endif
 
   /******************* GPIO ***********************/
 

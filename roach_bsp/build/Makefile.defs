@@ -1,15 +1,17 @@
 #################### Build Parameters ###########################
 #
 #xilinx apps
-XST=xst-9.2
-NGDBUILD=ngdbuild-9.2
-MAP=map-9.2
-PAR=par-9.2
-BITGEN=bitgen-9.2
-CPLDFIT=cpldfit-9.2
-HPREP6=hprep6-9.2
-IMPACT=impact-9.2
-TAEGINE=taengine-9.2
+ISE_VER=9.2
+
+XST=xst-$(ISE_VER)
+NGDBUILD=ngdbuild-$(ISE_VER)
+MAP=map-$(ISE_VER)
+PAR=par-$(ISE_VER)
+BITGEN=bitgen-$(ISE_VER)
+CPLDFIT=cpldfit-$(ISE_VER)
+HPREP6=hprep6-$(ISE_VER)
+IMPACT=impact-$(ISE_VER)
+TAEGINE=taengine-$(ISE_VER)
 #xilinx ENV vars
 XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=0
 #XST script commands

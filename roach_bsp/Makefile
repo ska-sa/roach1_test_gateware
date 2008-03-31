@@ -28,6 +28,6 @@ build_parameters:
 clean:
 	make -C modules clean
 	make -C build clean
-	make -C build_parameters clean INCDIR=../$(VINC) GENDIR=../$(GEN_DIR)
+	make -C support clean INCDIR=../$(VINC) GENDIR=../$(GEN_DIR)
 	rm -rf gen/*
 

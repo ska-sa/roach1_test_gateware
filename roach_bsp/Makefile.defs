@@ -30,9 +30,16 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/xaui_pipe/hdl/xaui_controller.v \
     ./modules/xaui_pipe/hdl/xaui_wb_attach.v \
     ./modules/xaui_pipe/hdl/xaui_fifo.v \
-    ./modules/xaui_pipe/hdl/xaui_v7_2.v
+    ./modules/xaui_pipe/hdl/xaui_v7_2.v \
+    ./modules/ten_gig_eth/hdl/ten_gb_eth.vhd \
+    ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB.vhd \
+    ./modules/ten_gig_eth/hdl/wb_attach.v \
+    ./modules/ten_gig_eth/hdl/retimer.vhd \
+    ./modules/ten_gig_eth/hdl/addr_fifo.v
 
-NETLIST_DIRS=./modules/xaui_pipe/netlist
+
+NETLIST_DIRS=./modules/xaui_pipe/netlist\
+             ./modules/ten_gig_eth/netlist
 
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel

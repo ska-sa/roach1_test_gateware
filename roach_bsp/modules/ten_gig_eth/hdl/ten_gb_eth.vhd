@@ -92,7 +92,8 @@ entity ten_gb_eth is
                 mgt_code_valid        : in  std_logic_vector(7  downto 0);
                 mgt_code_comma        : in  std_logic_vector(7  downto 0);
                 mgt_rxlock            : in  std_logic_vector(3  downto 0);
-                mgt_loopback          : out std_logic_vector(1  downto 0);
+                mgt_loopback          : out std_logic;
+                mgt_syncok            : in  std_logic_vector(3  downto 0);
                 mgt_en_chan_sync      : out std_logic;
                 mgt_powerdown         : out std_logic;
                 mgt_rx_reset          : out std_logic_vector(3  downto 0);
@@ -104,10 +105,10 @@ entity ten_gb_eth is
                 wb_stb_i              : in  std_logic;
                 wb_cyc_i              : in  std_logic;
                 wb_we_i               : in  std_logic;
-                wb_sel_i              : in  std_logic_vector(3  downto 0);
-                wb_adr_i              : in  std_logic_vector(15 downto 0);
-                wb_dat_i              : in  std_logic_vector(31 downto 0);
-                wb_dat_o              : out std_logic_vector(31 downto 0);
+                wb_sel_i              : in  std_logic_vector(1  downto 0);
+                wb_adr_i              : in  std_logic_vector(31 downto 0);
+                wb_dat_i              : in  std_logic_vector(15 downto 0);
+                wb_dat_o              : out std_logic_vector(15 downto 0);
                 wb_ack_o              : out std_logic
 	);
 end entity ten_gb_eth;
@@ -186,7 +187,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 	end component;
 
 	-- 10 Gb Ethernet PHY (XAUI)
-	component xaui_v7_1
+	component xaui_v7_2
 		port (
 			reset                : in  std_logic;
 			xgmii_txd            : in  std_logic_vector(63 downto 0);
@@ -201,7 +202,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 			mgt_codevalid        : in  std_logic_vector(7 downto 0);
 			mgt_codecomma        : in  std_logic_vector(7 downto 0);
 			mgt_enable_align     : out std_logic_vector(3 downto 0);
-			mgt_enchansync     : out std_logic;
+			mgt_enchansync       : out std_logic;
 			mgt_syncok           : in  std_logic_vector(3 downto 0);
 			mgt_loopback         : out std_logic;
 			mgt_powerdown        : out std_logic;
@@ -335,14 +336,11 @@ architecture ten_gb_eth_arch of ten_gb_eth is
                         wb_stb_i              : in  std_logic;
                         wb_cyc_i              : in  std_logic;
                         wb_we_i               : in  std_logic;
-                        wb_sel_i              : in  std_logic_vector( 3 downto 0);
-                        wb_adr_i              : in  std_logic_vector(15 downto 0);
-                        wb_dat_i              : in  std_logic_vector(31 downto 0);
-                        wb_dat_o              : out std_logic_vector(31 downto 0);
-                        wb_ack_o              : out std_logic;
-                        my_status              : in std_logic_vector(31 downto 0);
-                        eof              : in  std_logic;
-                        we               : in  std_logic
+                        wb_sel_i              : in  std_logic_vector( 1 downto 0);
+                        wb_adr_i              : in  std_logic_vector(31 downto 0);
+                        wb_dat_i              : in  std_logic_vector(15 downto 0);
+                        wb_dat_o              : out std_logic_vector(15 downto 0);
+                        wb_ack_o              : out std_logic
 		);
 	end component;
 
@@ -515,10 +513,6 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 	signal led_tx_count                            : std_logic_vector(23 downto 0) := (others => '0');
 	signal led_rx_1                                : std_logic := '0';
 	signal led_tx_1                                : std_logic := '0';
-	signal my_eof                                : std_logic;
-	signal my_we                                : std_logic;
-
-        signal my_status : std_logic_vector(31 downto 0);
 
 	-- constraints
 	attribute keep                                 : string;
@@ -644,8 +638,6 @@ tx_arp_cache: arp_cache
 
 -- transmit user clock controller process
 
-my_status <= "0000000" & "1" & "0000000" & tx_valid & "0000000" & tx_addrfifo_full & "0000000" & tx_buffer_full;
-
 tx_user_proc: process(clk)
 begin
 	if clk'event and clk = '1' then
@@ -654,11 +646,7 @@ begin
 			tx_buffer_write_address_snapshot <= (others => '0');
 			tx_data_count                    <= (0 => '1', others => '0');
 			tx_buffer_full                   <= '0';
-                        my_eof <= '0';
-                        my_we <= '0';
 		else
-                        my_eof <= '0';
-                        my_we <= '0';
 			-- the read counter advanced, so we can bring the full bit back to 0
 			if tx_buffer_new_read_address = '1' then
 				tx_buffer_full <= '0';
@@ -666,7 +654,6 @@ begin
 			-- a valid write was issued
 			if tx_valid = '1' and tx_buffer_full = '0' and tx_discard = '0' then
 --			if tx_valid = '1' and tx_addrfifo_full = '0' and tx_buffer_full = '0' and tx_discard = '0' then
-                                my_we <= '1';
 				-- increment the write counter
 				tx_buffer_write_address <= tx_buffer_write_address + 1;
 				-- the transmit buffer will be full on the next cycle whenever the write address is two slots behind the read address
@@ -677,7 +664,6 @@ begin
 				tx_data_count <= tx_data_count + 1;				
 				-- a request to send the packet was issued
 				if tx_end_of_frame = '1' then
-                                        my_eof <= '1';
 					-- reset the data count
 					tx_data_count <= (0 => '1', others => '0');
 					-- snapshot the write address to be able to cancel the next packet
@@ -1318,10 +1304,7 @@ wb : wb_attach
                 wb_ack_o              => wb_ack_o               ,
 
                 -- phy status
-		phy_status            => phy_status_vector      ,
-                my_status                   => my_status         ,
-                eof                   => my_eof         ,
-                we                   => my_we         
+		phy_status            => phy_status_vector
 	);
 
 
@@ -1465,7 +1448,7 @@ phy_rx_up <= phy_status_vector(6);
 
 
 -- 10 Gb Ethernet PHY (XAUI)
-phy : xaui_v7_1
+phy : xaui_v7_2
 	port map (
 		-- reset
 		reset                 => rst,
@@ -1491,7 +1474,7 @@ phy : xaui_v7_1
 		mgt_codecomma         => mgt_code_comma,
 		mgt_enable_align      => mgt_enable_align,
 		mgt_enchansync        => mgt_en_chan_sync,
-		mgt_syncok            => "1111",
+		mgt_syncok            => mgt_syncok,
 		mgt_loopback          => open,
 		mgt_powerdown         => mgt_powerdown,
 		mgt_tx_reset          => mgt_tx_reset_int,
@@ -1499,7 +1482,7 @@ phy : xaui_v7_1
                 mgt_rxlock            => mgt_rxlock
 	);
 
-mgt_loopback <= "00";
+mgt_loopback <= '0';
 
 mgt_tx_reset_int <= mgt_reset & mgt_reset & mgt_reset & mgt_reset;
 mgt_rx_reset_int <= mgt_reset & mgt_reset & mgt_reset & mgt_reset;
