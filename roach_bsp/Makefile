@@ -22,11 +22,12 @@ bits: build_parameters $(SRC) $(PCFILE) Makefile.defs
 build_parameters:
 	@make -C support build_parameters \
 	   PROJECT=$(PROJECT) REV_MAJOR=$(REV_MAJOR) REV_MINOR=$(REV_MINOR) \
-	   REV_RCS="12" \
-	   MODULE_ID=$(MODULE_ID) C_HEADER=../$(GEN_DIR)/$(PROJECT)_$(REV_MAJOR).h
+	   REV_RCS="0" MAKEDEFS=../Makefile.defs INCDIR=../$(VINC)\
+	   BOARD_ID=$(BOARD_ID) C_HEADER=../$(GEN_DIR)/$(PROJECT)_$(REV_MAJOR).h
 	
 clean:
 	make -C modules clean
 	make -C build clean
+	make -C build_parameters clean INCDIR=../$(VINC) GENDIR=../$(GEN_DIR)
 	rm -rf gen/*
 

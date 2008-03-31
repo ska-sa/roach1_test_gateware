@@ -1,13 +1,13 @@
 include Makefile.defs
 
-bits: $(if $(IS_CPLD),$(PROJECT).jed,$(PROJECT).bit); 
+bits: $(if $(IS_CPLD),$(PROJECT).jed,$(PROJECT).bit) 
 
 #XST FILES
 
 $(PROJECT).xst:
 	@echo '$(XST_ARGS)' | sed -e 's/, /\n/g' > $(PROJECT).xst
 
-$(PROJECT).prj: $(PROJ_FILE) Makefile.defs 
+$(PROJECT).prj: $(PROJ_FILE)
 	@> $@
 	@for I in $(SRC) ; do \
 	   if echo $$I | grep -q "\.vhd" ; then \

@@ -96,7 +96,7 @@ module wbs_arbiter(
   assign wbs_adr_o_int = wbm_adr_i - wbs_adr_o_diff;
 
   genvar gen_j;
-  generate for (gen_j=0; gen_j < 32; gen_j=gen_j+1) begin : G0
+  generate for (gen_j=0; gen_j < 32; gen_j=gen_j+1) begin : G1
     assign wbs_adr_o_diff[gen_j] = SLAVE_ADDR[32*wbs_sel_enc + gen_j];
   end endgenerate
 
@@ -105,7 +105,7 @@ module wbs_arbiter(
 
   /* Generate wbm_dat_o from wbs_sel_enc */
   genvar gen_k;
-  generate for (gen_k=0; gen_k < 16; gen_k=gen_k+1) begin : G0
+  generate for (gen_k=0; gen_k < 16; gen_k=gen_k+1) begin : G2
     assign wbm_dat_o[gen_k] = wbs_dat_i[16*wbs_sel_enc + gen_k];
   end endgenerate
 

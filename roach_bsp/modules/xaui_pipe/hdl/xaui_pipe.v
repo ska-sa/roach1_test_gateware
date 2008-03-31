@@ -1,47 +1,56 @@
 module xaui_pipe(
-  reset,
-  /*mgt signals*/
-  mgt_clk, mgt_reset,
-  mgt_txdata, mgt_txcharisk,
-  mgt_rxdata, mgt_rxcharisk,
-  mgt_enable_align,
-  mgt_code_valid, mgt_code_comma, mgt_rxlock,
-  mgt_rx_status,
-  mgt_loopback, mgt_en_chan_sync, mgt_powerdown,
-  mgt_tx_reset, mgt_rx_reset,
-  /*wb if*/
-  wb_clk_i,
-  wb_cyc_i, wb_stb_i, wb_we_i,
-  wb_adr_i, wb_dat_i, wb_dat_o,
-  wb_ack_o,
-  /*leds*/
-  leds
+    reset,
+    /*mgt signals*/
+    mgt_clk,
+    mgt_txdata, mgt_txcharisk,
+    mgt_rxdata, mgt_rxcharisk,
+    mgt_enable_align,
+    mgt_code_valid, mgt_code_comma, mgt_rxlock, mgt_syncok,
+    mgt_rxbufferr,
+    mgt_loopback, mgt_en_chan_sync, mgt_powerdown,
+    mgt_tx_reset, mgt_rx_reset,
+    mgt_rxeqmix, mgt_rxeqpole, mgt_txpreemphasis, mgt_txdiffctrl,
+    /*wb if*/
+    wb_clk_i,
+    wb_cyc_i, wb_stb_i, wb_we_i, wb_sel_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
+    /*leds*/
+    leds //rx, tx, linkup
   );
+  parameter DEFAULT_POWERDOWN = 0;
+  parameter DEFAULT_LOOPBACK  = 0;
+  parameter DEFAULT_TXEN      = 1;
 
   input  reset;
 
   input  mgt_clk;
-  output mgt_reset;
   output [63:0] mgt_txdata;
   output  [7:0] mgt_txcharisk;
   input  [63:0] mgt_rxdata;
   input   [7:0] mgt_rxcharisk;
   output  [3:0] mgt_enable_align;
-  input   [7:0] mgt_code_valid;
   input   [7:0] mgt_code_comma;
+  input   [7:0] mgt_code_valid;
+  input   [3:0] mgt_syncok;
   output  [3:0] mgt_rx_reset;
   output  [3:0] mgt_tx_reset;
-  output  [1:0] mgt_loopback;
+  output mgt_loopback;
   output mgt_powerdown;
   output mgt_en_chan_sync;
   input   [3:0] mgt_rxlock;
-  input  [23:0] mgt_rx_status;
+  input   [3:0] mgt_rxbufferr;
+  output  [1:0] mgt_rxeqmix;
+  output  [3:0] mgt_rxeqpole;
+  output  [2:0] mgt_txpreemphasis;
+  output  [2:0] mgt_txdiffctrl;
 
   input  wb_clk_i;
   input  wb_cyc_i, wb_stb_i, wb_we_i;
-  input  [15:0] wb_adr_i;
-  input  [31:0] wb_dat_i;
-  output [31:0] wb_dat_o;
+  input   [1:0] wb_sel_i;
+  input  [31:0] wb_adr_i;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
   output wb_ack_o;
 
   output  [2:0] leds;
@@ -85,7 +94,7 @@ module xaui_pipe(
   wire  [7:0] link_status;
 
   /* signals from WB_attach */
-  wire  [1:0] user_loopback;
+  wire  user_loopback;
   wire user_powerdown;
   wire user_txen;
   wire user_xaui_reset_strb;
@@ -102,7 +111,7 @@ module xaui_pipe(
 
   assign tx_fifo_wr_status = {tx_full, tx_almost_full};
   assign tx_fifo_wr_err = tx_overflow;
-  fifo_generator_v3_3 tx_fifo(
+  xaui_fifo tx_fifo(
     .rst(xaui_reset), 
     .rd_clk(tx_fifo_rd_clk),
     .dout(tx_fifo_rd_data),
@@ -122,7 +131,7 @@ module xaui_pipe(
 
   assign rx_fifo_wr_status = {2'b0, rx_full, rx_almost_full};
   assign rx_fifo_wr_err = rx_overflow;
-  fifo_generator_v3_3 rx_fifo(
+  xaui_fifo rx_fifo(
     .rst(xaui_reset),
     .rd_clk(rx_fifo_rd_clk),
     .dout(rx_fifo_rd_data),
@@ -177,12 +186,12 @@ module xaui_pipe(
 
   xaui_controller xaui_controller_0(
     .clk(mgt_clk), .reset(xaui_reset),
-    .mgt_reset(mgt_reset),
     .mgt_txdata(mgt_txdata), .mgt_txcharisk(mgt_txcharisk),
     .mgt_rxdata(mgt_rxdata), .mgt_rxcharisk(mgt_rxcharisk),
     .mgt_enable_align(mgt_enable_align),
-    .mgt_code_valid(mgt_code_valid), .mgt_code_comma(mgt_code_comma), .mgt_rxlock(mgt_rxlock),
-    .mgt_rx_status(mgt_rx_status),
+    .mgt_code_valid(mgt_code_valid), .mgt_code_comma(mgt_code_comma),
+    .mgt_rxlock(mgt_rxlock), .mgt_syncok(mgt_syncok),
+    .mgt_rxbufferr(mgt_rxbufferr),
     .mgt_loopback(mgt_loopback), .mgt_en_chan_sync(mgt_en_chan_sync), .mgt_powerdown(mgt_powerdown),
     .mgt_tx_reset(mgt_tx_reset), .mgt_rx_reset(mgt_rx_reset), 
     .xgmii_rxd(xgmii_rxd), .xgmii_rxc(xgmii_rxc),
@@ -214,10 +223,14 @@ module xaui_pipe(
 
   /**************************** Wishbone Attachment *********************************/
 
-  xaui_wb_attach xaui_wb_attach_0(
+  xaui_wb_attach #(
+    .DEFAULT_POWERDOWN(DEFAULT_POWERDOWN),
+    .DEFAULT_LOOPBACK(DEFAULT_LOOPBACK),
+    .DEFAULT_TXEN(DEFAULT_TXEN)
+  ) xaui_wb_attach_0 (
     .reset(reset),
     .wb_clk_i(wb_clk_i),
-    .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i),
+    .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i), .wb_sel_i(wb_sel_i),
     .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
     .wb_ack_o(wb_ack_o),
 
@@ -229,9 +242,13 @@ module xaui_pipe(
     .tx_fifo_status({tx_fifo_wr_status, tx_fifo_rd_status}),
     .rx_fifo_data(rx_fifo_rd_data), .tx_fifo_data(tx_fifo_wr_data),
 
-    .xaui_status(link_status)
+    .xaui_status(link_status),
+    .mgt_rxeqmix(mgt_rxeqmix), .mgt_rxeqpole(mgt_rxeqpole),
+    .mgt_txpreemphasis(mgt_txpreemphasis), .mgt_txdiffctrl(mgt_txdiffctrl)
     `ifdef XAUI_ERROR_TEST
     , .error_count(error_count), .data_count(data_count)
+    `else
+    , .error_count(64'd0), .data_count(64'd0)
     `endif
   );
 

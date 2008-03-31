@@ -1,3 +1,4 @@
+`include "build_parameters.v"
 `include "parameters.v"
 module toplevel(
     // System signals
@@ -61,10 +62,15 @@ module toplevel(
     // MGT signals,
     mgt_ref_clk_top_n, mgt_ref_clk_top_p,
     mgt_ref_clk_bottom_n, mgt_ref_clk_bottom_p,
-    mgt_rx_top_1_n, mgt_tx_top_1_p,
-    mgt_rx_top_0_n, mgt_tx_top_0_p,
-    mgt_rx_bottom_1_n, mgt_tx_bottom_1_p,
-    mgt_rx_bottom_0_n, mgt_tx_bottom_0_p
+
+    mgt_tx_top_1_n, mgt_tx_top_1_p,
+    mgt_tx_top_0_n, mgt_tx_top_0_p,
+    mgt_tx_bottom_1_n, mgt_tx_bottom_1_p,
+    mgt_tx_bottom_0_n, mgt_tx_bottom_0_p,
+    mgt_rx_top_1_n, mgt_rx_top_1_p,
+    mgt_rx_top_0_n, mgt_rx_top_0_p,
+    mgt_rx_bottom_1_n, mgt_rx_bottom_1_p,
+    mgt_rx_bottom_0_n, mgt_rx_bottom_0_p
   );
   input  sys_clk_n, sys_clk_p;
   input  dly_clk_n, dly_clk_p;
@@ -139,14 +145,24 @@ module toplevel(
   input  mgt_ref_clk_top_n, mgt_ref_clk_top_p;
   input  mgt_ref_clk_bottom_n, mgt_ref_clk_bottom_p;
 
-  input  [3:0] mgt_rx_top_1_n;
+  output [3:0] mgt_tx_top_1_n;
   output [3:0] mgt_tx_top_1_p;
-  input  [3:0] mgt_rx_top_0_n;
+  output [3:0] mgt_tx_top_0_n;
   output [3:0] mgt_tx_top_0_p;
-  input  [3:0] mgt_rx_bottom_1_n;
+  output [3:0] mgt_tx_bottom_1_n;
   output [3:0] mgt_tx_bottom_1_p;
-  input  [3:0] mgt_rx_bottom_0_n;
+  output [3:0] mgt_tx_bottom_0_n;
   output [3:0] mgt_tx_bottom_0_p;
+
+  input  [3:0] mgt_rx_top_1_n;
+  input  [3:0] mgt_rx_top_1_p;
+  input  [3:0] mgt_rx_top_0_n;
+  input  [3:0] mgt_rx_top_0_p;
+  input  [3:0] mgt_rx_bottom_1_n;
+  input  [3:0] mgt_rx_bottom_1_p;
+  input  [3:0] mgt_rx_bottom_0_n;
+  input  [3:0] mgt_rx_bottom_0_p;
+
 
   /**************** Global Infrastructure ****************/
 
@@ -163,6 +179,8 @@ module toplevel(
     .aux_clk_1(aux_clk_1)
   );
 
+  assign led_n = 4'b0101;
+
   /********************* Reset Block *********************/
   wire sys_reset;
   wire soft_reset;
@@ -178,21 +196,15 @@ module toplevel(
   /**************** Serial Communications ****************/
   wire serial_in, serial_out;
 
-  assign se_gpio_a_oen_n = 1'b0;
-  assign se_gpio_b_oen_n = 1'b1;
-
-  assign serial_in  = se_gpio_b[0];
-  assign serial_out = se_gpio_a[0];
-
   wire [7:0] as_data_i;
   wire [7:0] as_data_o;
   wire as_dstrb_i, as_busy_o, as_dstrb_o;
 
   serial_uart #(
-    .BAUD(115200),
-    .CLOCK_RATE(40000000)
+    .BAUD(`SERIAL_UART_BAUD),
+    .CLOCK_RATE(`MASTER_CLOCK_RATE)
   ) serial_uart_inst (
-    .clk(sys_clk), .reset(reset),
+    .clk(sys_clk), .reset(sys_reset),
     .serial_in(serial_in), .serial_out(serial_out),
     .as_data_i(as_data_i),  .as_data_o(as_data_o),
     .as_dstrb_i(as_dstrb_i), .as_busy_o(as_busy_o), .as_dstrb_o(as_dstrb_o)
@@ -220,6 +232,10 @@ module toplevel(
   );
 
   /******* PPC Master ********/
+  assign ppc_irq = 1'b0;
+  assign epb_data = {16{1'bz}};
+  assign epb_rdy = 1'b0;
+  
   wire wbm_stb_o_1, wbm_cyc_o_1, wbm_we_o_1;
   wire  [1:0] wbm_sel_o_1;
   wire [31:0] wbm_adr_o_1;
@@ -250,10 +266,10 @@ module toplevel(
     .NUM_MASTERS(2)
   ) wbm_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_sel_o_1, wbm_sel_o_0}),
+    .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o, wbm_we_o}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
     .wbm_adr_i({wbm_adr_o_1, wbm_adr_o_0}), .wbm_dat_i({wbm_dat_o_1, wbm_dat_o_0}), .wbm_dat_o({wbm_dat_i_1, wbm_dat_i_0}),
     .wbm_ack_o({wbm_ack_i_1, wbm_ack_i_0}), .wbm_err_o({wbm_err_i_1, wbm_err_i_0}),
-    .wbs_cyc_o(wbi_cyc_o), .wbs_stb_o(wbi_stb_o), .wbs_we_o(wbi_we_o),
+    .wbs_cyc_o(wbi_cyc_o), .wbs_stb_o(wbi_stb_o), .wbs_we_o(wbi_we_o), .wbs_sel_o(wbi_sel_o),
     .wbs_adr_o(wbi_adr_o), .wbs_dat_o(wbi_dat_o), .wbs_dat_i(wbi_dat_i),
     .wbs_ack_i(wbi_ack_i), .wbs_err_i(wbi_err_i),
     .wbm_mask(2'b11), //both enabled
@@ -262,26 +278,24 @@ module toplevel(
 
   localparam NUM_SLAVES = 14;
 
-  localparam SLAVE_ADDR = {32'h000d_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000 //slaves 13:10
-                           32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000 //slaves 9:6
-                           32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000 //slaves 5:2
-                           32'h0001_0000, 32'h0000_0000};                             //slaves 1:0
+  localparam SLAVE_ADDR = {32'h000d_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
+                           32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000, //slaves 9:6
+                           32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000, //slaves 5:2
+                           32'h0001_0000, 32'h0000_0000};                              //slaves 1:0
 
-  localparam SLAVE_HIGH = {32'h000d_ffff, 32'h000c_ffff, 32'h000b_ffff, 32'h000a_ffff //slaves 13:10
-                           32'h0009_ffff, 32'h0008_ffff, 32'h0007_ffff, 32'h0006_ffff //slaves 9:6
-                           32'h0005_ffff, 32'h0004_ffff, 32'h0003_ffff, 32'h0002_ffff //slaves 5:2
-                           32'h0001_ffff, 32'h0000_ffff};                             //slaves 1:0
+  localparam SLAVE_HIGH = {32'h000d_ffff, 32'h000c_ffff, 32'h000b_ffff, 32'h000a_ffff, //slaves 13:10
+                           32'h0009_ffff, 32'h0008_ffff, 32'h0007_ffff, 32'h0006_ffff, //slaves 9:6
+                           32'h0005_ffff, 32'h0004_ffff, 32'h0003_ffff, 32'h0002_ffff, //slaves 5:2
+                           32'h0001_ffff, 32'h0000_ffff};                              //slaves 1:0
 
-  wire [NUM_SLAVES - 1:0] wbs_cyc_o;
-  wire [NUM_SLAVES - 1:0] wbs_stb_o;
-
-  wire wbs_we_o;
-  wire  [1:0] wbs_sel_o;
-  wire [31:0] wbs_adr_o;
-  wire [15:0] wbs_dat_o;
-
-  wire [16*NUM_SLAVES - 1:0] wbs_dat_i;
-  wire    [NUM_SLAVES - 1:0] wbs_ack_i;
+  wire [NUM_SLAVES - 1:0] wb_cyc_o;
+  wire [NUM_SLAVES - 1:0] wb_stb_o;
+  wire wb_we_o;
+  wire  [1:0] wb_sel_o;
+  wire [31:0] wb_adr_o;
+  wire [15:0] wb_dat_o;
+  wire [16*NUM_SLAVES - 1:0] wb_dat_i;
+  wire    [NUM_SLAVES - 1:0] wb_ack_i;
 
   wbs_arbiter #(
     .NUM_SLAVES(NUM_SLAVES),
@@ -290,12 +304,12 @@ module toplevel(
     .TIMEOUT(1000)
   ) wbs_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o),
+    .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o), .wbm_sel_i(wbi_sel_o),
     .wbm_adr_i(wbi_adr_o), .wbm_dat_i(wbi_dat_o), .wbm_dat_o(wbi_dat_i),
     .wbm_ack_o(wbi_ack_i), .wbm_err_o(wbi_err_i),
-    .wbs_cyc_o(wbs_cyc_o), .wbs_stb_o(wbs_stb_o), .wbs_we_o(wbs_we_o),
-    .wbs_adr_o(wbs_adr_o), .wbs_dat_o(wbs_dat_o), .wbs_dat_i(wbs_dat_i),
-    .wbs_ack_i(wbs_ack_i)
+    .wbs_cyc_o(wb_cyc_o), .wbs_stb_o(wb_stb_o), .wbs_we_o(wb_we_o), .wbs_sel_o(wb_sel_o),
+    .wbs_adr_o(wb_adr_o), .wbs_dat_o(wb_dat_o), .wbs_dat_i(wb_dat_i),
+    .wbs_ack_i(wb_ack_i)
   );
 
   /******************* System Module *****************/
@@ -307,12 +321,292 @@ module toplevel(
     .REV_RCS(`REV_RCS)
   ) sys_block_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_i[0]), .wb_stb_i(wb_stb_i[0]),
-    .wb_we_i(wb_we_i), .wb_sel_i(wb_sel_i),
-    .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i),
-    .wb_dat_o(wb_dat_o[16*(0 + 1) - 1: 16*0]),
-    .wb_ack_o(wb_ack_o[0]),
+    .wb_cyc_i(wb_cyc_o[0]), .wb_stb_i(wb_stb_o[0]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(0 + 1) - 1: 16*0]),
+    .wb_ack_o(wb_ack_i[0]),
     .wb_toutsup_o() 
   );
+
+  /************* XAUI Infrastructure ***************/
+
+  wire mgt_clk;
+  wire mgt_clk_lock;
+
+  wire mgt_tx_reset             [3:0];
+  wire mgt_rx_reset             [3:0];
+  wire [63:0] mgt_rxdata        [3:0];
+  wire  [7:0] mgt_rxcharisk     [3:0];
+  wire [63:0] mgt_txdata        [3:0];
+  wire  [7:0] mgt_txcharisk     [3:0];
+  wire  [7:0] mgt_code_comma    [3:0];
+  wire  [3:0] mgt_enable_align  [3:0];
+  wire mgt_enchansync           [3:0];
+  wire mgt_loopback             [3:0];
+  wire mgt_powerdown            [3:0];
+  wire  [3:0] mgt_rxlock        [3:0];
+  wire  [3:0] mgt_syncok        [3:0];
+  wire  [7:0] mgt_codevalid     [3:0];
+  wire  [3:0] mgt_rxbufferr     [3:0];
+  wire  [1:0] mgt_rxeqmix       [3:0];
+  wire  [3:0] mgt_rxeqpole      [3:0];
+  wire  [2:0] mgt_txpreemphasis [3:0];
+  wire  [2:0] mgt_txdiffctrl    [3:0];
+
+  xaui_infrastructure #(
+    .DIFF_BOOST(`MGT_DIFF_BOOST)
+  ) xaui_infrastructure_inst (
+    .reset(sys_reset),
+    .mgt_refclk_t_n(mgt_ref_clk_top_n), .mgt_refclk_t_p(mgt_ref_clk_top_p), 
+    .mgt_refclk_b_n(mgt_ref_clk_bottom_n), .mgt_refclk_b_p(mgt_ref_clk_bottom_p), 
+
+    .mgt_tx_t0_n(mgt_tx_top_0_n),    .mgt_tx_t0_p(mgt_tx_top_0_p),
+    .mgt_tx_t1_n(mgt_tx_top_1_n),    .mgt_tx_t1_p(mgt_tx_top_1_p),
+    .mgt_tx_b0_n(mgt_tx_bottom_0_n), .mgt_tx_b0_p(mgt_tx_bottom_0_p),
+    .mgt_tx_b1_n(mgt_tx_bottom_1_n), .mgt_tx_b1_p(mgt_tx_bottom_1_p),
+    .mgt_rx_t0_n(mgt_rx_top_0_n),    .mgt_rx_t0_p(mgt_rx_top_0_p),
+    .mgt_rx_t1_n(mgt_rx_top_1_n),    .mgt_rx_t1_p(mgt_rx_top_1_p),
+    .mgt_rx_b0_n(mgt_rx_bottom_0_n), .mgt_rx_b0_p(mgt_rx_bottom_0_p),
+    .mgt_rx_b1_n(mgt_rx_bottom_1_n), .mgt_rx_b1_p(mgt_rx_bottom_1_p),
+
+    .mgt_clk(mgt_clk), .mgt_clk_lock(mgt_clk_lock),
+
+    .mgt_tx_reset_3(mgt_tx_reset[3]), .mgt_rx_reset_3(mgt_rx_reset[3]),
+    .mgt_rxdata_3(mgt_rxdata[3]), .mgt_rxcharisk_3(mgt_rxcharisk[3]),
+    .mgt_txdata_3(mgt_txdata[3]), .mgt_txcharisk_3(mgt_txcharisk[3]),
+    .mgt_code_comma_3(mgt_code_comma[3]),
+    .mgt_enchansync_3(mgt_enchansync[3]), .mgt_enable_align_3(mgt_enable_align[3]),
+    .mgt_loopback_3(mgt_loopback[3]), .mgt_powerdown_3(mgt_powerdown[3]),
+    .mgt_rxlock_3(mgt_rxlock[3]), .mgt_syncok_3(mgt_syncok[3]),
+    .mgt_codevalid_3(mgt_codevalid[3]), .mgt_rxbufferr_3(mgt_rxbufferr[3]),
+    .mgt_rxeqmix_3(mgt_rxeqmix[3]), .mgt_rxeqpole_3(mgt_rxeqpole[3]),
+    .mgt_txpreemphasis_3(mgt_txpreemphasis[3]), .mgt_txdiffctrl_3(mgt_txdiffctrl[3]),
+
+    .mgt_tx_reset_2(mgt_tx_reset[2]), .mgt_rx_reset_2(mgt_rx_reset[2]),
+    .mgt_rxdata_2(mgt_rxdata[2]), .mgt_rxcharisk_2(mgt_rxcharisk[2]),
+    .mgt_txdata_2(mgt_txdata[2]), .mgt_txcharisk_2(mgt_txcharisk[2]),
+    .mgt_code_comma_2(mgt_code_comma[2]),
+    .mgt_enchansync_2(mgt_enchansync[2]), .mgt_enable_align_2(mgt_enable_align[2]),
+    .mgt_loopback_2(mgt_loopback[2]), .mgt_powerdown_2(mgt_powerdown[2]),
+    .mgt_rxlock_2(mgt_rxlock[2]), .mgt_syncok_2(mgt_syncok[2]),
+    .mgt_codevalid_2(mgt_codevalid[2]), .mgt_rxbufferr_2(mgt_rxbufferr[2]),
+    .mgt_rxeqmix_2(mgt_rxeqmix[2]), .mgt_rxeqpole_2(mgt_rxeqpole[2]),
+    .mgt_txpreemphasis_2(mgt_txpreemphasis[2]), .mgt_txdiffctrl_2(mgt_txdiffctrl[2]),
+
+    .mgt_tx_reset_1(mgt_tx_reset[1]), .mgt_rx_reset_1(mgt_rx_reset[1]),
+    .mgt_rxdata_1(mgt_rxdata[1]), .mgt_rxcharisk_1(mgt_rxcharisk[1]),
+    .mgt_txdata_1(mgt_txdata[1]), .mgt_txcharisk_1(mgt_txcharisk[1]),
+    .mgt_code_comma_1(mgt_code_comma[1]),
+    .mgt_enchansync_1(mgt_enchansync[1]), .mgt_enable_align_1(mgt_enable_align[1]),
+    .mgt_loopback_1(mgt_loopback[1]), .mgt_powerdown_1(mgt_powerdown[1]),
+    .mgt_rxlock_1(mgt_rxlock[1]), .mgt_syncok_1(mgt_syncok[1]),
+    .mgt_codevalid_1(mgt_codevalid[1]), .mgt_rxbufferr_1(mgt_rxbufferr[1]),
+    .mgt_rxeqmix_1(mgt_rxeqmix[1]), .mgt_rxeqpole_1(mgt_rxeqpole[1]),
+    .mgt_txpreemphasis_1(mgt_txpreemphasis[1]), .mgt_txdiffctrl_1(mgt_txdiffctrl[1]),
+
+    .mgt_tx_reset_0(mgt_tx_reset[0]), .mgt_rx_reset_0(mgt_rx_reset[0]),
+    .mgt_rxdata_0(mgt_rxdata[0]), .mgt_rxcharisk_0(mgt_rxcharisk[0]),
+    .mgt_txdata_0(mgt_txdata[0]), .mgt_txcharisk_0(mgt_txcharisk[0]),
+    .mgt_code_comma_0(mgt_code_comma[0]),
+    .mgt_enchansync_0(mgt_enchansync[0]), .mgt_enable_align_0(mgt_enable_align[0]),
+    .mgt_loopback_0(mgt_loopback[0]), .mgt_powerdown_0(mgt_powerdown[0]),
+    .mgt_rxlock_0(mgt_rxlock[0]), .mgt_syncok_0(mgt_syncok[0]),
+    .mgt_codevalid_0(mgt_codevalid[0]), .mgt_rxbufferr_0(mgt_rxbufferr[0]),
+    .mgt_rxeqmix_0(mgt_rxeqmix[0]), .mgt_rxeqpole_0(mgt_rxeqpole[0]),
+    .mgt_txpreemphasis_0(mgt_txpreemphasis[0]), .mgt_txdiffctrl_0(mgt_txdiffctrl[0])
+  );
+
+  /******************* XAUI 0 **********************/
+
+  xaui_pipe #(
+    .DEFAULT_POWERDOWN(1'b0),
+    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_TXEN(1'b1)
+  ) xaui_pipe_0 (
+    .reset(sys_reset), .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[0]), .mgt_txcharisk(mgt_txcharisk[0]),
+    .mgt_rxdata(mgt_rxdata[0]), .mgt_rxcharisk(mgt_rxcharisk[0]),
+    .mgt_enable_align(mgt_enable_align[0]),.mgt_en_chan_sync(mgt_enchansync[0]), 
+    .mgt_code_valid(mgt_codevalid[0]), .mgt_code_comma(mgt_code_comma[0]),
+    .mgt_rxlock(mgt_rxlock[0]), .mgt_syncok(mgt_syncok[0]),
+    .mgt_rxbufferr(mgt_rxbufferr[0]),
+    .mgt_loopback(mgt_loopback[0]), .mgt_powerdown(mgt_powerdown[0]),
+    .mgt_tx_reset(mgt_tx_reset[0]), .mgt_rx_reset(mgt_rx_reset[0]),
+    .mgt_rxeqmix(mgt_rxeqmix[0]), .mgt_rxeqpole(mgt_rxeqpole[0]),
+    .mgt_txpreemphasis(mgt_txpreemphasis[0]), .mgt_txdiffctrl(mgt_txdiffctrl[0]),
+
+    .wb_clk_i(sys_clk),
+    .wb_cyc_i(wb_cyc_o[1]), .wb_stb_i(wb_stb_o[1]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
+    .wb_ack_o(wb_ack_i[1]),
+    .leds() //rx, tx, linkup
+  );
+
+  /******************* XAUI 1 **********************/
+
+  xaui_pipe #(
+    .DEFAULT_POWERDOWN(1'b0),
+    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_TXEN(1'b1)
+  ) xaui_pipe_1 (
+    .reset(sys_reset), .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[1]), .mgt_txcharisk(mgt_txcharisk[1]),
+    .mgt_rxdata(mgt_rxdata[1]), .mgt_rxcharisk(mgt_rxcharisk[1]),
+    .mgt_enable_align(mgt_enable_align[1]),.mgt_en_chan_sync(mgt_enchansync[1]), 
+    .mgt_code_valid(mgt_codevalid[1]), .mgt_code_comma(mgt_code_comma[1]),
+    .mgt_rxlock(mgt_rxlock[1]), .mgt_syncok(mgt_syncok[1]),
+    .mgt_rxbufferr(mgt_rxbufferr[1]),
+    .mgt_loopback(mgt_loopback[1]), .mgt_powerdown(mgt_powerdown[1]),
+    .mgt_tx_reset(mgt_tx_reset[1]), .mgt_rx_reset(mgt_rx_reset[1]),
+    .mgt_rxeqmix(mgt_rxeqmix[1]), .mgt_rxeqpole(mgt_rxeqpole[1]),
+    .mgt_txpreemphasis(mgt_txpreemphasis[1]), .mgt_txdiffctrl(mgt_txdiffctrl[1]),
+
+    .wb_clk_i(sys_clk),
+    .wb_cyc_i(wb_cyc_o[2]), .wb_stb_i(wb_stb_o[2]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(2 + 1) - 1: 16*2]),
+    .wb_ack_o(wb_ack_i[2]),
+    .leds() //rx, tx, linkup
+  );
+
+  /******************* XAUI 2 **********************/
+
+  xaui_pipe #(
+    .DEFAULT_POWERDOWN(1'b0),
+    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_TXEN(1'b1)
+  ) xaui_pipe_2 (
+    .reset(sys_reset), .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[2]), .mgt_txcharisk(mgt_txcharisk[2]),
+    .mgt_rxdata(mgt_rxdata[2]), .mgt_rxcharisk(mgt_rxcharisk[2]),
+    .mgt_enable_align(mgt_enable_align[2]),.mgt_en_chan_sync(mgt_enchansync[2]), 
+    .mgt_code_valid(mgt_codevalid[2]), .mgt_code_comma(mgt_code_comma[2]),
+    .mgt_rxlock(mgt_rxlock[2]), .mgt_syncok(mgt_syncok[2]),
+    .mgt_rxbufferr(mgt_rxbufferr[2]),
+    .mgt_loopback(mgt_loopback[2]), .mgt_powerdown(mgt_powerdown[2]),
+    .mgt_tx_reset(mgt_tx_reset[2]), .mgt_rx_reset(mgt_rx_reset[2]),
+    .mgt_rxeqmix(mgt_rxeqmix[2]), .mgt_rxeqpole(mgt_rxeqpole[2]),
+    .mgt_txpreemphasis(mgt_txpreemphasis[2]), .mgt_txdiffctrl(mgt_txdiffctrl[2]),
+
+    .wb_clk_i(sys_clk),
+    .wb_cyc_i(wb_cyc_o[3]), .wb_stb_i(wb_stb_o[3]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(3 + 1) - 1: 16*3]),
+    .wb_ack_o(wb_ack_i[3]),
+    .leds() //rx, tx, linkup
+  );
+
+  /******************* XAUI 3 **********************/
+
+  xaui_pipe #(
+    .DEFAULT_POWERDOWN(1'b0),
+    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_TXEN(1'b1)
+  ) xaui_pipe_3 (
+    .reset(sys_reset), .mgt_clk(mgt_clk),
+    .mgt_txdata(mgt_txdata[3]), .mgt_txcharisk(mgt_txcharisk[3]),
+    .mgt_rxdata(mgt_rxdata[3]), .mgt_rxcharisk(mgt_rxcharisk[3]),
+    .mgt_enable_align(mgt_enable_align[3]),.mgt_en_chan_sync(mgt_enchansync[3]), 
+    .mgt_code_valid(mgt_codevalid[3]), .mgt_code_comma(mgt_code_comma[3]),
+    .mgt_rxlock(mgt_rxlock[3]), .mgt_syncok(mgt_syncok[3]),
+    .mgt_rxbufferr(mgt_rxbufferr[3]),
+    .mgt_loopback(mgt_loopback[3]), .mgt_powerdown(mgt_powerdown[3]),
+    .mgt_tx_reset(mgt_tx_reset[3]), .mgt_rx_reset(mgt_rx_reset[3]),
+    .mgt_rxeqmix(mgt_rxeqmix[3]), .mgt_rxeqpole(mgt_rxeqpole[3]),
+    .mgt_txpreemphasis(mgt_txpreemphasis[3]), .mgt_txdiffctrl(mgt_txdiffctrl[3]),
+
+    .wb_clk_i(sys_clk),
+    .wb_cyc_i(wb_cyc_o[4]), .wb_stb_i(wb_stb_o[4]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(4 + 1) - 1: 16*4]),
+    .wb_ack_o(wb_ack_i[4]),
+    .leds() //rx, tx, linkup
+  );
+
+  /******************* GPIO ***********************/
+
+  /******** Single Ended **********/
+  assign se_gpio_a_oen_n = 1'b0;
+  assign se_gpio_b_oen_n = 1'b1;
+
+  assign se_gpio_a[0] = serial_out;
+  assign se_gpio_a[7:1] = 7'b0;
+
+  assign serial_in  = se_gpio_b[0];
+  assign se_gpio_b[7:1] = {7{1'bz}};
+
+  /******** Differential **********/
+  assign diff_gpio_a_n = {19{1'bz}};
+  assign diff_gpio_a_p = {19{1'bz}};
+  assign diff_gpio_a_clk_n = 1'bz;
+  assign diff_gpio_a_clk_p = 1'bz;
+  assign diff_gpio_b_n = {19{1'bz}};
+  assign diff_gpio_b_p = {19{1'bz}};
+  assign diff_gpio_b_clk_n = 1'bz;
+  assign diff_gpio_b_clk_p = 1'bz;
+
+  /****************** ZDOKs **********************/
+  assign zdok0_dp_n = {38{1'bz}};
+  assign zdok0_dp_p = {38{1'bz}};
+  assign zdok1_dp_n = {38{1'bz}};
+  assign zdok1_dp_p = {38{1'bz}};
+
+  /***************** QDR0 ************************/
+  assign qdr0_d  = {18{1'b0}};
+  assign qdr0_sa = {22{1'b0}};
+  assign qdr0_w_n = 1'b1;
+  assign qdr0_r_n = 1'b1;
+  assign qdr0_dll_off_n = 1'b1;
+  assign qdr0_bw_n = 2'b11;
+  assign qdr0_k_p = 1'b0;
+  assign qdr0_k_n = 1'b1;
+
+  /***************** QDR1 ************************/
+  assign qdr1_d  = {18{1'b0}};
+  assign qdr1_sa = {22{1'b0}};
+  assign qdr1_w_n = 1'b1;
+  assign qdr1_r_n = 1'b1;
+  assign qdr1_dll_off_n = 1'b1;
+  assign qdr1_bw_n = 2'b11;
+  assign qdr1_k_p = 1'b0;
+  assign qdr1_k_n = 1'b1;
+
+  /*************** DDR SDRAM ********************/
+
+  assign ddr2_dq = {72{1'bz}};
+  assign ddr2_dm = 9'b0;
+  assign ddr2_dqs_n = {9{1'bz}};
+  assign ddr2_dqs_p = {9{1'bz}};
+  assign ddr2_a = 16'b0;
+  assign ddr2_ba = 3'b0;
+  assign ddr2_ras_n = 1'b1;
+  assign ddr2_cas_n = 1'b1; 
+  assign ddr2_we_n  = 1'b1;
+  assign ddr2_reset_n = 1'b0;
+  assign ddr2_cke_0 = 1'b0;
+  assign ddr2_cke_1 = 1'b0;
+  assign ddr2_cs_n_0 = 1'b1;
+  assign ddr2_cs_n_1 = 1'b1;
+  assign ddr2_odt_0 = 1'b1;
+  assign ddr2_odt_1 = 1'b1;
+  assign ddr2_ck_0_n = 1'b0;
+  assign ddr2_ck_0_p = 1'b1;
+  assign ddr2_ck_1_n = 1'b0;
+  assign ddr2_ck_1_p = 1'b1;
+  assign ddr2_ck_2_n = 1'b0;
+  assign ddr2_ck_2_p = 1'b1;
+    
+  assign ddr2_scl = 1'b0;
+  assign ddr2_sda = 1'b0;
+  assign ddr2_par_out = 1'b0;
+
+
+
 
 endmodule

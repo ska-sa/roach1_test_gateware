@@ -13,10 +13,10 @@ NET "aux_clk0_p"  LOC = G15;
 NET "aux_clk1_n"  LOC = H14;
 NET "aux_clk1_p"  LOC = H15;
 
-NET "led_n<0>"        LOC = AP26;
-NET "led_n<1>"        LOC = AP25;
-NET "led_n<2>"        LOC = AL25;
-NET "led_n<3>"        LOC = AL24;
+NET "led_n<0>"    LOC = AP26;
+NET "led_n<1>"    LOC = AP25;
+NET "led_n<2>"    LOC = AL25;
+NET "led_n<3>"    LOC = AL24;
 
 #
 # PPC External Peripheral Bus [EPB]
@@ -680,6 +680,7 @@ NET "se_gpio_b_oen_n" LOC = M32;
 # Clock on tile 7
 NET "mgt_ref_clk_top_n"    LOC = C8;
 NET "mgt_ref_clk_top_p"    LOC = D8;
+
 # Clock on tile 3
 NET "mgt_ref_clk_bottom_n" LOC = Y3;
 NET "mgt_ref_clk_bottom_p" LOC = Y4;

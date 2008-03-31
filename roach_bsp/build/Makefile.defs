@@ -47,8 +47,8 @@ XST_ARGS=run,\
 
 ######### Command Flags ###########
 NGDBUILD_FLAGS=-aul
-MAP_FLAGS=-detail -timing -ol high
-PAR_FLAGS=-w -ol high
+MAP_FLAGS=-detail -timing -ol std -w
+PAR_FLAGS=-w -ol std
 BITGEN_FLAGS=-w -g DONE_cycle:4 -g DonePipe:Yes -g StartUpClk:JTAGCLK -g DonePin:PULLUP -g Security:NONE -m
 CPLDFIT_FLAGS=
 HPREP6_FLAGS=

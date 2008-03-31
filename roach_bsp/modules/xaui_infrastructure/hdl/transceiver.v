@@ -1,7 +1,7 @@
 module transceiver(
     //mgt resets and clocks
     reset, rx_reset, tx_reset,
-    refclk,
+    refclk, refclk_ret,
     mgt_clk, mgt_clk_mult_2,
     //mgt rx/tx
     txp_1, txn_1,
@@ -46,6 +46,7 @@ module transceiver(
 
   input  reset, rx_reset, tx_reset;
   input  refclk, mgt_clk, mgt_clk_mult_2;
+  output refclk_ret;
 
   output txp_1, txn_1, txp_0, txn_0;
   input  rxp_1, rxn_1, rxp_0, rxn_0;
@@ -121,13 +122,16 @@ module transceiver(
   /************ XAUI status bits generation *****************/
 
   wire [2:0] rxbufstatus_1, rxbufstatus_0;
-  assign rxbuferr_1 = rxbufstatus_1 == 3'b110 || rxbufstatus_1 == 3'b101;
-  assign rxbuferr_0 = rxbufstatus_0 == 3'b110 || rxbufstatus_0 == 3'b101;
+
+  assign rxbufferr_1 = rxbufstatus_1 == 3'b110 || rxbufstatus_1 == 3'b101;
+  assign rxbufferr_0 = rxbufstatus_0 == 3'b110 || rxbufstatus_0 == 3'b101;
    
-  wire [1:0] rxlossofsync_1;
-  wire [1:0] rxlossofsync_0;
-  assign syncok_1 = ~rxlossofsync_1[1];
-  assign syncok_0 = ~rxlossofsync_0[1];
+  wire rxlossofsync_1;
+  wire rxlossofsync_0;
+  wire rxlossofsync_1_nc;
+  wire rxlossofsync_0_nc;
+  assign syncok_1 = rxlossofsync_1;
+  assign syncok_0 = rxlossofsync_0;
 
 
   wire [1:0] rxnotintable_1;
@@ -183,7 +187,8 @@ module transceiver(
     .RCV_TERM_VTTRX_1("FALSE"),
     .TERMINATION_IMP_1(50),
 
-    .PCS_COM_CFG(28'h1680a0e),  
+ // .PCS_COM_CFG(28'h1680a0e),  -- this seems to not be supported in ise-9.2
+ // but is referenced in documentation
     .TERMINATION_CTRL(5'b10100),
     .TERMINATION_OVRD("FALSE"),
     //------------------- RX Serial Line Rate Settings --------------------   
@@ -391,7 +396,7 @@ module transceiver(
     .RXPMASETPHASE0(1'b0), .RXPMASETPHASE1(1'b0),
     .RXSTATUS0(), .RXSTATUS1(),
     //------------- Receive Ports - RX Loss-of-sync State Machine --------------
-    .RXLOSSOFSYNC0(rxlossofsync_0), .RXLOSSOFSYNC1(rxlossofsync_1),
+    .RXLOSSOFSYNC0({rxlossofsync_0, rxlossofsync_0_nc}), .RXLOSSOFSYNC1({rxlossofsync_1, rxlossofsync_1_nc}),
     //-------------------- Receive Ports - RX Oversampling ---------------------
     .RXENSAMPLEALIGN0(1'b0), .RXENSAMPLEALIGN1(1'b0),
     .RXOVERSAMPLEERR0(), .RXOVERSAMPLEERR1(),
@@ -406,7 +411,7 @@ module transceiver(
     .GTPTEST(4'b0), .INTDATAWIDTH(1'b1),
     .PLLLKDET(pll_lock_det),
     .PLLLKDETEN(1'b1), .PLLPOWERDOWN(1'b0),
-    .REFCLKOUT(), .REFCLKPWRDNB(1'b1),
+    .REFCLKOUT(refclk_ret), .REFCLKPWRDNB(1'b1),
     .RESETDONE0(resetdone_0), .RESETDONE1(resetdone_1),
     .RXENELECIDLERESETB(rxenelecidleresetb & ~reset),
     .TXENPMAPHASEALIGN(1'b0), .TXPMASETPHASE(1'b0),

@@ -18,8 +18,8 @@ module sys_block(
   input  wb_stb_i;
   input   [1:0] wb_sel_i;
   input  [31:0] wb_adr_i;
-  input  [16:0] wb_dat_i;
-  output [16:0] wb_dat_o;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
   output wb_ack_o, wb_toutsup_o;
   assign wb_toutsup_o=1'b0;
 
@@ -41,8 +41,8 @@ module sys_block(
       wb_ack_o<=1'b0;
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o<=1'b1;
-        wb_dat_o_sel <= wb_adr_i[4:2];
-        case (wb_adr_i[4:2])
+        wb_dat_o_sel <= wb_adr_i[3:1];
+        case (wb_adr_i[3:1])
           `REG_BOARD_ID: begin
           end
           `REG_REV_MAJOR: begin
@@ -52,10 +52,12 @@ module sys_block(
           `REG_REV_RCS: begin
           end
           `REG_SCRATCHPAD: begin
-            if (wb_sel_i[0])
-              scratch_pad[7:0] <= wb_dat_i[7:0];
-            if (wb_sel_i[1])
-              scratch_pad[15:8] <= wb_dat_i[15:8];
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                scratch_pad[7:0] <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                scratch_pad[15:8] <= wb_dat_i[15:8];
+            end
           end
         endcase
       end

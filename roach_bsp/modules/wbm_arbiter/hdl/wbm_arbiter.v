@@ -5,11 +5,11 @@ module wbm_arbiter(
     /*generic wb signals*/
     wb_clk_i, wb_rst_i,
     /*wbm signals*/
-    wbm_cyc_i, wbm_stb_i, wbm_we_i,
+    wbm_cyc_i, wbm_stb_i, wbm_we_i, wbm_sel_i,
     wbm_adr_i, wbm_dat_i, wbm_dat_o,
     wbm_ack_o, wbm_err_o,
     /*wbs signals*/
-    wbs_cyc_o, wbs_stb_o, wbs_we_o,
+    wbs_cyc_o, wbs_stb_o, wbs_we_o, wbs_sel_o,
     wbs_adr_o, wbs_dat_o, wbs_dat_i,
     wbs_ack_i, wbs_err_i,
     /*special signals*/
@@ -29,6 +29,7 @@ module wbm_arbiter(
   input  [NUM_MASTERS - 1:0] wbm_cyc_i;
   input  [NUM_MASTERS - 1:0] wbm_stb_i;
   input  [NUM_MASTERS - 1:0] wbm_we_i;
+  input  [NUM_MASTERS - 1:0] wbm_sel_i;
   input  [16*NUM_MASTERS - 1:0] wbm_adr_i;
   input  [16*NUM_MASTERS - 1:0] wbm_dat_i;
   output [15:0] wbm_dat_o;
@@ -36,6 +37,7 @@ module wbm_arbiter(
   output [NUM_MASTERS - 1:0] wbm_err_o;
 
   output wbs_cyc_o, wbs_stb_o, wbs_we_o;
+  output  [1:0] wbs_sel_o;
   output [15:0] wbs_adr_o;
   output [15:0] wbs_dat_o;
   input  [15:0] wbs_dat_i;
@@ -59,6 +61,8 @@ module wbm_arbiter(
   assign wbm_dat_o = wbs_dat_i;
 
   assign wbs_we_o  = wbm_we_i[active_master];
+
+  assign wbs_sel_o = {wbm_sel_i[active_master*2 + 1], wbm_sel_i[active_master*2 + 0]};
 
   genvar gen_k, gen_l;
 

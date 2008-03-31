@@ -21,7 +21,7 @@ module as_wb_bridge(
     as_dstrb_o, as_busy_i, as_dstrb_i,
     wb_stb_o, wb_cyc_o, wb_we_o, wb_sel_o,
     wb_adr_o, wb_dat_o, wb_dat_i,
-    wb_ack_i,
+    wb_ack_i, wb_err_i,
     soft_reset
   );
   input  clk, reset;
@@ -34,7 +34,7 @@ module as_wb_bridge(
   output [31:0] wb_adr_o;
   output [15:0] wb_dat_o;
   input  [15:0] wb_dat_i;
-  input  wb_ack_i;
+  input  wb_ack_i, wb_err_i;
   output soft_reset;
 
   /* Interaction Signals */
@@ -262,7 +262,7 @@ module as_wb_bridge(
           end
         end
         `WB_M_STATE_RESPONSE: begin
-          if (wb_ack_i) begin
+          if (wb_ack_i | wb_err_i) begin
             wb_m_state<=`WB_M_STATE_CMND;
             if (~wb_we_o) begin
               wb_data <= wb_dat_i;
