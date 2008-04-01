@@ -38,7 +38,7 @@ module wbm_arbiter(
 
   output wbs_cyc_o, wbs_stb_o, wbs_we_o;
   output  [1:0] wbs_sel_o;
-  output [15:0] wbs_adr_o;
+  output [31:0] wbs_adr_o;
   output [15:0] wbs_dat_o;
   input  [15:0] wbs_dat_i;
   input  wbs_ack_i, wbs_err_i;

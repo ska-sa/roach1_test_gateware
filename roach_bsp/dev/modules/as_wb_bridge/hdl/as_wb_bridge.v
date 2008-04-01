@@ -54,11 +54,16 @@ module as_wb_bridge(
   reg as_t_wait;
   reg [7:0] as_data_o;
   reg as_dstrb_o;
-  
+
+  localparam DISABLE_HELLO = 1; //this was a dump idea
 
   always @(posedge clk) begin
     if (reset) begin
-      as_t_state<=`AS_T_STATE_HELLO;
+      if (DISABLE_HELLO) begin
+        as_t_state<=`AS_T_STATE_WAIT;
+      end else begin
+        as_t_state<=`AS_T_STATE_HELLO;
+      end
       as_dstrb_o<=1'b0;
       as_data_o<=8'b0;
       as_t_progress<=2'b0;

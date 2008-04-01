@@ -275,7 +275,7 @@ module toplevel(
     .NUM_MASTERS(2)
   ) wbm_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o, wbm_we_o}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
+    .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o_1, wbm_we_o_0}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
     .wbm_adr_i({wbm_adr_o_1, wbm_adr_o_0}), .wbm_dat_i({wbm_dat_o_1, wbm_dat_o_0}), .wbm_dat_o({wbm_dat_i_1, wbm_dat_i_0}),
     .wbm_ack_o({wbm_ack_i_1, wbm_ack_i_0}), .wbm_err_o({wbm_err_i_1, wbm_err_i_0}),
     .wbs_cyc_o(wbi_cyc_o), .wbs_stb_o(wbi_stb_o), .wbs_we_o(wbi_we_o), .wbs_sel_o(wbi_sel_o),

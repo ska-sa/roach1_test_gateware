@@ -30,7 +30,7 @@ module wbm_arbiter(
   input  [NUM_MASTERS - 1:0] wbm_stb_i;
   input  [NUM_MASTERS - 1:0] wbm_we_i;
   input  [NUM_MASTERS - 1:0] wbm_sel_i;
-  input  [16*NUM_MASTERS - 1:0] wbm_adr_i;
+  input  [32*NUM_MASTERS - 1:0] wbm_adr_i;
   input  [16*NUM_MASTERS - 1:0] wbm_dat_i;
   output [15:0] wbm_dat_o;
   output [NUM_MASTERS - 1:0] wbm_ack_o;
@@ -38,7 +38,7 @@ module wbm_arbiter(
 
   output wbs_cyc_o, wbs_stb_o, wbs_we_o;
   output  [1:0] wbs_sel_o;
-  output [15:0] wbs_adr_o;
+  output [31:0] wbs_adr_o;
   output [15:0] wbs_dat_o;
   input  [15:0] wbs_dat_i;
   input  wbs_ack_i, wbs_err_i;
@@ -66,8 +66,8 @@ module wbm_arbiter(
 
   genvar gen_k, gen_l;
 
-  generate for (gen_k=0; gen_k < 16; gen_k=gen_k+1) begin : G2
-    assign wbs_adr_o[gen_k] = wbm_adr_i[16*active_master + gen_k];
+  generate for (gen_k=0; gen_k < 32; gen_k=gen_k+1) begin : G2
+    assign wbs_adr_o[gen_k] = wbm_adr_i[32*active_master + gen_k];
   end endgenerate
 
   generate for (gen_l=0; gen_l < 16; gen_l=gen_l+1) begin : G3
@@ -88,6 +88,7 @@ module wbm_arbiter(
     input [NUM_MASTERS - 1:0] pending_i;
     reg [NUM_MASTERS - 1:0] j;
     begin
+      sel_active_master = 0; //default is zero
       for (j=0; j < NUM_MASTERS; j=j+1) begin
         if (pending_i[j]) begin
           sel_active_master = j; //last master gets preference

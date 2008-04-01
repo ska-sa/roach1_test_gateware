@@ -8,7 +8,7 @@
 /************** XAUI/TENGBE Defines ***************/
 
 //`define ENABLE_TEN_GB_ETH_0
-//`define ENABLE_XAUI_0
+`define ENABLE_XAUI_0
 //`define ENABLE_TEN_GB_ETH_1
 //`define ENABLE_XAUI_1
 //`define ENABLE_TEN_GB_ETH_2

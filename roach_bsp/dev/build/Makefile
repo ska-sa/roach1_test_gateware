@@ -33,8 +33,11 @@ $(PROJECT).pcf: $(PROJECT).ngd
 $(PROJECT).ncd: $(PROJECT).pcf
 	$(PAR_ENV) $(PAR) $(PAR_FLAGS) $(PROJECT)_map.ncd $@ $^ >& par.log
 
-$(PROJECT).bit: $(PROJECT).ncd
-	$(BITGEN) $(BITGEN_FLAGS) $^ $@ >& bitgen.log
+$(PROJECT).twr: $(PROJECT).ncd
+	$(TRCE) $(TRCE_FLAGS) -o $@ $^ >& trce.log
+
+$(PROJECT).bit: $(PROJECT).twr 
+	$(BITGEN) $(BITGEN_FLAGS) $(PROJECT).ncd $@ >& bitgen.log
 	@cp $@ $(GEN_DIR)/$@
 
 

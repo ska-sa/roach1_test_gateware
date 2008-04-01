@@ -42,6 +42,7 @@ module sys_block(
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o<=1'b1;
         wb_dat_o_sel <= wb_adr_i[3:1];
+
         case (wb_adr_i[3:1])
           `REG_BOARD_ID: begin
           end

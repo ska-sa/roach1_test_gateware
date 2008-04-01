@@ -7,6 +7,7 @@ XST=xst-$(ISE_VER)
 NGDBUILD=ngdbuild-$(ISE_VER)
 MAP=map-$(ISE_VER)
 PAR=par-$(ISE_VER)
+TRCE=trce-$(ISE_VER)
 BITGEN=bitgen-$(ISE_VER)
 CPLDFIT=cpldfit-$(ISE_VER)
 HPREP6=hprep6-$(ISE_VER)
@@ -22,8 +23,8 @@ XST_ARGS=run,\
 -ofmt NGC,\
 -top  $(TOPLEVEL_MODULE),\
 -p $(PARTNUM),\
--opt_mode Area,\
--opt_level 1,\
+-opt_mode Timing,\
+-opt_level 3,\
 -iuc NO,\
 -keep_hierarchy NO,\
 -rtlview Yes,\
@@ -49,10 +50,11 @@ XST_ARGS=run,\
 
 ######### Command Flags ###########
 NGDBUILD_FLAGS=-aul
-MAP_FLAGS=-detail -timing -ol std -w
-PAR_FLAGS=-w -ol std
-BITGEN_FLAGS=-w -g DONE_cycle:4 -g DonePipe:Yes -g StartUpClk:JTAGCLK -g DonePin:PULLUP -g Security:NONE -m
+MAP_FLAGS=-detail -timing -ol high -w
+PAR_FLAGS=-w -ol high
+BITGEN_FLAGS=-w -g StartUpClk:JTAGCLK -g Security:NONE -m
 CPLDFIT_FLAGS=
+TRCE_FLAGS=-e 1000
 HPREP6_FLAGS=
 #TAENGINE_FLAGS=-detail
 TAENGINE_FLAGS=
