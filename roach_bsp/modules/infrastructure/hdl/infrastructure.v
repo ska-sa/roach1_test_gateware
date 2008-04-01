@@ -3,6 +3,7 @@ module infrastructure(
     sys_clk,
     dly_clk_n, dly_clk_p,
     dly_clk,
+    idelay_rst, idelay_rdy,
     aux_clk0_n, aux_clk0_p,
     aux_clk_0,
     aux_clk1_n, aux_clk1_p,
@@ -12,6 +13,8 @@ module infrastructure(
   output sys_clk;
   input  dly_clk_n, dly_clk_p;
   output dly_clk;
+  input  idelay_rst;
+  output idelay_rdy;
   input  aux_clk0_n, aux_clk0_p;
   output aux_clk_0;
   input  aux_clk1_n, aux_clk1_p;
@@ -30,6 +33,12 @@ module infrastructure(
   BUFG BUFG_arr_inst[3:0](
     .I(clk_int),
     .O({sys_clk, dly_clk, aux_clk_1, aux_clk_0})
+  );
+
+  IDELAYCTRL idelayctrl_inst(
+    .REFCLK(dly_clk),
+    .RST(idelay_rst),
+    .RDY(idelay_rdy)
   );
 
 endmodule

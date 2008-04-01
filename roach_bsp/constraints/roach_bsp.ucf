@@ -1,4 +1,17 @@
 #
+# Timing Constraints
+#
+
+Net mgt_clk TNM_NET = mgt_clk;
+TIMESPEC TS_mgt_clk = PERIOD mgt_clk 156.25 MHz;
+
+Net sys_clk TNM_NET = sys_clk;
+TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
+
+#Net dly_clk TNM_NET = dly_clk;
+#TIMESPEC TS_dly_clk = PERIOD dly_clk 200 MHz;
+
+#
 # System signals
 #
 

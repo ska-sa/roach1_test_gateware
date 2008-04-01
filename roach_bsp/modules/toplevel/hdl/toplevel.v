@@ -163,27 +163,36 @@ module toplevel(
   input  [3:0] mgt_rx_bottom_0_n;
   input  [3:0] mgt_rx_bottom_0_p;
 
+  /****************** Glocal Signals **********************/
+
+  wire sys_clk, dly_clk, mgt_clk, aux_clk_0, aux_clk_1;
+  // synthesis attribute KEEP of sys_clk is TRUE
+  // synthesis attribute KEEP of dly_clk is TRUE
+  // synthesis attribute KEEP of mgt_clk is TRUE
+  // Ensure that the above nets are not synthesized away
+  wire sys_reset;
+  wire soft_reset;
+  assign led_n = 4'b0101;
 
   /**************** Global Infrastructure ****************/
 
-  wire sys_clk, dly_clk, aux_clk_0, aux_clk_1;
+
+  wire idelay_ready_nc;
 
   infrastructure infrastructure_inst(
     .sys_clk_n(sys_clk_n), .sys_clk_p(sys_clk_p),
     .sys_clk(sys_clk),
     .dly_clk_n(dly_clk_n), .dly_clk_p(dly_clk_p),
     .dly_clk(dly_clk),
+    .idelay_rst(sys_reset), .idelay_rdy(idelay_ready_nc),
     .aux_clk0_n(aux_clk0_n), .aux_clk0_p(aux_clk0_p),
     .aux_clk_0(aux_clk_0),
     .aux_clk1_n(aux_clk1_n), .aux_clk1_p(aux_clk1_p),
     .aux_clk_1(aux_clk_1)
   );
 
-  assign led_n = 4'b0101;
 
   /********************* Reset Block *********************/
-  wire sys_reset;
-  wire soft_reset;
 
   reset_block #(
     .DELAY(100),
@@ -331,7 +340,6 @@ module toplevel(
 
   /************* XAUI Infrastructure ***************/
 
-  wire mgt_clk;
   wire mgt_clk_lock;
 
   wire  [3:0] mgt_tx_reset      [3:0];
