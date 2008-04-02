@@ -6,9 +6,15 @@
 
 
 /************** XAUI/TENGBE Defines ***************/
+`define TGE_0_DEFAULT_FABRIC_MAC     48'hff_ff_ff_ff_ff_ff
+`define TGE_0_DEFAULT_FABRIC_IP      32'hff_ff_ff_ff
+`define TGE_0_DEFAULT_FABRIC_GATEWAY 8'hff
+`define TGE_0_DEFAULT_FABRIC_PORT    16'hff_ff
+`define TGE_0_FABRIC_RUN_ON_STARTUP  1
 
-//`define ENABLE_TEN_GB_ETH_0
-`define ENABLE_XAUI_0
+
+`define ENABLE_TEN_GB_ETH_0
+//`define ENABLE_XAUI_0
 //`define ENABLE_TEN_GB_ETH_1
 //`define ENABLE_XAUI_1
 //`define ENABLE_TEN_GB_ETH_2

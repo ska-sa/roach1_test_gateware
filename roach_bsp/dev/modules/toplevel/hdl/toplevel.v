@@ -148,7 +148,7 @@ module toplevel(
     .NUM_MASTERS(2)
   ) wbm_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o_1, wbm_we_o_1}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
+    .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o_1, wbm_we_o_0}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
     .wbm_adr_i({wbm_adr_o_1, wbm_adr_o_0}), .wbm_dat_i({wbm_dat_o_1, wbm_dat_o_0}), .wbm_dat_o({wbm_dat_i_1, wbm_dat_i_0}),
     .wbm_ack_o({wbm_ack_i_1, wbm_ack_i_0}), .wbm_err_o({wbm_err_i_1, wbm_err_i_0}),
     .wbs_cyc_o(wbi_cyc_o), .wbs_stb_o(wbi_stb_o), .wbs_we_o(wbi_we_o), .wbs_sel_o(wbi_sel_o),
@@ -185,7 +185,7 @@ module toplevel(
     .NUM_SLAVES(NUM_SLAVES),
     .SLAVE_ADDR(SLAVE_ADDR),
     .SLAVE_HIGH(SLAVE_HIGH),
-    .TIMEOUT(1000)
+    .TIMEOUT(100)
   ) wbs_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o), .wbm_sel_i(wbi_sel_o),
@@ -194,7 +194,7 @@ module toplevel(
     .wbs_cyc_o(wb_cyc_o), .wbs_stb_o(wb_stb_o), .wbs_we_o(wb_we_o), .wbs_sel_o(wb_sel_o),
     .wbs_adr_o(wb_adr_o), .wbs_dat_o(wb_dat_o), .wbs_dat_i(wb_dat_i),
     .wbs_ack_i(wb_ack_i)
-    ,.debug(debug_led)
+    ,.debug(debug_led[7:4])
   );
 
   /******************* System Module *****************/
@@ -286,7 +286,13 @@ module toplevel(
   /******************* XAUI/TGBE 0 **********************/
 
 `ifdef ENABLE_TEN_GB_ETH_0
-  ten_gb_eth ten_gb_eth_0 (
+  ten_gb_eth #(
+    .DEFAULT_FABRIC_MAC     (`TGE_0_DEFAULT_FABRIC_MAC),
+    .DEFAULT_FABRIC_IP      (`TGE_0_DEFAULT_FABRIC_IP),
+    .DEFAULT_FABRIC_GATEWAY (`TGE_0_DEFAULT_FABRIC_GATEWAY),
+    .DEFAULT_FABRIC_PORT    (`TGE_0_DEFAULT_FABRIC_PORT),
+    .FABRIC_RUN_ON_STARTUP  (`TGE_0_FABRIC_RUN_ON_STARTUP)
+  ) ten_gb_eth_0 (
     .clk(tge_usr_clk[0]), .rst(tge_usr_rst[0]),
     .tx_valid(tge_tx_valid[0]), .tx_ack(tge_tx_ack[0]),
     .tx_end_of_frame(tge_tx_end_of_frame[0]), .tx_discard(tge_tx_discard[0]),
@@ -314,6 +320,7 @@ module toplevel(
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
     .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
     .wb_ack_o(wb_ack_i[1])
+    ,.debug(debug_led[3:0])
   );
 
   assign mgt_rxeqmix[0]       = 2'b0; 
@@ -360,6 +367,7 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
     .wb_ack_o(wb_ack_i[1]),
     .leds() //rx, tx, linkup
+    ,.debug(debug_led[3:0])
   );
 `endif
 

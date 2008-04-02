@@ -2,9 +2,9 @@
 module sys_block(
     //wb slave
     wb_clk_i, wb_rst_i,
-    wb_we_i, wb_cyc_i, wb_stb_i,
+    wb_we_i, wb_cyc_i, wb_stb_i, wb_sel_i,
     wb_adr_i, wb_dat_i, wb_dat_o,
-    wb_ack_o, wb_toutsup_o, wb_sel_i
+    wb_ack_o, wb_toutsup_o
   );
   parameter BOARD_ID  = 16'hdead;
   parameter REV_MAJOR = 16'haaaa;

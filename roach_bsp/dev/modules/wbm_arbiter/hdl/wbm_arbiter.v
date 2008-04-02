@@ -62,7 +62,8 @@ module wbm_arbiter(
 
   assign wbs_we_o  = wbm_we_i[active_master];
 
-  assign wbs_sel_o = {wbm_sel_i[active_master*2 + 1], wbm_sel_i[active_master*2 + 0]};
+  assign wbs_sel_o[1] = wbm_sel_i[active_master*2 + 1];
+  assign wbs_sel_o[0] = wbm_sel_i[active_master*2 + 0];
 
   genvar gen_k, gen_l;
 

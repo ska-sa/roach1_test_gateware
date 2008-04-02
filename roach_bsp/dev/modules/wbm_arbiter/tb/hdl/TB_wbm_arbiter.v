@@ -12,14 +12,14 @@ module TB_wbm_arbiter();
   reg   [`NUM_MASTERS*1 - 1:0] wbm_cyc_i;
   reg   [`NUM_MASTERS*1 - 1:0] wbm_stb_i;
   reg   [`NUM_MASTERS*1 - 1:0] wbm_we_i;
-  reg  [`NUM_MASTERS*16 - 1:0] wbm_adr_i;
+  reg  [`NUM_MASTERS*32 - 1:0] wbm_adr_i;
   reg  [`NUM_MASTERS*16 - 1:0] wbm_dat_i;
   wire  [16 - 1:0] wbm_dat_o;
   wire  [`NUM_MASTERS*1 - 1:0] wbm_ack_o;
   wire  [`NUM_MASTERS*1 - 1:0] wbm_err_o;
 
   wire wbs_cyc_o, wbs_stb_o, wbs_we_o;
-  wire [15:0] wbs_adr_o;
+  wire [31:0] wbs_adr_o;
   wire [15:0] wbs_dat_o;
   reg  [15:0] wbs_dat_i;
   reg  wbs_ack_i;
@@ -28,7 +28,7 @@ module TB_wbm_arbiter();
     .NUM_MASTERS(`NUM_MASTERS)
   ) wbm_arbiter (
     .wb_clk_i(clk), .wb_rst_i(reset),
-    .wbm_cyc_i(wbm_cyc_i), .wbm_stb_i(wbm_stb_i), .wbm_we_i(wbm_we_i),
+    .wbm_cyc_i(wbm_cyc_i), .wbm_stb_i(wbm_stb_i), .wbm_we_i(wbm_we_i), .wbm_sel_i(2'b11),
     .wbm_adr_i(wbm_adr_i), .wbm_dat_i(wbm_dat_i), .wbm_dat_o(wbm_dat_o),
     .wbm_ack_o(wbm_ack_o), .wbm_err_o(wbm_err_o),
     .wbs_cyc_o(wbs_cyc_o), .wbs_stb_o(wbs_stb_o), .wbs_we_o(wbs_we_o),
@@ -166,7 +166,7 @@ module TB_wbm_arbiter();
               wbm_cyc_i <= {`NUM_MASTERS{1'b1}};
               wbm_stb_i <= {`NUM_MASTERS{1'b1}};
               wbm_we_i  <= {`NUM_MASTERS{1'b1}};
-              wbm_adr_i <= {`NUM_MASTERS{16'b0}};
+              wbm_adr_i <= {`NUM_MASTERS{32'b0}};
               wbm_dat_i <= test_data;
               mstate <= `MSTATE_WAIT;
 `ifdef DEBUG
@@ -177,7 +177,7 @@ module TB_wbm_arbiter();
               wbm_cyc_i[0] <= 1'b1;
               wbm_stb_i[0] <= 1'b1;
               wbm_we_i[0]  <= 1'b0;
-              wbm_adr_i[15:0] <= mindex;
+              wbm_adr_i[31:0] <= mindex;
               mstate <= `MSTATE_WAIT;
             end
           endcase

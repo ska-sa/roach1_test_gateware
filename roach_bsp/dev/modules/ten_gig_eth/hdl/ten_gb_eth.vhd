@@ -54,6 +54,13 @@ library unisim;
 use unisim.all;
 
 entity ten_gb_eth is
+	generic(
+                DEFAULT_FABRIC_MAC     : std_logic_vector := x"ffffffffffff";
+                DEFAULT_FABRIC_IP      : std_logic_vector := x"ffffffff";
+                DEFAULT_FABRIC_GATEWAY : std_logic_vector := x"ff";
+                DEFAULT_FABRIC_PORT    : std_logic_vector := x"ffff";
+                FABRIC_RUN_ON_STARTUP  : integer := 1
+	);
 	port (
 		-- application clock
 		clk                   : in  std_logic;
@@ -110,6 +117,7 @@ entity ten_gb_eth is
                 wb_dat_i              : in  std_logic_vector(15 downto 0);
                 wb_dat_o              : out std_logic_vector(15 downto 0);
                 wb_ack_o              : out std_logic
+                ;debug              : out std_logic_vector(3 downto 0)
 	);
 end entity ten_gb_eth;
 
@@ -293,6 +301,13 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 
 	-- plb attachment
 	component wb_attach
+		generic(
+                        DEFAULT_FABRIC_MAC     : std_logic_vector := x"ffffffffffff";
+                        DEFAULT_FABRIC_IP      : std_logic_vector := x"ffffffff";
+                        DEFAULT_FABRIC_GATEWAY : std_logic_vector := x"ff";
+                        DEFAULT_FABRIC_PORT    : std_logic_vector := x"ffff";
+                        FABRIC_RUN_ON_STARTUP  : integer := 1
+		);
 		port (
 			-- local configuration
 			local_mac             : out std_logic_vector(47 downto 0);
@@ -341,6 +356,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
                         wb_dat_i              : in  std_logic_vector(15 downto 0);
                         wb_dat_o              : out std_logic_vector(15 downto 0);
                         wb_ack_o              : out std_logic
+                        ;debug              : out std_logic_vector(3 downto 0)
 		);
 	end component;
 
@@ -1078,7 +1094,7 @@ begin
 					rx_frame_valid_for_cpu         <= '1';
 					rx_frame_valid_for_hardware    <= '1';
 					-- if we receive a valid word from the mac we start a frame reception
-					if mac_rx_data_valid = "11111111" then
+					if mac_rx_data_valid = "11111111" & phy_rx_up = '1' then
 						rx_state                             <= RECEIVE_HDR_WORD_2;
 						-- store the source address
 						rx_addrfifo_write_data(47 downto 40) <= mac_rx_data(55 downto 48);
@@ -1257,6 +1273,13 @@ cpu_tx_cpu_buffer_select        <= tx_cpu_buffer_next;
 
 -- wb attachment
 wb : wb_attach
+	generic map (
+                DEFAULT_FABRIC_MAC     => DEFAULT_FABRIC_MAC,
+                DEFAULT_FABRIC_IP      => DEFAULT_FABRIC_IP,
+                DEFAULT_FABRIC_GATEWAY => DEFAULT_FABRIC_GATEWAY,
+                DEFAULT_FABRIC_PORT    => DEFAULT_FABRIC_PORT,
+                FABRIC_RUN_ON_STARTUP  => FABRIC_RUN_ON_STARTUP
+	)
 	port map (
 		-- local configuration
 		local_mac             => local_mac              ,
@@ -1305,6 +1328,7 @@ wb : wb_attach
 
                 -- phy status
 		phy_status            => phy_status_vector
+                ,debug => debug
 	);
 
 

@@ -1,11 +1,11 @@
-`define TGE_ARP_CACHE_OFFSET   16'h0
-`define TGE_ARP_CACHE_HIGH     16'hFF
-`define TGE_RX_BUFFER_OFFSET   16'h1000
-`define TGE_RX_BUFFER_HIGH     16'h17FF
-`define TGE_TX_BUFFER_OFFSET   16'h2000
-`define TGE_TX_BUFFER_HIGH     16'h27FF
-`define TGE_REGISTERS_OFFSET   16'h3000
-`define TGE_REGISTERS_HIGH     16'h37FF
+`define TGE_ARP_CACHE_OFFSET   32'h0
+`define TGE_ARP_CACHE_HIGH     32'h7FF
+`define TGE_RX_BUFFER_OFFSET   32'h1000
+`define TGE_RX_BUFFER_HIGH     32'h17FF
+`define TGE_TX_BUFFER_OFFSET   32'h2000
+`define TGE_TX_BUFFER_HIGH     32'h27FF
+`define TGE_REGISTERS_OFFSET   32'h3000
+`define TGE_REGISTERS_HIGH     32'h37FF
 
 `define TGE_REG_LOCAL_MAC_2    4'd0
 `define TGE_REG_LOCAL_MAC_1    4'd1
@@ -13,10 +13,11 @@
 `define TGE_REG_LOCAL_GATEWAY  4'd3
 `define TGE_REG_LOCAL_IPADDR_1 4'd4
 `define TGE_REG_LOCAL_IPADDR_0 4'd5
-`define TGE_REG_LOCAL_TXSIZE   4'd6
-`define TGE_REG_LOCAL_RXSIZE   4'd7
+`define TGE_REG_CPU_TXSIZE     4'd6
+`define TGE_REG_CPU_RXSIZE     4'd7
 `define TGE_REG_LOCAL_VALID    4'd8
 `define TGE_REG_LOCAL_UDP_PORT 4'd9
+`define TGE_REG_XAUI_STATUS    4'd10
 
 module wb_attach(
     wb_clk_i, wb_rst_i,
@@ -35,7 +36,15 @@ module wb_attach(
     rx_cpu_buffer_size, rx_cpu_new_buffer, rx_cpu_buffer_cleared, rx_cpu_buffer_select,
     //ARP Cache
     arp_cache_data_in, arp_cache_address, arp_cache_we, arp_cache_data_out
+    , debug
   );
+  output [3:0] debug;
+  reg [3:0] debug;
+  parameter DEFAULT_FABRIC_MAC     = 48'hffff_ffff_ffff;
+  parameter DEFAULT_FABRIC_IP      = {8'd255, 8'd255, 8'd255, 8'd255};
+  parameter DEFAULT_FABRIC_GATEWAY = 8'hff;
+  parameter DEFAULT_FABRIC_PORT    = 16'hffff;
+  parameter FABRIC_RUN_ON_STARTUP  = 1;
 
   input  wb_clk_i, wb_rst_i;
   input  wb_cyc_i, wb_stb_i, wb_we_i;
@@ -80,8 +89,6 @@ module wb_attach(
   reg wb_ack_o;
   reg [3:0] wb_dat_o_src;
 
-  reg [31:0] conf_read_reg;
-
   reg [47:0] local_mac;
   reg [31:0] local_ip;
   reg  [7:0] local_gateway;
@@ -100,15 +107,15 @@ module wb_attach(
 
   wire wb_trans = wb_stb_i & wb_cyc_i & ~wb_ack_o;
 
-  wire arp_cache_selected = wb_trans && (wb_adr_i >= `TGE_ARP_CACHE_OFFSET & wb_adr_i <= `TGE_ARP_CACHE_HIGH); 
-  wire rx_buffer_selected = wb_trans && (wb_adr_i >= `TGE_RX_BUFFER_OFFSET & wb_adr_i <= `TGE_RX_BUFFER_HIGH); 
-  wire tx_buffer_selected = wb_trans && (wb_adr_i >= `TGE_TX_BUFFER_OFFSET & wb_adr_i <= `TGE_TX_BUFFER_HIGH); 
-  wire registers_selected = wb_trans && (wb_adr_i >= `TGE_REGISTERS_OFFSET & wb_adr_i <= `TGE_REGISTERS_HIGH); 
+  wire arp_cache_selected = wb_trans && (wb_adr_i >= (`TGE_ARP_CACHE_OFFSET) && wb_adr_i <= (`TGE_ARP_CACHE_HIGH)); 
+  wire rx_buffer_selected = wb_trans && (wb_adr_i >= (`TGE_RX_BUFFER_OFFSET) && wb_adr_i <= (`TGE_RX_BUFFER_HIGH)); 
+  wire tx_buffer_selected = wb_trans && (wb_adr_i >= (`TGE_TX_BUFFER_OFFSET) && wb_adr_i <= (`TGE_TX_BUFFER_HIGH)); 
+  wire registers_selected = wb_trans && (wb_adr_i >= (`TGE_REGISTERS_OFFSET) && wb_adr_i <= (`TGE_REGISTERS_HIGH)); 
 
-  wire [15:0] arp_cache_addr = wb_adr_i - (`TGE_ARP_CACHE_OFFSET);
-  wire [15:0] rx_buffer_addr = wb_adr_i - (`TGE_RX_BUFFER_OFFSET);
-  wire [15:0] tx_buffer_addr = wb_adr_i - (`TGE_TX_BUFFER_OFFSET);
-  wire [15:0] registers_addr = wb_adr_i - (`TGE_REGISTERS_OFFSET);
+  wire [31:0] arp_cache_addr = wb_adr_i - (`TGE_ARP_CACHE_OFFSET);
+  wire [31:0] rx_buffer_addr = wb_adr_i - (`TGE_RX_BUFFER_OFFSET);
+  wire [31:0] tx_buffer_addr = wb_adr_i - (`TGE_TX_BUFFER_OFFSET);
+  wire [31:0] registers_addr = wb_adr_i - (`TGE_REGISTERS_OFFSET);
 
   always @(posedge wb_clk_i) begin
     //strobes
@@ -124,14 +131,13 @@ module wb_attach(
       tx_cpu_buffer_filled  <= 1'b0;
       tx_cpu_free_buffer_R <= 1'b0;
       rx_cpu_new_buffer_R  <= 1'b0;
-      local_mac<=48'h1234_1234_1234;
-      local_ip<=32'hff_ff_ff_ff;
-      local_gateway<=8'b0;
-      local_port<=16'h1000;
-      local_valid<=1'b1;
-    end else begin
-      wb_ack_o <= 1'b0;
 
+      local_mac      <= DEFAULT_FABRIC_MAC;
+      local_ip       <= DEFAULT_FABRIC_IP;
+      local_gateway  <= DEFAULT_FABRIC_GATEWAY;
+      local_port     <= DEFAULT_FABRIC_PORT;
+      local_valid    <= FABRIC_RUN_ON_STARTUP;
+    end else begin
       tx_cpu_free_buffer_R <= tx_cpu_free_buffer;
       rx_cpu_new_buffer_R  <= rx_cpu_new_buffer;
 
@@ -160,12 +166,13 @@ module wb_attach(
         tx_cpu_buffer_size <= tx_size;
       end
 
-  /* most of the work is done in the next always block in coverting 32 bit to 64 bit buffer
+  /* most of the work is done in the next always block in coverting 16 bit to 64 bit buffer
    * transactions */
       // ARP Cache
       if (arp_cache_selected) begin 
         if (wb_we_i) begin
         end else begin
+        debug[0] <= ~debug[0];
           use_arp_data <= 1'b1;
         end
       end
@@ -174,6 +181,7 @@ module wb_attach(
       if (rx_buffer_selected) begin
         if (wb_we_i) begin
         end else begin
+        debug[1] <= ~debug[1];
           use_rx_data <= 1'b1;
         end
       end
@@ -182,12 +190,14 @@ module wb_attach(
       if (tx_buffer_selected) begin
         if (wb_we_i) begin
         end else begin
+        debug[2] <= ~debug[2];
           use_tx_data <= 1'b1;
         end
       end
 
       // registers
       if (registers_selected) begin
+        debug[3] <= ~debug[3];
         wb_dat_o_src <= registers_addr[4:1];
         if (wb_we_i) begin
           case (registers_addr[4:1])
@@ -225,11 +235,11 @@ module wb_attach(
               if (wb_sel_i[1])
                 local_ip[15:8]  <= wb_dat_i[15:8];
             end
-            `TGE_REG_LOCAL_TXSIZE: begin
+            `TGE_REG_CPU_TXSIZE: begin
               if (wb_sel_i[0])
                 tx_size <= wb_dat_i[7:0];
             end
-            `TGE_REG_LOCAL_RXSIZE: begin
+            `TGE_REG_CPU_RXSIZE: begin
               if (wb_sel_i[0])
                 rx_size <= wb_dat_i[7:0];
             end
@@ -242,6 +252,8 @@ module wb_attach(
                 local_port[7:0]   <= wb_dat_i[7:0];
               if (wb_sel_i[1])
                 local_port[15:8]  <= wb_dat_i[15:8];
+            end
+            `TGE_REG_XAUI_STATUS: begin
             end
             default: begin
             end
@@ -334,10 +346,11 @@ module wb_attach(
                             wb_dat_o_src == `TGE_REG_LOCAL_GATEWAY  ? {8'b0, local_gateway} :
                             wb_dat_o_src == `TGE_REG_LOCAL_IPADDR_1 ? local_ip[31:16]       :
                             wb_dat_o_src == `TGE_REG_LOCAL_IPADDR_0 ? local_ip[15:0]        :
-                            wb_dat_o_src == `TGE_REG_LOCAL_TXSIZE   ? {8'b0, tx_size}       :
-                            wb_dat_o_src == `TGE_REG_LOCAL_RXSIZE   ? {8'b0, rx_size}       :
+                            wb_dat_o_src == `TGE_REG_CPU_TXSIZE     ? {8'b0, tx_size}       :
+                            wb_dat_o_src == `TGE_REG_CPU_RXSIZE     ? {8'b0, rx_size}       :
                             wb_dat_o_src == `TGE_REG_LOCAL_VALID    ? {15'b0, local_valid}  :
                             wb_dat_o_src == `TGE_REG_LOCAL_UDP_PORT ? local_port            :
+                            wb_dat_o_src == `TGE_REG_XAUI_STATUS    ? {8'b0, phy_status}    :
                                                                       16'b0;
 
   assign wb_dat_o = use_arp_data ? arp_data_int :
