@@ -132,7 +132,6 @@ module wbs_arbiter(
     wbs_cyc_o <= {NUM_SLAVES{1'b0}};
     wbm_ack_o <= 1'b0;
     wbm_err_o <= 1'b0;
-    debug[1:0] <= wbs_active[1:0];
 
     if (wb_rst_i) begin
       state <= STATE_IDLE;
@@ -141,11 +140,7 @@ module wbs_arbiter(
       case (state)
         STATE_IDLE: begin
           if (wbm_cyc_i & wbm_stb_i) begin
-            debug[7] <= wbm_adr_i >= 32'h1_0000; 
-            debug[6] <= wbm_adr_i[32 - 1:32 - 16] >= SLAVE_ADDR[32*(1+1) - 1:32*(1 + 1) - 16];
-            debug[5] <= wbm_adr_i[32 - 1:32 - 16] <= SLAVE_HIGH[32*(1+1) - 1:32*(1 + 1) - 16];
-            debug[4] <= wbm_adr_i[16];
-            debug[3:2] <= wbm_adr_i[2:1];
+            debug[7:0] <= wbs_sel[7:0];
             wbs_active <= wbs_sel;
             wbs_adr_o_reg <= wbs_adr_o_int;
             wbs_cyc_o <= wbs_sel;
@@ -154,7 +149,7 @@ module wbs_arbiter(
             $display("wb_arb: got event, wbs_sel = %x",wbs_sel);
 `endif
           end else begin
-            //wbs_active <= {NUM_SLAVES{1'b0}};
+            wbs_active <= {NUM_SLAVES{1'b0}};
             /* this delayed clear is intentional as the wbm_ack depends on the value */
           end
         end
