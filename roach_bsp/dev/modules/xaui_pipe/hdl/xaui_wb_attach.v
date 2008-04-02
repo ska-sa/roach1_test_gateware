@@ -2,23 +2,25 @@
   /**************************** XAUI Wishbone Attachment *********************************/
 
 module xaui_wb_attach(
-  reset,
-  wb_clk_i,
-  wb_cyc_i, wb_stb_i, wb_we_i, wb_sel_i,
-  wb_adr_i, wb_dat_i, wb_dat_o,
-  wb_ack_o,
+    reset,
+    wb_clk_i,
+    wb_cyc_i, wb_stb_i, wb_we_i, wb_sel_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
 
-  user_loopback, user_powerdown, user_txen, user_xaui_reset_strb,
+    user_loopback, user_powerdown, user_txen, user_xaui_reset_strb,
 
-  rx_fifo_rd_en,  tx_fifo_wr_en,
-  rx_fifo_status, tx_fifo_status,
-  rx_fifo_data,   tx_fifo_data,
+    rx_fifo_rd_en,  tx_fifo_wr_en,
+    rx_fifo_status, tx_fifo_status,
+    rx_fifo_data,   tx_fifo_data,
 
-  xaui_status,
-  mgt_rxeqmix, mgt_rxeqpole,
-  mgt_txpreemphasis, mgt_txdiffctrl,
-  error_count, data_count
+    xaui_status,
+    mgt_rxeqmix, mgt_rxeqpole,
+    mgt_txpreemphasis, mgt_txdiffctrl,
+    error_count, data_count
+    ,debug
   );
+  output [3:0] debug;
   parameter DEFAULT_POWERDOWN = 0;
   parameter DEFAULT_LOOPBACK  = 0;
   parameter DEFAULT_TXEN      = 1;
@@ -100,6 +102,7 @@ module xaui_wb_attach(
                     wb_dat_o_src == `REG_UNUSED + 7 ? data_count[15:0]  : 
                                                       16'b0;
 
+  reg [3:0] debug;
   always @(posedge wb_clk_i) begin
     // strobes
     wb_ack_o<=1'b0;
@@ -122,12 +125,12 @@ module xaui_wb_attach(
         wb_ack_o<=1'b1;
         wb_dat_o_src <= wb_adr_i[5:1];
 
-        case (wb_adr_i[6:2]) 
+        case (wb_adr_i[5:1]) 
           `REG_TXDATA3: begin
             if (wb_we_i) begin
               if (wb_sel_i[1])
                 tx_fifo_data[63:56] <= wb_dat_i[15:8];
-              if (wb_sel_i[1])
+              if (wb_sel_i[0])
                 tx_fifo_data[55:48] <= wb_dat_i[7:0];
             end
           end
@@ -135,7 +138,7 @@ module xaui_wb_attach(
             if (wb_we_i) begin
               if (wb_sel_i[1])
                 tx_fifo_data[47:40] <= wb_dat_i[15:8];
-              if (wb_sel_i[1])
+              if (wb_sel_i[0])
                 tx_fifo_data[39:32] <= wb_dat_i[7:0];
             end
           end
@@ -143,15 +146,15 @@ module xaui_wb_attach(
             if (wb_we_i) begin
               if (wb_sel_i[1])
                 tx_fifo_data[31:24] <= wb_dat_i[15:8];
-              if (wb_sel_i[1])
-                tx_fifo_data[23:15] <= wb_dat_i[7:0];
+              if (wb_sel_i[0])
+                tx_fifo_data[23:16] <= wb_dat_i[7:0];
             end
           end
           `REG_TXDATA0: begin
             if (wb_we_i) begin
               if (wb_sel_i[1])
                 tx_fifo_data[15:8]  <= wb_dat_i[15:8];
-              if (wb_sel_i[1])
+              if (wb_sel_i[0])
                 tx_fifo_data[7:0]   <= wb_dat_i[7:0];
             end
           end
@@ -159,6 +162,7 @@ module xaui_wb_attach(
             if (wb_we_i) begin
               if (wb_sel_i[0] & wb_dat_i[0]) begin
                 tx_fifo_wr_en<=1'b1;
+                debug <= ~debug;
               end
             end
           end

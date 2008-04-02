@@ -17,10 +17,13 @@ module xaui_pipe(
     wb_ack_o,
     /*leds*/
     leds //rx, tx, linkup
+    ,debug
   );
+  output [3:0] debug;
   parameter DEFAULT_POWERDOWN = 0;
   parameter DEFAULT_LOOPBACK  = 0;
   parameter DEFAULT_TXEN      = 1;
+
 
   input  reset;
 
@@ -250,6 +253,7 @@ module xaui_pipe(
     `else
     , .error_count(64'd0), .data_count(64'd0)
     `endif
+    , .debug(debug)
   );
 
   /************************** Clock Domain Crossing *********************/
