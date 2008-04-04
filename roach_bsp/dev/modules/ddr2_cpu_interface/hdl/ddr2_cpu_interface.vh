@@ -1,0 +1,7 @@
+`ifndef DDR2_CPU_INTERFACE_VH
+`define DDR2_CPU_INTERFACE_VH
+
+`define REG_DDR2_PHY_READY 1'd0
+`define REG_DDR2_SOFT_ADDR 1'd1
+
+`endif
