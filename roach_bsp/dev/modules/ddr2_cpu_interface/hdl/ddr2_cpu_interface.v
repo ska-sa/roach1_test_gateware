@@ -20,7 +20,6 @@ module ddr2_cpu_interface(
   );
 
   parameter SOFT_ADDR_BITS  = 8;
-  parameter WB_BURST_LENGTH = 16;
   
   input  wb_clk_i;
   input  wb_rst_i;
@@ -45,7 +44,6 @@ module ddr2_cpu_interface(
   input  mem_wb_burst;
 
   input  ddr2_phy_rdy;
-  output ddr2_reset;
   output ddr2_clk_o, ddr2_rst_o;
   output ddr2_request_o;
   input  ddr2_granted_i;
@@ -71,7 +69,10 @@ module ddr2_cpu_interface(
     .wb_adr_i(reg_wb_adr_i), .wb_dat_i(reg_wb_dat_i), .wb_dat_o(reg_wb_dat_o),
     .wb_ack_o(reg_wb_ack_o),
     .soft_addr(soft_addr),
-    .phy_ready(phy_ready)
+    .phy_ready(phy_ready),
+    .ddr2_reset(ddr2_rst_o),
+    .ddr2_bus_rqst(ddr2_request_o),
+    .ddr2_bus_grntd(ddr2_granted_i)
   );
 
   wire mem_rd_ack, mem_wr_ack;

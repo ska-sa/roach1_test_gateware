@@ -8,6 +8,9 @@ module reg_wb_attach(
     wb_ack_o,
     soft_addr,
     phy_ready
+    ddr2_reset,
+    ddr2_bus_rqst,
+    ddr2_bus_grntd
   );
   parameter SOFT_ADDR_BITS = 4;
   
@@ -24,23 +27,36 @@ module reg_wb_attach(
 
   output [SOFT_ADDR_BITS - 1:0] soft_addr;
   input  phy_ready;
+  output ddr2_reset;
+  output ddr2_bus_rqst;
+  input  ddr2_bus_grntd;
+
+  reg ddr2_reset;
+  reg ddr2_bus_rqst;
 
   reg wb_ack_o;
-  reg wb_dat_o_src;
-  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_PHY_READY ? {15'b0, phy_ready} :
+  reg [2:0] wb_dat_o_src;
+  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_PHY_READY ? {15'b0, phy_ready}                        :
                     wb_dat_o_src == `REG_DDR2_SOFT_ADDR ? {{16 - SOFT_ADDR_BITS{1'b0}} , soft_addr} :
+                    wb_dat_o_src == `REG_DDR2_RESET     ? 16'b0                                     :
+                    wb_dat_o_src == `REG_DDR2_BUS_RQST  ? {15'b0, ddr2_bus_rqst}                    :
+                    wb_dat_o_src == `REG_DDR2_BUS_GRNTD ? {15'b0, ddr2_bus_grntd}                   :
+                    16'd0;
 
   reg [SOFT_ADDR_BITS - 1:0] soft_addr;
 
   always @(posedge wb_clk_i) begin
+    // strobes
     wb_ack_o <= 1'b0;
+    ddr2_reset <= 1'b0;
     if (wb_rst_i) begin
       soft_addr <= {SOFT_ADDR_BITS{1'b0}};
+      ddr2_bus_rqst <= 1'b0;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <= 1'b1;
-        wb_dat_o_src <= wb_adr_i[1];
-        case (wb_adr_i[1])
+        wb_dat_o_src <= wb_adr_i[3:1];
+        case (wb_adr_i[3:1])
           `REG_DDR2_PHY_READY: begin
           end
           `REG_DDR2_SOFT_ADDR: begin
@@ -57,6 +73,18 @@ module reg_wb_attach(
                   soft_addr[SOFT_ADDR_BITS-1:0] <= wb_dat_i[SOFT_ADDR_BITS-1:0]
               end
             end
+          end
+          `REG_DDR2_RESET: begin
+            if (wb_we_i & wb_sel_i[0]) begin
+              ddr2_reset <= wb_dat_i[0];
+            end
+          end
+          `REG_DDR2_BUS_RQST: begin
+            if (wb_we_i & wb_sel_i[0]) begin
+              ddr2_bus_rqst <= wb_dat_i[0];
+            end
+          end
+          `REG_DDR2_BUS_GRNTD: begin
           end
         endcase
       end

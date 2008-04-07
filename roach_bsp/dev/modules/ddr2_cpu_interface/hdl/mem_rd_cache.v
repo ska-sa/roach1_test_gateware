@@ -2,6 +2,7 @@ module mem_rd_cache(
     clk, reset,
     rd_strb_i, rd_addr_i,
     rd_data_o, rd_ack_o,
+    wr_strb_i, //write input to check coherence 
     
     ddr_addr_o, ddr_strb_o,
     ddr_data_i, ddr_dvalid_i,
@@ -77,6 +78,10 @@ module mem_rd_cache(
   always @(posedge clk) begin
     store_first_done <= 1'b0;
     if (reset) begin
+      store_state <= STORE_IDLE;
+      first_loaded <= 1'b0;
+      second_loaded <= 1'b0;
+    end else if (wr_strb_i & cache_hit) begin
       store_state <= STORE_IDLE;
       first_loaded <= 1'b0;
       second_loaded <= 1'b0;
