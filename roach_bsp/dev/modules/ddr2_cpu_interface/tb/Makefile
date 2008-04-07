@@ -2,7 +2,8 @@ MODULE=ddr2_cpu_interface
 
 VCC=iverilog
 FLAGS=-Wall
-DEFINES=-DDEBUG
+DEFINES=-DSIMULATION
+DEFINES+=-DDEBUG
 DEFINES+=-DDESPERATE_DEBUG
 VSIM=vvp
 
@@ -12,8 +13,8 @@ GEN_DIR=./gen
 
 INCLUDE=-I$(SRC_DIR)
 
-SRC=$(SRC_DIR)/$(MODULE).v
-TB_SRC=$(TB_DIR)/TB_$(MODULE).v
+SRC=$(SRC_DIR)/$(MODULE).v $(SRC_DIR)/mem_rd_cache.v $(SRC_DIR)/mem_wr_cache.v $(SRC_DIR)/reg_wb_attach.v
+TB_SRC=$(TB_DIR)/TB_$(MODULE).v $(TB_DIR)/ddr2_controller.v $(TB_DIR)/dist_fifo.v
 OBJ=$(GEN_DIR)/$(MODULE).o
 TB_OBJ=$(GEN_DIR)/TB_$(MODULE).o
 
