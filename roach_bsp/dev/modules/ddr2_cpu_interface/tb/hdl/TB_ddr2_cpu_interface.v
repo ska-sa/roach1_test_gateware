@@ -2,7 +2,7 @@
 
 //`timescale 1ns/10ps
 
-`define SIMLENGTH  1_000_000
+`define SIMLENGTH  100_000
 `define CLK_PERIOD 2
 
 `define NUM_OPERATIONS 1_000
@@ -93,6 +93,8 @@ module TB_ddr2_cpu_interface();
 
   reg [4:0] mode_done;
 
+  integer i;
+
   always @(posedge clk) begin
     if (reset) begin
       mode <= MODE_CONFIG;
@@ -124,8 +126,14 @@ module TB_ddr2_cpu_interface();
         end
         MODE_READ: begin
           if (mode_done[MODE_READ]) begin
+            for (i=0; i < `NUM_OPERATIONS; i = i+1) begin
+              if (readback_mem[i] !== i) begin
+                $display("FAILED: data check 0 error - expected %x, got %x", i, readback_mem[i]);
+                $finish;
+              end
+            end
             //some check
-            $display("PASSED");
+            $display("PASSED - time %d", $time);
             $finish;
           end
         end
@@ -139,7 +147,7 @@ module TB_ddr2_cpu_interface();
   /******************** DDR2 Controller ************************/  
 
   ddr2_controller ddr2_controller_inst(
-    .clk(ddr2_clk_o), .reset(reset | ddr2_rst_o),
+    .clk(clk), .reset(reset | ddr2_rst_o),
     .af_cmnd_i(ddr2_af_cmnd_o), .af_addr_i(ddr2_af_addr_o), .af_wen_i(ddr2_af_wen_o),
     .af_afull_o(ddr2_af_afull_i),
     .df_data_i(ddr2_df_data_o), .df_mask_i(ddr2_df_mask_o), .df_wen_i(ddr2_df_wen_o),
@@ -268,7 +276,7 @@ module TB_ddr2_cpu_interface();
 
   reg [31:0] mem_progress;
 
-  assign mem_wb_burst = 1'b0;
+  assign mem_wb_burst = mode == MODE_WRITE;
 
   always @(posedge clk) begin
     // strobes
@@ -291,6 +299,7 @@ module TB_ddr2_cpu_interface();
               mem_wb_adr_i <= mem_progress[15:0] << 1;
               mem_wb_dat_i <= mem_progress[15:0];
               mem_wbm_state <= MEM_WBM_STATE_COLLECT;
+              $display("ddr_wbm: wr - dat = %x", mem_progress[15:0]);
             end
             MODE_READ: begin
               mem_wb_cyc_i <= 1'b1;

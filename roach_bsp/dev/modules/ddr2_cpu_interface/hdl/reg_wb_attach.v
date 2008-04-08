@@ -7,7 +7,7 @@ module reg_wb_attach(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     soft_addr,
-    phy_ready
+    phy_ready,
     ddr2_reset,
     ddr2_bus_rqst,
     ddr2_bus_grntd
@@ -56,6 +56,9 @@ module reg_wb_attach(
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <= 1'b1;
         wb_dat_o_src <= wb_adr_i[3:1];
+`ifdef DEBUG
+        $display("ddr2_wb_regs: got wb transaction - we = %x adr = %x dat = %x, %x", wb_we_i, wb_adr_i, wb_dat_i, wb_dat_o);
+`endif
         case (wb_adr_i[3:1])
           `REG_DDR2_PHY_READY: begin
           end
@@ -63,14 +66,14 @@ module reg_wb_attach(
             if (SOFT_ADDR_BITS > 8) begin
               if (wb_we_i) begin
                 if (wb_sel_i[0])
-                  soft_addr[7:0] <= wb_dat_i[7:0]
+                  soft_addr[7:0] <= wb_dat_i[7:0];
                 if (wb_sel_i[1])
-                  soft_addr[SOFT_ADDR_BITS-1:8] <= wb_dat_i[SOFT_ADDR_BITS-1:8]
+                  soft_addr[SOFT_ADDR_BITS-1:8] <= wb_dat_i[SOFT_ADDR_BITS-1:8];
               end
             end else begin
               if (wb_we_i) begin
                 if (wb_sel_i[0])
-                  soft_addr[SOFT_ADDR_BITS-1:0] <= wb_dat_i[SOFT_ADDR_BITS-1:0]
+                  soft_addr[SOFT_ADDR_BITS-1:0] <= wb_dat_i[SOFT_ADDR_BITS-1:0];
               end
             end
           end

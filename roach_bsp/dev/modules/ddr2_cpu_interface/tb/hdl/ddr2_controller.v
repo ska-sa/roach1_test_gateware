@@ -31,9 +31,11 @@ module ddr2_controller(
   assign af_cmnd = af_d_int[33:31];
   assign af_addr = af_d_int[30:0];
 
+
   dist_fifo #(
     .WIDTH(34),
-    .SIZE(32)
+    .SIZE(32),
+    .ID(0)
   ) a_fifo (
     .clk(clk), .reset(reset),
     .d_in({af_cmnd_i, af_addr_i}),  .wr_en(af_wen_i),
@@ -56,7 +58,8 @@ module ddr2_controller(
 
   dist_fifo #(
     .WIDTH(144),
-    .SIZE(32)
+    .SIZE(32),
+    .ID(1)
   ) d_fifo (
     .clk(clk), .reset(reset),
     .d_in({df_data_i, df_mask_i}),  .wr_en(df_wen_i),
@@ -88,6 +91,10 @@ module ddr2_controller(
 
   assign phy_rdy = state != STATE_STARTUP;
 
+  reg [63:0] foo;
+
+  wire [15:0] yoma = af_addr[15:0];
+
   always @(posedge clk) begin
     //strobes
     df_rd    <= 1'b0;
@@ -97,6 +104,7 @@ module ddr2_controller(
     if (reset) begin
       startup_counter <= 32'b0;
       state <= STATE_STARTUP;
+    end else if (df_rd | af_rd) begin//lame
     end else begin
       case (state)
         STATE_STARTUP: begin
@@ -119,29 +127,31 @@ module ddr2_controller(
                 $display("FAILED: attempted to write with empty data fifo");
                 $finish;
               end else begin
-                mem[af_addr[15:0] + 0] [  7:0] <= df_data[  7:0]; // : mem[af_addr[15:0] + 0] [  7:0]; 
-                mem[af_addr[15:0] + 0] [ 15:8] <= df_mask[1]  ? df_data[ 15:8] : mem[af_addr[15:0] + 0] [ 15:8]; 
-                mem[af_addr[15:0] + 0] [23:16] <= df_mask[2]  ? df_data[23:16] : mem[af_addr[15:0] + 0] [23:16]; 
-                mem[af_addr[15:0] + 0] [31:24] <= df_mask[3]  ? df_data[31:24] : mem[af_addr[15:0] + 0] [31:24]; 
-                mem[af_addr[15:0] + 0] [39:32] <= df_mask[4]  ? df_data[39:32] : mem[af_addr[15:0] + 0] [39:32]; 
-                mem[af_addr[15:0] + 0] [47:40] <= df_mask[5]  ? df_data[47:40] : mem[af_addr[15:0] + 0] [47:40]; 
-                mem[af_addr[15:0] + 0] [55:48] <= df_mask[6]  ? df_data[55:48] : mem[af_addr[15:0] + 0] [55:48]; 
-                mem[af_addr[15:0] + 0] [63:56] <= df_mask[7]  ? df_data[63:56] : mem[af_addr[15:0] + 0] [63:56]; 
-                mem[af_addr[15:0] + 1] [  7:0] <= df_mask[8]  ? df_data[64 +  7:0  + 64] : mem[af_addr[15:0] + 1] [  7:0]; 
-                mem[af_addr[15:0] + 1] [ 15:8] <= df_mask[9]  ? df_data[64 + 15:8  + 64] : mem[af_addr[15:0] + 1] [ 15:8]; 
-                mem[af_addr[15:0] + 1] [23:16] <= df_mask[10] ? df_data[64 + 23:16 + 64] : mem[af_addr[15:0] + 1] [23:16]; 
-                mem[af_addr[15:0] + 1] [31:24] <= df_mask[11] ? df_data[64 + 31:24 + 64] : mem[af_addr[15:0] + 1] [31:24]; 
-                mem[af_addr[15:0] + 1] [39:32] <= df_mask[12] ? df_data[64 + 39:32 + 64] : mem[af_addr[15:0] + 1] [39:32]; 
-                mem[af_addr[15:0] + 1] [47:40] <= df_mask[13] ? df_data[64 + 47:40 + 64] : mem[af_addr[15:0] + 1] [47:40]; 
-                mem[af_addr[15:0] + 1] [55:48] <= df_mask[14] ? df_data[64 + 55:48 + 64] : mem[af_addr[15:0] + 1] [55:48]; 
-                mem[af_addr[15:0] + 1] [63:56] <= df_mask[15] ? df_data[64 + 63:56 + 64] : mem[af_addr[15:0] + 1] [63:56]; 
+                foo [  7:0] = df_mask[0]  ? df_data[  7:0] : mem[af_addr[15:0] + 0] [  7:0]; 
+                foo [ 15:8] = df_mask[1]  ? df_data[ 15:8] : mem[af_addr[15:0] + 0] [ 15:8]; 
+                foo [23:16] = df_mask[2]  ? df_data[23:16] : mem[af_addr[15:0] + 0] [23:16]; 
+                foo [31:24] = df_mask[3]  ? df_data[31:24] : mem[af_addr[15:0] + 0] [31:24]; 
+                foo [39:32] = df_mask[4]  ? df_data[39:32] : mem[af_addr[15:0] + 0] [39:32]; 
+                foo [47:40] = df_mask[5]  ? df_data[47:40] : mem[af_addr[15:0] + 0] [47:40]; 
+                foo [55:48] = df_mask[6]  ? df_data[55:48] : mem[af_addr[15:0] + 0] [55:48]; 
+                foo [63:56] = df_mask[7]  ? df_data[63:56] : mem[af_addr[15:0] + 0] [63:56]; 
+                mem[af_addr[15:0]] <= foo;
+
+                foo [  7:0] = df_mask[8]  ? df_data[64 +  7:0  + 64] : mem[af_addr[15:0] + 1] [  7:0]; 
+                foo [ 15:8] = df_mask[9]  ? df_data[64 + 15:8  + 64] : mem[af_addr[15:0] + 1] [ 15:8]; 
+                foo [23:16] = df_mask[10] ? df_data[64 + 23:16 + 64] : mem[af_addr[15:0] + 1] [23:16]; 
+                foo [31:24] = df_mask[11] ? df_data[64 + 31:24 + 64] : mem[af_addr[15:0] + 1] [31:24]; 
+                foo [39:32] = df_mask[12] ? df_data[64 + 39:32 + 64] : mem[af_addr[15:0] + 1] [39:32]; 
+                foo [47:40] = df_mask[13] ? df_data[64 + 47:40 + 64] : mem[af_addr[15:0] + 1] [47:40]; 
+                foo [55:48] = df_mask[14] ? df_data[64 + 55:48 + 64] : mem[af_addr[15:0] + 1] [55:48]; 
+                foo [63:56] = df_mask[15] ? df_data[64 + 63:56 + 64] : mem[af_addr[15:0] + 1] [63:56]; 
+                mem[af_addr[15:0]+1] <= foo;
 
                 write_timer <= 0;
                 df_rd <= 1'b1;
                 state <= STATE_WR;
 `ifdef DEBUG
                 $display("ddr2: got wr, addr = %x, data = %x, mask=%b", af_addr[15:0], df_data, df_mask);
-                $display("FU ??? %x", mem[af_addr[15:0]]);
 `endif
               end
             end else begin
@@ -152,15 +162,17 @@ module ddr2_controller(
         end
         STATE_RD: begin
           if (read_timer == READ_LATENCY) begin
-            data_o   <= {mem[af_addr + 1], mem[af_addr + 0]};
+            data_o   <= {mem[af_addr[15:0] + 1], mem[af_addr[15:0] + 0]};
             dvalid_o <= 1'b1;
             read_timer <= read_timer + 1;
-            $display("ddr2: read data 0 - %x", {mem[af_addr + 1], mem[af_addr + 0]});
+
+            $display("ddr2: read data 0 - %x", {mem[af_addr[15:0] + 1], mem[af_addr[15:0] + 0]});
           end else if (read_timer == READ_LATENCY + 1) begin
-            data_o   <= {mem[af_addr + 3], mem[af_addr + 2]};
+            data_o   <= {mem[af_addr[15:0] + 3], mem[af_addr[15:0] + 2]};
             dvalid_o <= 1'b1;
             af_rd <= 1'b1;
-            $display("ddr2: read data 0 - %x", {mem[af_addr + 3], mem[af_addr + 2]});
+
+            $display("ddr2: read data 1 - %x", {mem[af_addr[15:0] + 3], mem[af_addr[15:0] + 2]});
             state <= STATE_IDLE;
           end else begin
             read_timer <= read_timer + 1;
@@ -172,29 +184,43 @@ module ddr2_controller(
               $display("FAILED: attempted to write with empty data fifo");
               $finish;
             end else begin
-              mem[af_addr[15:0] + 2] [  7:0] <= df_mask[0]  ? df_data[  7:0] : mem[af_addr[15:0] + 2] [  7:0]; 
-              mem[af_addr[15:0] + 2] [ 15:8] <= df_mask[1]  ? df_data[ 15:8] : mem[af_addr[15:0] + 2] [ 15:8]; 
-              mem[af_addr[15:0] + 2] [23:16] <= df_mask[2]  ? df_data[23:16] : mem[af_addr[15:0] + 2] [23:16]; 
-              mem[af_addr[15:0] + 2] [31:24] <= df_mask[3]  ? df_data[31:24] : mem[af_addr[15:0] + 2] [31:24]; 
-              mem[af_addr[15:0] + 2] [39:32] <= df_mask[4]  ? df_data[39:32] : mem[af_addr[15:0] + 2] [39:32]; 
-              mem[af_addr[15:0] + 2] [47:40] <= df_mask[5]  ? df_data[47:40] : mem[af_addr[15:0] + 2] [47:40]; 
-              mem[af_addr[15:0] + 2] [55:48] <= df_mask[6]  ? df_data[55:48] : mem[af_addr[15:0] + 2] [55:48]; 
-              mem[af_addr[15:0] + 2] [63:56] <= df_mask[7]  ? df_data[63:56] : mem[af_addr[15:0] + 2] [63:56]; 
-              mem[af_addr[15:0] + 3] [  7:0] <= df_mask[8]  ? df_data[64 +  7:0  + 64] : mem[af_addr[15:0] + 3] [  7:0]; 
-              mem[af_addr[15:0] + 3] [ 15:8] <= df_mask[9]  ? df_data[64 + 15:8  + 64] : mem[af_addr[15:0] + 3] [ 15:8]; 
-              mem[af_addr[15:0] + 3] [23:16] <= df_mask[10] ? df_data[64 + 23:16 + 64] : mem[af_addr[15:0] + 3] [23:16]; 
-              mem[af_addr[15:0] + 3] [31:24] <= df_mask[11] ? df_data[64 + 31:24 + 64] : mem[af_addr[15:0] + 3] [31:24]; 
-              mem[af_addr[15:0] + 3] [39:32] <= df_mask[12] ? df_data[64 + 39:32 + 64] : mem[af_addr[15:0] + 3] [39:32]; 
-              mem[af_addr[15:0] + 3] [47:40] <= df_mask[13] ? df_data[64 + 47:40 + 64] : mem[af_addr[15:0] + 3] [47:40]; 
-              mem[af_addr[15:0] + 3] [55:48] <= df_mask[14] ? df_data[64 + 55:48 + 64] : mem[af_addr[15:0] + 3] [55:48]; 
-              mem[af_addr[15:0] + 3] [63:56] <= df_mask[15] ? df_data[64 + 63:56 + 64] : mem[af_addr[15:0] + 3] [63:56]; 
+              foo [  7:0] = df_mask[0]  ? df_data[  7:0] : mem[af_addr[15:0] + 2] [  7:0]; 
+              foo [ 15:8] = df_mask[1]  ? df_data[ 15:8] : mem[af_addr[15:0] + 2] [ 15:8]; 
+              foo [23:16] = df_mask[2]  ? df_data[23:16] : mem[af_addr[15:0] + 2] [23:16]; 
+              foo [31:24] = df_mask[3]  ? df_data[31:24] : mem[af_addr[15:0] + 2] [31:24]; 
+              foo [39:32] = df_mask[4]  ? df_data[39:32] : mem[af_addr[15:0] + 2] [39:32]; 
+              foo [47:40] = df_mask[5]  ? df_data[47:40] : mem[af_addr[15:0] + 2] [47:40]; 
+              foo [55:48] = df_mask[6]  ? df_data[55:48] : mem[af_addr[15:0] + 2] [55:48]; 
+              foo [63:56] = df_mask[7]  ? df_data[63:56] : mem[af_addr[15:0] + 2] [63:56]; 
+              mem[af_addr[15:0]+2] <= foo;
+
+              foo [  7:0] = df_mask[8]  ? df_data[64 +  7:0  + 64] : mem[af_addr[15:0] + 3] [  7:0]; 
+              foo [ 15:8] = df_mask[9]  ? df_data[64 + 15:8  + 64] : mem[af_addr[15:0] + 3] [ 15:8]; 
+              foo [23:16] = df_mask[10] ? df_data[64 + 23:16 + 64] : mem[af_addr[15:0] + 3] [23:16]; 
+              foo [31:24] = df_mask[11] ? df_data[64 + 31:24 + 64] : mem[af_addr[15:0] + 3] [31:24]; 
+              foo [39:32] = df_mask[12] ? df_data[64 + 39:32 + 64] : mem[af_addr[15:0] + 3] [39:32]; 
+              foo [47:40] = df_mask[13] ? df_data[64 + 47:40 + 64] : mem[af_addr[15:0] + 3] [47:40]; 
+              foo [55:48] = df_mask[14] ? df_data[64 + 55:48 + 64] : mem[af_addr[15:0] + 3] [55:48]; 
+              foo [63:56] = df_mask[15] ? df_data[64 + 63:56 + 64] : mem[af_addr[15:0] + 3] [63:56]; 
+              mem[af_addr[15:0]+3] <= foo;
+`ifdef DEBUG
+              $display("ddr2: word 2 - data = %x, mask=%b", df_data, df_mask);
+`endif
+
               df_rd <= 1'b1;
               af_rd <= 1'b1;
-              $display("FU ??? %x", mem[af_addr[15:0]]);
             end
           end
 
           if (write_timer == WRITE_LATENCY) begin
+             $display("MOO 0 : %x", mem[0]);
+             $display("MOO 1 : %x", mem[1]);
+             $display("MOO 2 : %x", mem[2]);
+             $display("MOO 3 : %x", mem[3]);
+             $display("MOO 4 : %x", mem[4]);
+             $display("MOO 5 : %x", mem[5]);
+             $display("MOO 6 : %x", mem[6]);
+             $display("MOO 7 : %x", mem[7]);
             state <= STATE_IDLE;
           end else begin
             write_timer <= write_timer + 1;

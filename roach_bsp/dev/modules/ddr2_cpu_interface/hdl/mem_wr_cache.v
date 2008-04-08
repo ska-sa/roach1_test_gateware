@@ -2,111 +2,157 @@ module mem_wr_cache(
     clk, reset,
     wr_sel_i,
     wr_strb_i, wr_addr_i, wr_data_i,
-    wr_ack_i,
+    wr_ack_o,
     wr_eob, //end-of-burst strobe
     ddr_data_o, ddr_mask_o, ddr_data_wen_o,
     ddr_addr_o, ddr_addr_wen_o,
-    ddr_af_full, ddr_df_full
+    ddr_af_afull_i, ddr_df_afull_i
   );
   input  clk, reset;
   input   [1:0] wr_sel_i;
   input  wr_strb_i;
-  input   [32:0] wr_addr_i;
+  input   [33:0] wr_addr_i;
   input   [15:0] wr_data_i;
-  output wr_ack_i;
+  output wr_ack_o;
+  input  wr_eob;
 
   output [127:0] ddr_data_o;
   output  [15:0] ddr_mask_o;
   output ddr_data_wen_o;
   output  [30:0] ddr_addr_o;
   output ddr_addr_wen_o;
-  input  ddr_af_full, ddr_df_full; /* TODO: should use these */
+  input  ddr_af_afull_i, ddr_df_afull_i;
 
-  /* TODO: implement proper caching before writes
-   *       ie maintain one bursts worth of data in a register
-   *          and commit when full/eob/non-contiguous write*/
+  wire send_busy, send_wait;
 
-  reg [255:0] data_buffer;
-  reg  [31:0] mask_buffer;
+  wire [29:0] wr_word_addr = wr_addr_i[33:4];
 
-  /************** Commit Decision ****************/
+  wire buffer_hit = buffer_empty || buffer_addr == wr_word_addr;
+
+  reg  buffer_empty;
+  reg  [29:0] buffer_addr;
+  reg [127:0] data_buffer;
+  reg  [15:0] mask_buffer;
+
+  wire [127:0] data_overlay = (wr_data_i << 16*wr_addr_i[3:1]);
+  wire  [15:0] mask_overlay =  (wr_sel_i <<  2*wr_addr_i[3:1]);
+
+  genvar i;
+  wire [127:0] data_next;
+  generate for (gen_i = 0; gen_i < 16; gen_i = gen_i + 1) begin : G0
+    assign data_next[8*(gen_i+1) - 1:8*(gen_i)] = mask_overlay[gen_i] ? data_overlay[8*(gen_i+1) - 1:8*(gen_i)] : data_buffer[8*(gen_i+1) - 1:8*(gen_i)];
+  end endgenerate
 
   /********** User collect interface *************/
-  reg collect_state;
-  localparam COLLECT_IDLE = 1'b0;
-  localparam COLLECT_WAIT = 1'b1;
+  reg  delayed_send;
+  reg  commit_send;
 
-  wire send_strb = wr_strb_i;
-  reg  send_done;
+  assign wr_ack_o = commit_send ? 1'b0 : delayed_send ? ~send_wait  & ~send_busy : wr_strb_i & (buffer_hit  || !(send_busy | send_wait));
 
   always @(posedge clk) begin
     if (reset) begin
-      collect_state <= COLLECT_IDLE;
+      buffer_empty  <= 1'b1;
+      mask_buffer  <= 16'b0;
+      delayed_send <= 1'b0;
+      commit_send <= 1'b0;
+    end else if (commit_send) begin
+      if (~send_wait & ~send_busy) begin
+        commit_send <= 1'b0;
+        mask_buffer  <= 16'b0;
+        buffer_empty <= 1'b1;
+        $display("commit complete 1 - %d  %b", send_wait, send_busy);
+      end
+      if (wr_strb_i) begin
+        delayed_send <= 1'b1;
+        $display("got wr when committing");
+      end
+    end else if (delayed_send) begin
+      if (~send_wait & ~send_busy) begin
+        delayed_send <= 1'b0;
+        buffer_empty <= 1'b0;
+        buffer_addr <= wr_word_addr;
+        data_buffer <= data_overlay;
+        mask_buffer <= mask_overlay;
+        $display("dirty miss buffering -  dat = %x, adr = %x, offset = %x", wr_data_i, wr_word_addr, wr_addr_i[3:1]);
+      end
     end else begin
-      case (collect_state)
-        COLLECT_IDLE: begin
-          if (send_done) begin
-            mask_buffer <= {32{1'b0}};  //clear - this is a special case for mask buffer
-          end
-
-          if (wr_strb_i) begin
-            mask_buffer <=  (wr_sel_i << wr_addr_i[3:0]);
-            data_buffer <= (wr_data_i << wr_addr_i[3:0]); /*TODO: implement sel here*/
-          end
-
-          if (send_strb) begin
-            collect_state <= COLLECT_WAIT;
+      if (wr_strb_i) begin
+        buffer_empty  <= 1'b0;
+        if (buffer_hit) begin
+          data_buffer <= data_next;
+          mask_buffer <= mask_buffer | mask_overlay;
+          buffer_addr <= wr_word_addr;
+          $display("buffering - true adr = %x, adr = %x, offset = %x", wr_addr_i, wr_word_addr, wr_addr_i[3:1]);
+        end else begin
+          if (send_busy | send_wait) begin
+            delayed_send <= 1'b1;
+          end else begin
+            buffer_addr <= wr_word_addr;
+            data_buffer <= data_overlay;
+            mask_buffer   <= mask_overlay;
+          $display("clean miss buffering - true adr = %x, adr = %x, offset = %x", wr_addr_i, wr_word_addr, wr_addr_i[3:1]);
           end
         end
-        COLLECT_WAIT: begin //wait a cycle before next possible commit
-            collect_state <= COLLECT_IDLE;
+      end else if (wr_eob & !buffer_empty) begin
+        if (send_busy | send_wait) begin
+          commit_send <= 1'b1;
+          $display("commit pending");
+        end else begin
+          buffer_empty <= 1'b1;
+          mask_buffer  <= 16'b0;
+          $display("commit complete 0");
         end
-      endcase
+      end
     end
   end
 
   /******** DDR2 send interface ***********/
-
   reg send_state;
   localparam SEND_IDLE   = 1'b0;
   localparam SEND_SECOND = 1'b1;
 
-  reg ddr_data_wen_o;
-  reg ddr_addr_wen_o;
-  reg ddr_src;
+  reg waiting;
 
-  assign ddr_data_o = ddr_src == 1'b0 ? data_buffer[127:0] : data_buffer[255:128];
-  assign ddr_mask_o = ddr_src == 1'b0 ? mask_buffer[15:0]  : mask_buffer[31:16];
-  assign ddr_addr_o = {wr_addr_i[32:4], 2'b00}; //column addressing
-  assign ddr_addr_wen_o = ddr_data_wen_o 
+  reg [29:0] addr_buff;
+
+  assign ddr_addr_wen_o = ~send_wait & (send_state == SEND_SECOND);
+  assign ddr_data_wen_o = ~send_wait & (send_state == SEND_SECOND) |
+                          ~send_wait & ~send_busy & (commit_send | delayed_send | (wr_strb_i & !buffer_hit) | (wr_eob & !buffer_empty));
+
+  assign ddr_data_o = data_buffer;
+  assign ddr_mask_o = send_state == SEND_IDLE ? mask_buffer : 16'b0;
+  assign ddr_addr_o = {addr_buff, 1'b0};
+
+  assign send_busy = send_state == SEND_SECOND;
+
+  assign send_wait = send_state == SEND_SECOND & (ddr_af_afull_i | ddr_df_afull_i) || send_state == SEND_IDLE & ddr_df_afull_i;
 
   always @(posedge clk) begin
-    ddr_data_wen_o <= 1'b0;
-    ddr_addr_wen_o <= 1'b0;
     if (reset) begin
       send_state <= SEND_IDLE;
-      send_done <= 1'b1;
     end else begin
       case (send_state)
         SEND_IDLE: begin
-          if (send_strb) begin
-            send_done <= 1'b0;
-            ddr_src         <= 1'b0;
-            ddr_data_wen_o  <= 1'b1;
-            send_state      <= SEND_SECOND;
+          if (ddr_data_wen_o) begin
+            send_state <= SEND_SECOND;
+            addr_buff <= buffer_addr;
           end
         end
         SEND_SECOND: begin
-          ddr_src        <= 1'b1;
-          ddr_data_wen_o <= 1'b1;
-          ddr_addr_wen_o <= 1'b1;
-          send_done      <= 1'b1;
-          send_state     <= SEND_IDLE;
+          if (ddr_addr_wen_o) begin
+            send_state <= SEND_IDLE;
+          end
         end
       endcase
     end
   end
   
+  always @(posedge clk) begin
+    if (ddr_data_wen_o & ~ddr_addr_wen_o) begin
+      $display("%b - %b - d: %x, m: %b, a: %x", ddr_data_wen_o, ddr_addr_wen_o, ddr_data_o, ddr_mask_o, buffer_addr);
+      $display("commit - %b %b %b %b %b", ~send_wait & ~send_busy, commit_send, delayed_send, (wr_strb_i & !buffer_hit),(wr_eob & !buffer_empty));
+    end
+  end
 
 endmodule
 

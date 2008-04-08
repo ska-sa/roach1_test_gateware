@@ -5,6 +5,7 @@ module dist_fifo(
     full,  empty,
     afull, aempty
   );
+  parameter ID = 0;
   parameter WIDTH     = 32;
   parameter SIZE      = 32;
   input  clk, reset;
@@ -18,6 +19,7 @@ module dist_fifo(
 
   reg [SIZE - 1:0] fifo_head;//should be log2(SIZE + 1)
   reg [SIZE - 1:0] fifo_tail;//should be log2(SIZE + 1)
+  assign true_diff = fifo_head >= fifo_tail ? fifo_head - fifo_tail : fifo_head + SIZE - fifo_tail;
   reg fifo_empty;
 
   assign d_out = fifo_data[fifo_tail];
@@ -27,7 +29,6 @@ module dist_fifo(
 
   wire [SIZE - 1:0] true_diff;
 
-  assign true_diff = fifo_head >= fifo_tail ? fifo_head - fifo_tail : fifo_head + SIZE - 1 - fifo_tail;
 
   assign afull  = true_diff > SIZE - 8;
   assign aempty = true_diff < 8;
@@ -42,11 +43,14 @@ module dist_fifo(
         fifo_head <= fifo_head == SIZE - 1 ? 0 : fifo_head + 1;
         fifo_data[fifo_head] <= d_in;
         fifo_empty <= 1'b0;
+ //       $display("fifo_write %d - data %x - time %d", ID, d_in, $time);
       end
       if (rd_en & ~fifo_empty) begin
         fifo_tail <= fifo_tail == SIZE - 1 ? 0 : fifo_tail + 1;
+   //     $display("fifo_read %d - data %x - time %d", ID, fifo_data[(fifo_tail-1)%SIZE], $time);
         if (true_diff == 1 && ~wr_en) begin
           fifo_empty <= 1'b1;
+     //     $display("fifo_empty %d - %d - %d", ID, fifo_head, fifo_tail);
         end
       end
     end
