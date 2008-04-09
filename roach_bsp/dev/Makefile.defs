@@ -35,7 +35,29 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB.vhd \
     ./modules/ten_gig_eth/hdl/wb_attach.v \
     ./modules/ten_gig_eth/hdl/retimer.vhd \
-    ./modules/ten_gig_eth/hdl/addr_fifo.v
+    ./modules/ten_gig_eth/hdl/addr_fifo.v \
+    ./modules/ddr2_controller/hdl/ddr2_controller.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_black_box.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_ctrl_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_mem_if_top_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_calib_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_ctl_io_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_dm_iob.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_dq_iob.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_dqs_iob.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_init_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_io_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_top_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_phy_write_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_usr_addr_fifo_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_usr_rd_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_usr_top_0.v \
+    ./modules/ddr2_controller/hdl/ml505_ddr2_usr_wr_0.v \
+    ./modules/ddr2_cpu_interface/hdl/ddr2_cpu_interface.v \
+    ./modules/ddr2_cpu_interface/hdl/mem_rd_cache.v \
+    ./modules/ddr2_cpu_interface/hdl/mem_wr_cache.v \
+    ./modules/ddr2_cpu_interface/hdl/reg_wb_attach.v \
+    ./modules/ddr2_infrastructure/hdl/ddr2_infrastructure.v
 
 
 NETLIST_DIRS=./modules/xaui_pipe/netlist\

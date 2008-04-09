@@ -20,7 +20,19 @@ module toplevel(
     mgt_3_rx_n,
     mgt_3_rx_p,
     mgt_3_tx_n,
-    mgt_3_tx_p
+    mgt_3_tx_p,
+    DDR2_A,
+    DDR2_BA,
+    DDR2_CAS_B,
+    DDR2_CKE0, DDR2_CKE1,
+    DDR2_CLK0_N, DDR2_CLK0_P,
+    DDR2_CLK1_N, DDR2_CLK1_P,
+    DDR2_CS0_B, DDR2_CS1_B,
+    DDR2_D, DDR2_DM,
+    DDR2_DQS_N, DDR2_DQS_P,
+    DDR2_ODT0, DDR2_ODT1,
+    DDR2_RAS_B, DDR2_SCL, DDR2_SDA, 
+    DDR2_WE_B
   );
   input  usr_clk, reset_in;
   output [12:0] led_n;
@@ -43,7 +55,21 @@ module toplevel(
   input  mgt_3_rx_p;
   output mgt_3_tx_n;
   output mgt_3_tx_p;
-
+  inout  [63:0] DDR2_D;
+  output  [7:0] DDR2_DM;
+  inout   [7:0] DDR2_DQS_N;
+  inout   [7:0] DDR2_DQS_P;
+  output [13:0] DDR2_A;
+  output  [2:0] DDR2_BA;
+  output DDR2_CAS_B, DDR2_RAS_B, DDR2_WE_B;
+  output DDR2_CS0_B, DDR2_CS1_B;
+  output DDR2_CKE0, DDR2_CKE1;
+  output DDR2_CLK0_N, DDR2_CLK0_P, DDR2_CLK1_N, DDR2_CLK1_P;
+  output DDR2_ODT0, DDR2_ODT1;
+  inout  DDR2_SCL, DDR2_SDA;
+  
+  assign DDR2_SCL = 1'b0;
+  assign DDR2_SDA = 1'b0;
 
   /****************** Glocal Signals **********************/
 
@@ -58,11 +84,14 @@ module toplevel(
   /**************** Global Infrastructure ****************/
 
 
-  wire idelay_ready_nc;
+  wire idelay_ready;
 
   infrastructure infrastructure_inst(
+    .reset(sys_reset),
     .sys_clk_buf(usr_clk),
-    .sys_clk(sys_clk)
+    .sys_clk(sys_clk),
+    .dly_clk(dly_clk),
+    .dly_rdy(idelay_ready)
   );
 
 
@@ -160,7 +189,7 @@ module toplevel(
 
   localparam NUM_SLAVES = 14;
 
-  localparam SLAVE_ADDR = {32'h000d_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
+  localparam SLAVE_ADDR = {32'hffff_ffff, 32'h0800_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
                            32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000, //slaves 9:6
                            32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000, //slaves 5:2
                            32'h0001_0000, 32'h0000_0000};                              //slaves 1:0
@@ -391,6 +420,103 @@ module toplevel(
 `endif
 `endif
 
+/*********** DDR2 Memory Controller ***************/
+  wire ddr_clk_0, ddr_clk_90, ddr_clk_div;
+  wire ddr_rst_0, ddr_rst_90, ddr_rst_div;
+
+  wire  [2:0] ddr_af_cmd;
+  wire [30:0] ddr_af_addr;
+  wire ddr_af_wren;
+  wire ddr_af_afull;
+  wire [127:0] ddr_df_data;
+  wire  [15:0] ddr_df_mask;
+  wire ddr_df_wren;
+  wire ddr_df_afull;
+  wire [127:0] ddr_rd_data;
+  wire ddr_rd_dvalid;
+
+  wire ddr_phy_ready;
+  wire ddr_usr_rst;
+
+  wire [6:0] debug_int;
+
+  ddr2_infrastructure ddr2_infrastructure_inst (
+    .reset(sys_reset | ~idelay_ready),
+    .clk_in(sys_clk),
+    .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90), .ddr_clk_div(ddr_clk_div),
+    .ddr_rst_0(ddr_rst_0), .ddr_rst_90(ddr_rst_90), .ddr_rst_div(ddr_rst_div),
+    .usr_clk(sys_clk), .usr_rst(ddr_usr_rst)
+    , .debug(debug_int)
+  );
+
+  ddr2_controller ddr2_controller_inst (
+    .clk0(ddr_clk_0),
+    .clk90(ddr_clk_90),
+    .clkdiv0(ddr_clk_div),
+    .rst0(ddr_rst_0),
+    .rst90(ddr_rst_90),
+    .rstdiv0(ddr_rst_div),
+
+    .app_af_cmd(ddr_af_cmd),
+    .app_af_addr(ddr_af_addr),
+    .app_af_wren(ddr_af_wren),
+    .app_wdf_wren(ddr_df_wren),
+    .app_wdf_data(ddr_df_data),
+    .app_wdf_mask_data(ddr_df_mask),
+    .app_af_afull(ddr_af_afull),
+    .app_wdf_afull(ddr_df_afull),
+    .rd_data_valid(ddr_rd_dvalid),
+    .rd_data_fifo_out(ddr_rd_data),
+    .rd_ecc_error(),
+    .phy_init_done(ddr_phy_ready),
+
+    .ddr2_ck({DDR2_CLK1_P, DDR2_CLK0_P}),
+    .ddr2_ck_n({DDR2_CLK1_N, DDR2_CLK0_N}),
+    .ddr2_a(DDR2_A),
+    .ddr2_ba(DDR2_BA),
+    .ddr2_ras_n(DDR2_RAS_B),
+    .ddr2_cas_n(DDR2_CAS_B),
+    .ddr2_we_n(DDR2_WE_B),
+    .ddr2_cs_n({DDR2_CS1_B, DDR2_CS0_B}),
+    .ddr2_cke({DDR2_CKE1, DDR2_CKE0}),
+    .ddr2_odt({DDR2_ODT1, DDR2_ODT0}),
+    .ddr2_dm(DDR2_DM),
+    .ddr2_dqs(DDR2_DQS_P),
+    .ddr2_dqs_n(DDR2_DQS_N),
+    .ddr2_dq(DDR2_D)
+  );
+
+  wire ddr_arb;
+
+  ddr2_cpu_interface #(
+    .SOFT_ADDR_BITS(8)
+  ) ddr2_cpu_interface_inst (
+    .debug({1'b1, debug_int}),
+    //memory wb slave IF
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+
+    .reg_wb_we_i(wb_we_o), .reg_wb_cyc_i(wb_cyc_o[2]), .reg_wb_stb_i(wb_stb_o[2]),
+    .reg_wb_sel_i(wb_sel_o),
+    .reg_wb_adr_i(wb_adr_o), .reg_wb_dat_i(wb_dat_o),
+    .reg_wb_dat_o(wb_dat_i[16*(2 + 1) - 1: 16*2]),
+    .reg_wb_ack_o(wb_ack_i[2]),
+    //memory wb slave IF
+    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[13]), .mem_wb_stb_i(wb_stb_o[13]),
+    .mem_wb_sel_i(wb_sel_o),
+    .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
+    .mem_wb_dat_o(wb_dat_i[16*(13 + 1) - 1: 16*13]),
+    .mem_wb_ack_o(wb_ack_i[13]),
+    .mem_wb_burst(1'b0),
+    //ddr interface
+    .ddr2_clk_o(sys_clk), .ddr2_rst_o(ddr_usr_rst),
+    .ddr2_phy_rdy(ddr_phy_ready),
+    .ddr2_request_o(ddr_arb), .ddr2_granted_i(ddr_arb),
+    .ddr2_af_cmnd_o(ddr_af_cmd), .ddr2_af_addr_o(ddr_af_addr), .ddr2_af_wen_o(ddr_af_wren),
+    .ddr2_af_afull_i(ddr_af_afull),
+    .ddr2_df_data_o(ddr_df_data), .ddr2_df_mask_o(ddr_df_mask), .ddr2_df_wen_o(ddr_df_wren),
+    .ddr2_df_afull_i(ddr_df_afull),
+    .ddr2_data_i(ddr_rd_data), .ddr2_dvalid_i(ddr_rd_dvalid)
+  );
 
 /********** LED flashers ************/
 

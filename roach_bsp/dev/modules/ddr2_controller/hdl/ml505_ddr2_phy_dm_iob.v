@@ -60,7 +60,9 @@ module ml505_ddr2_phy_dm_iob
        .S  (1'b0)
        );
 
-  OBUF u_obuf_dm
+  OBUF #(
+    .IOSTANDARD("SSTL18_I")
+  ) u_obuf_dm
     (
      .I (dm_out),
      .O (ddr_dm)

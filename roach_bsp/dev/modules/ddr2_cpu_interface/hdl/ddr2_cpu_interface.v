@@ -17,7 +17,9 @@ module ddr2_cpu_interface(
     ddr2_df_data_o, ddr2_df_mask_o, ddr2_df_wen_o,
     ddr2_df_afull_i,
     ddr2_data_i, ddr2_dvalid_i
+    ,debug
   );
+  input [7:0] debug;
 
   parameter SOFT_ADDR_BITS  = 8;
   
@@ -63,6 +65,7 @@ module ddr2_cpu_interface(
   reg_wb_attach #(
     .SOFT_ADDR_BITS(SOFT_ADDR_BITS)
   ) reg_wb_attach_inst (
+    .debug(debug),
     //memory wb slave IF
     .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
     .wb_we_i(reg_wb_we_i), .wb_cyc_i(reg_wb_cyc_i), .wb_stb_i(reg_wb_stb_i), .wb_sel_i(reg_wb_sel_i),
@@ -78,7 +81,7 @@ module ddr2_cpu_interface(
   assign ddr2_clk_o = wb_clk_i;
 
   wire mem_rd_ack, mem_wr_ack;
-  assign mem_wb_ack_o = mem_rd_ack | mem_wr_ack;
+ // assign mem_wb_ack_o = mem_rd_ack | mem_wr_ack;
 
   wire [30:0] ddr_rd_addr;
   wire ddr_rd_strb;
@@ -91,6 +94,13 @@ module ddr2_cpu_interface(
   wire ddr_error = ddr_rd_strb & ddr_wr_strb;
   wire ddr2_af_wen_o = ddr_rd_strb | ddr_wr_strb;
 
+  always @(wb_clk_i) begin
+    if (wb_rst_i) begin
+    end else begin
+    end
+  end
+
+  /*
   mem_rd_cache mem_rd_cache_inst(
     .clk(wb_clk_i), .reset(wb_rst_i),
     .rd_strb_i(mem_wb_cyc_i & mem_wb_stb_i & ~mem_wb_we_i),
@@ -99,12 +109,12 @@ module ddr2_cpu_interface(
     .wr_strb_i(mem_wb_cyc_i & mem_wb_stb_i & mem_wb_we_i),
     
     .ddr_addr_o(ddr_rd_addr), .ddr_strb_o(ddr_rd_strb),
-    .ddr_data_i(ddr2_data_i), .ddr_dvalid_i(ddr2_dvalid_i),
+    .ddr_data_i(ddr2_data_i | ddr2_rst_o), .ddr_dvalid_i(ddr2_dvalid_i),
     .ddr_af_afull_i(ddr2_af_afull_i)
   );
 
   mem_wr_cache mem_wr_cache_inst(
-    .clk(wb_clk_i), .reset(wb_rst_i),
+    .clk(wb_clk_i), .reset(wb_rst_i | ddr2_rst_o),
     .wr_strb_i(mem_wb_cyc_i & mem_wb_stb_i & mem_wb_we_i),
     .wr_sel_i(mem_wb_sel_i),
     .wr_addr_i({soft_addr, mem_wb_adr_i[34 - SOFT_ADDR_BITS - 1:0]}),
@@ -114,6 +124,7 @@ module ddr2_cpu_interface(
     .ddr_addr_o(ddr_wr_addr), .ddr_addr_wen_o(ddr_wr_strb),
     .ddr_af_afull_i(ddr2_af_afull_i), .ddr_df_afull_i(ddr2_df_afull_i)
   );
+  */
 
 
 endmodule

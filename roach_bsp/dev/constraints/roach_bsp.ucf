@@ -33,126 +33,126 @@ TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
 # NET  CPU_TDO              LOC="E7";    # Bank 12, Vcco=3.3V, DCI using 49.9 ohm resistors      
 # NET  CPU_TMS              LOC="U10";   # Bank 12, Vcco=3.3V, DCI using 49.9 ohm resistors      
 # NET  CPU_TRST             LOC="V10";   # Bank 18, Vcco=3.3V, No DCI      
-# NET  DDR2_A0              LOC="L30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A1              LOC="M30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A2              LOC="N29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A3              LOC="P29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A4              LOC="K31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_A5              LOC="L31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_A6              LOC="P31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_A7              LOC="P30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_A8              LOC="M31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_A9              LOC="R28";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_A10             LOC="J31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A11             LOC="R29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A12             LOC="T31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_A13             LOC="H29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
-# NET  DDR2_BA0             LOC="G31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_BA1             LOC="J30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_BA2             LOC="R31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CAS_B           LOC="E31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CKE0            LOC="T28";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CKE1            LOC="U30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CLK0_N          LOC="AJ29";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CLK0_P          LOC="AK29";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CLK1_N          LOC="F28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CLK1_P          LOC="E28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CS0_B           LOC="L29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_CS1_B           LOC="J29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D0              LOC="AF30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D1              LOC="AK31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D2              LOC="AF31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D3              LOC="AD30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D4              LOC="AJ30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D5              LOC="AF29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D6              LOC="AD29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D7              LOC="AE29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D8              LOC="AH27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D9              LOC="AF28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D10             LOC="AH28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D11             LOC="AA28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D12             LOC="AG25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D13             LOC="AJ26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D14             LOC="AG28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D15             LOC="AB28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D16             LOC="AC28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D17             LOC="AB25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D18             LOC="AC27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D19             LOC="AA26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D20             LOC="AB26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D21             LOC="AA24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D22             LOC="AB27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D23             LOC="AA25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D24             LOC="AC29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D25             LOC="AB30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D26             LOC="W31";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D27             LOC="V30";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D28             LOC="AC30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D29             LOC="W29";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D30             LOC="V27";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D31             LOC="W27";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D32             LOC="V29";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D33             LOC="Y27";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D34             LOC="Y26";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D35             LOC="W24";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D36             LOC="V28";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D37             LOC="W25";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D38             LOC="W26";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D39             LOC="V24";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D40             LOC="R24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D41             LOC="P25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D42             LOC="N24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D43             LOC="P26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D44             LOC="T24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D45             LOC="N25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D46             LOC="P27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D47             LOC="N28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D48             LOC="M28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D49             LOC="L28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D50             LOC="F25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D51             LOC="H25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D52             LOC="K27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D53             LOC="K28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D54             LOC="H24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D55             LOC="G26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D56             LOC="G25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D57             LOC="M26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D58             LOC="J24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D59             LOC="L26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D60             LOC="J27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D61             LOC="M25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D62             LOC="L25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_D63             LOC="L24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM0             LOC="AJ31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM1             LOC="AE28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM2             LOC="Y24";   # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM3             LOC="Y31";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM4             LOC="V25";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM5             LOC="P24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM6             LOC="F26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DM7             LOC="J25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS0_N          LOC="AA30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS0_P          LOC="AA29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS1_N          LOC="AK27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS1_P          LOC="AK28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS2_N          LOC="AJ27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS2_P          LOC="AK26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS3_N          LOC="AA31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS3_P          LOC="AB31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS4_N          LOC="Y29";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS4_P          LOC="Y28";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS5_N          LOC="E27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS5_P          LOC="E26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS6_N          LOC="G28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS6_P          LOC="H28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS7_N          LOC="H27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_DQS7_P          LOC="G27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_ODT0            LOC="F31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_ODT1            LOC="F30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_RAS_B           LOC="H30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_SCL             LOC="E29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_SDA             LOC="F29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
-# NET  DDR2_WE_B            LOC="K29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<0>"             IOSTANDARD = SSTL18_I | LOC="L30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<1>"             IOSTANDARD = SSTL18_I | LOC="M30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<2>"             IOSTANDARD = SSTL18_I | LOC="N29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<3>"             IOSTANDARD = SSTL18_I | LOC="P29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<4>"             IOSTANDARD = SSTL18_I | LOC="K31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<5>"             IOSTANDARD = SSTL18_I | LOC="L31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<6>"             IOSTANDARD = SSTL18_I | LOC="P31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<7>"             IOSTANDARD = SSTL18_I | LOC="P30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<8>"             IOSTANDARD = SSTL18_I | LOC="M31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<9>"             IOSTANDARD = SSTL18_I | LOC="R28";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_A<10>"            IOSTANDARD = SSTL18_I | LOC="J31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<11>"            IOSTANDARD = SSTL18_I | LOC="R29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<12>"            IOSTANDARD = SSTL18_I | LOC="T31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_A<13>"            IOSTANDARD = SSTL18_I | LOC="H29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors      
+NET "DDR2_BA<0>"            IOSTANDARD = SSTL18_I | LOC="G31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_BA<1>"            IOSTANDARD = SSTL18_I | LOC="J30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_BA<2>"            IOSTANDARD = SSTL18_I | LOC="R31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CAS_B          IOSTANDARD = SSTL18_I |LOC="E31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CKE0           IOSTANDARD = SSTL18_I |LOC="T28";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CKE1           IOSTANDARD = SSTL18_I |LOC="U30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CLK0_N         IOSTANDARD = DIFF_SSTL18_I |LOC="AJ29";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CLK0_P         IOSTANDARD = DIFF_SSTL18_I |LOC="AK29";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CLK1_N         IOSTANDARD = DIFF_SSTL18_I |LOC="F28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CLK1_P         IOSTANDARD = DIFF_SSTL18_I |LOC="E28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CS0_B          IOSTANDARD = SSTL18_I |LOC="L29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_CS1_B          IOSTANDARD = SSTL18_I |LOC="J29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<0>"              LOC="AF30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<1>"              LOC="AK31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<2>"              LOC="AF31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<3>"              LOC="AD30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<4>"              LOC="AJ30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<5>"              LOC="AF29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<6>"              LOC="AD29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<7>"              LOC="AE29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<8>"              LOC="AH27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<9>"              LOC="AF28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<10>"             LOC="AH28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<11>"             LOC="AA28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<12>"             LOC="AG25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<13>"             LOC="AJ26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<14>"             LOC="AG28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<15>"             LOC="AB28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<16>"             LOC="AC28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<17>"             LOC="AB25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<18>"             LOC="AC27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<19>"             LOC="AA26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<20>"             LOC="AB26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<21>"             LOC="AA24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<22>"             LOC="AB27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<23>"             LOC="AA25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<24>"             LOC="AC29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<25>"             LOC="AB30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<26>"             LOC="W31";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<27>"             LOC="V30";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<28>"             LOC="AC30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<29>"             LOC="W29";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<30>"             LOC="V27";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<31>"             LOC="W27";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<32>"             LOC="V29";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<33>"             LOC="Y27";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<34>"             LOC="Y26";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<35>"             LOC="W24";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<36>"             LOC="V28";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<37>"             LOC="W25";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<38>"             LOC="W26";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<39>"             LOC="V24";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<40>"             LOC="R24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<41>"             LOC="P25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<42>"             LOC="N24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<43>"             LOC="P26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<44>"             LOC="T24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<45>"             LOC="N25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<46>"             LOC="P27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<47>"             LOC="N28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<48>"             LOC="M28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<49>"             LOC="L28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<50>"             LOC="F25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<51>"             LOC="H25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<52>"             LOC="K27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<53>"             LOC="K28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<54>"             LOC="H24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<55>"             LOC="G26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<56>"             LOC="G25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<57>"             LOC="M26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<58>"             LOC="J24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<59>"             LOC="L26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<60>"             LOC="J27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<61>"             LOC="M25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<62>"             LOC="L25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_D<63>"             LOC="L24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<0>"             LOC="AJ31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<1>"             LOC="AE28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<2>"             LOC="Y24";   # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<3>"             LOC="Y31";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<4>"             LOC="V25";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<5>"             LOC="P24";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<6>"             LOC="F26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DM<7>"             LOC="J25";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<0>"          LOC="AA30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<0>"          LOC="AA29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<1>"          LOC="AK27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<1>"          LOC="AK28";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<2>"          LOC="AJ27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<2>"          LOC="AK26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<3>"          LOC="AA31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<3>"          LOC="AB31";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<4>"          LOC="Y29";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<4>"          LOC="Y28";   # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<5>"          LOC="E27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<5>"          LOC="E26";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<6>"          LOC="G28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<6>"          LOC="H28";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_N<7>"          LOC="H27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET "DDR2_DQS_P<7>"          LOC="G27";   # Bank 19, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_ODT0            IOSTANDARD = SSTL18_I | LOC="F31";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_ODT1            IOSTANDARD = SSTL18_I | LOC="F30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_RAS_B           IOSTANDARD = SSTL18_I | LOC="H30";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_SCL             IOSTANDARD = SSTL18_I | LOC="E29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_SDA             IOSTANDARD = SSTL18_I | LOC="F29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DDR2_WE_B            IOSTANDARD = SSTL18_I | LOC="K29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
 # NET  DVI_D0               LOC="AB8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
 # NET  DVI_D1               LOC="AC8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
 # NET  DVI_D2               LOC="AN12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
@@ -238,11 +238,11 @@ NET  serial_out      LOC="AG20";  # Bank 4, Vcco=3.3V, No DCI
 NET  led_n<0>          LOC="H18";   # Bank 3, Vcco=2.5V, No DCI
 NET  led_n<1>          LOC="L18";   # Bank 3, Vcco=2.5V, No DCI
 NET  led_n<2>          LOC="G15";   # Bank 3, Vcco=2.5V, No DCI
-NET  led_n<3>          LOC="AD26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  led_n<3>         IOSTANDARD = LVCMOS18 | LOC="AD26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  led_n<4>           LOC="G16";   # Bank 3, Vcco=2.5V, No DCI
-NET  led_n<5>           LOC="AD25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-NET  led_n<6>           LOC="AD24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-NET  led_n<7>           LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  led_n<5>         IOSTANDARD = LVCMOS18 | LOC="AD25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  led_n<6>         IOSTANDARD = LVCMOS18 | LOC="AD24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  led_n<7>         IOSTANDARD = LVCMOS18 | LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  led_n<8>           LOC="E8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
 NET  led_n<9>           LOC="AG23";  # Bank 2, Vcco=3.3V
 NET  led_n<10>           LOC="AF13";  # Bank 2, Vcco=3.3V

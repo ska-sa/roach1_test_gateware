@@ -66,7 +66,7 @@ module ddr2_controller #
    parameter SIM_ONLY       = 0,      // = 1 to skip power up delay
    parameter DEBUG_EN       = 0,      // Enable debug signals/controls
    parameter DQS_IO_COL     = 0,      // I/O column location of DQS groups
-   parameter DQ_IO_MS       = 0       // Master/Slave location of DQ I/O
+   parameter DQ_IO_MS       = 64'b0       // Master/Slave location of DQ I/O
    )
   (
    input                                    clk0,

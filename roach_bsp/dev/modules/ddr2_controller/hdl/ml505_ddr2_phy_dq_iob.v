@@ -127,7 +127,9 @@ module ml505_ddr2_phy_dq_iob #
   // Bidirectional I/O
   //***************************************************************************
 
-  IOBUF u_iobuf_dq
+  IOBUF #(
+    .IOSTANDARD("SSTL18_II_DCI")
+  ) u_iobuf_dq
     (
      .I  (dq_out),
      .T  (dq_oe_n_r),

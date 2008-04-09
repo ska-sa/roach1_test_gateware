@@ -1094,7 +1094,7 @@ begin
 					rx_frame_valid_for_cpu         <= '1';
 					rx_frame_valid_for_hardware    <= '1';
 					-- if we receive a valid word from the mac we start a frame reception
-					if mac_rx_data_valid = "11111111" & phy_rx_up = '1' then
+					if mac_rx_data_valid = "11111111" and phy_rx_up = '1' then
 						rx_state                             <= RECEIVE_HDR_WORD_2;
 						-- store the source address
 						rx_addrfifo_write_data(47 downto 40) <= mac_rx_data(55 downto 48);

@@ -198,7 +198,9 @@ module ml505_ddr2_phy_dqs_iob #
 
   generate
     if (DDR_TYPE > 0) begin: gen_dqs_iob_ddr2
-      IOBUFDS u_iobuf_dqs
+      IOBUFDS #(
+        .IOSTANDARD("DIFF_SSTL18_II_DCI")
+      ) u_iobuf_dqs
         (
          .O   (dqs_ibuf),
          .IO  (ddr_dqs),
@@ -207,7 +209,9 @@ module ml505_ddr2_phy_dqs_iob #
          .T   (dqs_oe_n_r)
          );
     end else begin: gen_dqs_iob_ddr1
-      IOBUF u_iobuf_dqs
+      IOBUF #(
+        .IOSTANDARD("SSTL18_II_DCI")
+      ) u_iobuf_dqs
         (
          .O   (dqs_ibuf),
          .IO  (ddr_dqs),

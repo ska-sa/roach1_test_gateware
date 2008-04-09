@@ -25,10 +25,6 @@ module mem_wr_cache(
 
   wire send_busy, send_wait;
 
-  wire [29:0] wr_word_addr = wr_addr_i[33:4];
-
-  wire buffer_hit = buffer_empty || buffer_addr == wr_word_addr;
-
   reg  buffer_empty;
   reg  [29:0] buffer_addr;
   reg [127:0] data_buffer;
@@ -37,7 +33,10 @@ module mem_wr_cache(
   wire [127:0] data_overlay = (wr_data_i << 16*wr_addr_i[3:1]);
   wire  [15:0] mask_overlay =  (wr_sel_i <<  2*wr_addr_i[3:1]);
 
-  genvar i;
+  wire [29:0] wr_word_addr = wr_addr_i[33:4];
+  wire buffer_hit = buffer_empty || buffer_addr == wr_word_addr;
+
+  genvar gen_i;
   wire [127:0] data_next;
   generate for (gen_i = 0; gen_i < 16; gen_i = gen_i + 1) begin : G0
     assign data_next[8*(gen_i+1) - 1:8*(gen_i)] = mask_overlay[gen_i] ? data_overlay[8*(gen_i+1) - 1:8*(gen_i)] : data_buffer[8*(gen_i+1) - 1:8*(gen_i)];
@@ -60,11 +59,11 @@ module mem_wr_cache(
         commit_send <= 1'b0;
         mask_buffer  <= 16'b0;
         buffer_empty <= 1'b1;
-        $display("commit complete 1 - %d  %b", send_wait, send_busy);
+        //$display("commit complete 1 - %d  %b", send_wait, send_busy);
       end
       if (wr_strb_i) begin
         delayed_send <= 1'b1;
-        $display("got wr when committing");
+       // $display("got wr when committing");
       end
     end else if (delayed_send) begin
       if (~send_wait & ~send_busy) begin
@@ -73,7 +72,7 @@ module mem_wr_cache(
         buffer_addr <= wr_word_addr;
         data_buffer <= data_overlay;
         mask_buffer <= mask_overlay;
-        $display("dirty miss buffering -  dat = %x, adr = %x, offset = %x", wr_data_i, wr_word_addr, wr_addr_i[3:1]);
+       // $display("dirty miss buffering -  dat = %x, adr = %x, offset = %x", wr_data_i, wr_word_addr, wr_addr_i[3:1]);
       end
     end else begin
       if (wr_strb_i) begin
@@ -82,7 +81,7 @@ module mem_wr_cache(
           data_buffer <= data_next;
           mask_buffer <= mask_buffer | mask_overlay;
           buffer_addr <= wr_word_addr;
-          $display("buffering - true adr = %x, adr = %x, offset = %x", wr_addr_i, wr_word_addr, wr_addr_i[3:1]);
+         // $display("buffering - true adr = %x, adr = %x, offset = %x", wr_addr_i, wr_word_addr, wr_addr_i[3:1]);
         end else begin
           if (send_busy | send_wait) begin
             delayed_send <= 1'b1;
@@ -90,17 +89,17 @@ module mem_wr_cache(
             buffer_addr <= wr_word_addr;
             data_buffer <= data_overlay;
             mask_buffer   <= mask_overlay;
-          $display("clean miss buffering - true adr = %x, adr = %x, offset = %x", wr_addr_i, wr_word_addr, wr_addr_i[3:1]);
+          //$display("clean miss buffering - true adr = %x, adr = %x, offset = %x", wr_addr_i, wr_word_addr, wr_addr_i[3:1]);
           end
         end
       end else if (wr_eob & !buffer_empty) begin
         if (send_busy | send_wait) begin
           commit_send <= 1'b1;
-          $display("commit pending");
+         // $display("commit pending");
         end else begin
           buffer_empty <= 1'b1;
           mask_buffer  <= 16'b0;
-          $display("commit complete 0");
+         // $display("commit complete 0");
         end
       end
     end
@@ -144,13 +143,6 @@ module mem_wr_cache(
           end
         end
       endcase
-    end
-  end
-  
-  always @(posedge clk) begin
-    if (ddr_data_wen_o & ~ddr_addr_wen_o) begin
-      $display("%b - %b - d: %x, m: %b, a: %x", ddr_data_wen_o, ddr_addr_wen_o, ddr_data_o, ddr_mask_o, buffer_addr);
-      $display("commit - %b %b %b %b %b", ~send_wait & ~send_busy, commit_send, delayed_send, (wr_strb_i & !buffer_hit),(wr_eob & !buffer_empty));
     end
   end
 

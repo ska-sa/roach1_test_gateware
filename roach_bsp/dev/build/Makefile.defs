@@ -23,8 +23,6 @@ XST_ARGS=run,\
 -ofmt NGC,\
 -top  $(TOPLEVEL_MODULE),\
 -p $(PARTNUM),\
--opt_mode Timing,\
--opt_level 3,\
 -iuc NO,\
 -keep_hierarchy NO,\
 -rtlview Yes,\

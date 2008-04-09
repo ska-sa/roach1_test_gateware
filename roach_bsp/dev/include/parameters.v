@@ -13,7 +13,7 @@
 `define TGE_0_FABRIC_RUN_ON_STARTUP  1
 
 
-`define ENABLE_TEN_GB_ETH_0
+//`define ENABLE_TEN_GB_ETH_0
 //`define ENABLE_XAUI_0
 //`define ENABLE_TEN_GB_ETH_1
 //`define ENABLE_XAUI_1

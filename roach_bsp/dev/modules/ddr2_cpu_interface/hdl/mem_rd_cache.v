@@ -61,9 +61,9 @@ module mem_rd_cache(
 
   //generate assignment of rd_data from cache data and cache index
   genvar gen_i;
-  generate for (gen_i=0; gen_i < 16; gen_i=gen_i + 1)
+  generate for (gen_i=0; gen_i < 16; gen_i=gen_i + 1) begin : G0
     assign rd_data_o[gen_i] = cache_data[cache_index*16 + gen_i];
-  endgenerate
+  end endgenerate
 
   /************** DDR2 memory store logic *****************/
   reg [1:0] store_state;
