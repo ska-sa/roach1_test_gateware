@@ -81,7 +81,7 @@ module ddr2_cpu_interface(
   assign ddr2_clk_o = wb_clk_i;
 
   wire mem_rd_ack, mem_wr_ack;
- // assign mem_wb_ack_o = mem_rd_ack | mem_wr_ack;
+  assign mem_wb_ack_o = mem_rd_ack | mem_wr_ack;
 
   wire [30:0] ddr_rd_addr;
   wire ddr_rd_strb;
@@ -94,13 +94,6 @@ module ddr2_cpu_interface(
   wire ddr_error = ddr_rd_strb & ddr_wr_strb;
   wire ddr2_af_wen_o = ddr_rd_strb | ddr_wr_strb;
 
-  always @(wb_clk_i) begin
-    if (wb_rst_i) begin
-    end else begin
-    end
-  end
-
-  /*
   mem_rd_cache mem_rd_cache_inst(
     .clk(wb_clk_i), .reset(wb_rst_i),
     .rd_strb_i(mem_wb_cyc_i & mem_wb_stb_i & ~mem_wb_we_i),
@@ -124,7 +117,5 @@ module ddr2_cpu_interface(
     .ddr_addr_o(ddr_wr_addr), .ddr_addr_wen_o(ddr_wr_strb),
     .ddr_af_afull_i(ddr2_af_afull_i), .ddr_df_afull_i(ddr2_df_afull_i)
   );
-  */
-
 
 endmodule

@@ -36,15 +36,21 @@ module ml505_ddr2_usr_rd_0 #
   (
    input                                    clk0,
    input                                    rst0,
+   input                                    app_clk,
    input [(DQS_WIDTH*DQ_PER_DQS)-1:0]       rd_data_in_rise,
    input [(DQS_WIDTH*DQ_PER_DQS)-1:0]       rd_data_in_fall,
    input [DQS_WIDTH-1:0]                    ctrl_rden,
    input [DQS_WIDTH-1:0]                    ctrl_rden_sel,
-   output reg [1:0]                         rd_ecc_error,
+   output [1:0]                             rd_ecc_error,
    output                                   rd_data_valid,
-   output reg [(APPDATA_WIDTH/2)-1:0]       rd_data_out_rise,
-   output reg [(APPDATA_WIDTH/2)-1:0]       rd_data_out_fall
+   output [(APPDATA_WIDTH/2)-1:0]           rd_data_out_rise,
+   output [(APPDATA_WIDTH/2)-1:0]           rd_data_out_fall
    );
+
+  reg [1:0]                         rd_ecc_error_int;
+  wire                              rd_data_valid_int;
+  reg [(APPDATA_WIDTH/2)-1:0]       rd_data_out_rise_int;
+  reg [(APPDATA_WIDTH/2)-1:0]       rd_data_out_fall_int;
 
   // determine number of FIFO72's to use based on data width
   localparam RDF_FIFO_NUM = ((APPDATA_WIDTH/2)+63)/64;
@@ -134,16 +140,16 @@ module ml505_ddr2_usr_rd_0 #
   generate
     if (ECC_ENABLE) begin
       always @(posedge clk0) begin
-        rd_ecc_error[0]   <= (|sb_ecc_error) & fifo_rden_r5;
-        rd_ecc_error[1]   <= (|db_ecc_error) & fifo_rden_r5;
-        rd_data_out_rise  <= rd_data_out_rise_temp;
-        rd_data_out_fall  <= rd_data_out_fall_temp;
+        rd_ecc_error_int[0]   <= (|sb_ecc_error) & fifo_rden_r5;
+        rd_ecc_error_int[1]   <= (|db_ecc_error) & fifo_rden_r5;
+        rd_data_out_rise_int  <= rd_data_out_rise_temp;
+        rd_data_out_fall_int  <= rd_data_out_fall_temp;
         rise_data_r       <= rise_data;
         fall_data_r       <= fall_data;
       end
 
       // can use any of the read valids, they're all delayed by same amount
-      assign rd_data_valid = fifo_rden_r6;
+      assign rd_data_valid_int = fifo_rden_r6;
 
       // delay read valid to take into account max delay difference btw
       // the read enable coming from the different DQS groups
@@ -244,13 +250,102 @@ module ml505_ddr2_usr_rd_0 #
              );
       end
     end else begin
-      assign rd_data_valid = fifo_rden_r0;
+      assign rd_data_valid_int = fifo_rden_r0;
       always @(posedge clk0) begin
-        rd_data_out_rise <= rise_data;
-        rd_data_out_fall <= fall_data;
+        rd_data_out_rise_int <= rise_data;
+        rd_data_out_fall_int <= fall_data;
         fifo_rden_r0 <= rden;
       end
     end
   endgenerate
+
+  wire fifo_empty;
+
+  genvar gen_i;
+  generate
+      for (gen_i = 0; gen_i < RDF_FIFO_NUM; gen_i = gen_i + 1) begin: GEN_I
+        
+        FIFO36_72  # // rise fifo
+          (
+           .ALMOST_EMPTY_OFFSET     (9'h007),
+           .ALMOST_FULL_OFFSET      (9'h00F),
+           .DO_REG                  (1),          // extra CC output delay
+           .EN_ECC_WRITE            ("FALSE"),
+           .EN_ECC_READ             ("FALSE"),
+           .EN_SYN                  ("FALSE"),
+           .FIRST_WORD_FALL_THROUGH ("FALSE")
+           )
+          u_geni0
+            (
+             .ALMOSTEMPTY (),
+             .ALMOSTFULL  (),
+             .DBITERR     (db_ecc_error[gen_i]),
+             .DO          (rd_data_out_rise[(64*(gen_i+1))-1:
+                                                 (64 *gen_i)]),
+             .DOP         (),
+             .ECCPARITY   (),
+             .EMPTY       (fifo_empty),
+             .FULL        (),
+             .RDCOUNT     (),
+             .RDERR       (),
+             .SBITERR     (),
+             .WRCOUNT     (),
+             .WRERR       (),
+             .DI          (rd_data_out_rise_int[((64*(gen_i+1)) + (gen_i*8))-1:(64 *gen_i)+(gen_i*8)]),
+             .DIP         (),
+             .RDCLK       (app_clk),
+             .RDEN        (!fifo_empty),
+             .RST         (rst_r),
+             .WRCLK       (clk0),
+             .WREN        (rd_data_valid_int)
+             );
+
+        FIFO36_72  # // fall_fifo
+          (
+           .ALMOST_EMPTY_OFFSET     (9'h007),
+           .ALMOST_FULL_OFFSET      (9'h00F),
+           .DO_REG                  (1),          // extra CC output delay
+           .EN_ECC_WRITE            ("FALSE"),
+           .EN_ECC_READ             ("FALSE"),
+           .EN_SYN                  ("FALSE"),
+           .FIRST_WORD_FALL_THROUGH ("FALSE")
+           )
+          u_geni1
+            (
+             .ALMOSTEMPTY (),
+             .ALMOSTFULL  (),
+             .DBITERR     (),
+             .DO          (rd_data_out_fall[(64*(gen_i+1))-1: (64 *gen_i)]),
+             .DOP         (),
+             .ECCPARITY   (),
+             .EMPTY       (),
+             .FULL        (),
+             .RDCOUNT     (),
+             .RDERR       (),
+             .SBITERR     (),
+             .WRCOUNT     (),
+             .WRERR       (),
+             .DI          (rd_data_out_fall_int[((64*(gen_i+1)) + (gen_i*8))-1:(64 *gen_i)+(gen_i*8)]),
+             .DIP         (),
+             .RDCLK       (app_clk),
+             .RDEN        (~rst_r),
+             .RST         (rst_r),          // or can use rst0
+             .WRCLK       (clk0),
+             .WREN        (rd_data_valid_int)
+             );
+
+    end
+  endgenerate
+  //TODO: make this work for the 144 data bits case
+
+   assign rd_ecc_error = rd_ecc_error_int; //TODO: convert this to app_clk clock domain
+
+   reg  fifo_empty_reg;
+
+   assign rd_data_valid = ~fifo_empty_reg;
+
+   always @(posedge app_clk) begin
+     fifo_empty_reg <= fifo_empty;
+   end
 
 endmodule

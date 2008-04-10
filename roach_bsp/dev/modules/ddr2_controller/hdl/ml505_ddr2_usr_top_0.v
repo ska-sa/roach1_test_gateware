@@ -46,6 +46,7 @@ module ml505_ddr2_usr_top_0 #
    input [DQS_WIDTH-1:0]                     phy_calib_rden_sel,
    output                                    rd_data_valid,
    output [APPDATA_WIDTH-1:0]                rd_data_fifo_out,
+   input                                     app_clk,
    input [2:0]                               app_af_cmd,
    input [30:0]                              app_af_addr,
    input                                     app_af_wren,
@@ -84,6 +85,7 @@ module ml505_ddr2_usr_top_0 #
       (
        .clk0             (clk0),
        .rst0             (rst0),
+       .app_clk          (app_clk),
        .rd_data_in_rise  (rd_data_in_rise),
        .rd_data_in_fall  (rd_data_in_fall),
        .rd_ecc_error     (rd_ecc_error),
@@ -106,6 +108,7 @@ module ml505_ddr2_usr_top_0 #
       (
        .clk0         (clk0),
        .rst0         (rst0),
+       .app_clk      (app_clk),
        .app_af_cmd   (app_af_cmd),
        .app_af_addr  (app_af_addr),
        .app_af_wren  (app_af_wren),

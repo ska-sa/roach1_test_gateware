@@ -35,6 +35,7 @@ module ml505_ddr2_usr_addr_fifo_0 #
   (
    input          clk0,
    input          rst0,
+   input          app_clk,
    input [2:0]    app_af_cmd,
    input [30:0]   app_af_addr,
    input          app_af_wren,
@@ -86,7 +87,7 @@ module ml505_ddr2_usr_addr_fifo_0 #
        .RDCLK       (clk0),
        .RDEN        (ctrl_af_rden),
        .RST         (rst_r),
-       .WRCLK       (clk0),
+       .WRCLK       (app_clk),
        .WREN        (app_af_wren)
        );
 

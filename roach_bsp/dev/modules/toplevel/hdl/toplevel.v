@@ -437,6 +437,7 @@ module toplevel(
 
   wire ddr_phy_ready;
   wire ddr_usr_rst;
+  wire ddr_usr_clk;
 
   wire [6:0] debug_int;
 
@@ -457,6 +458,7 @@ module toplevel(
     .rst90(ddr_rst_90),
     .rstdiv0(ddr_rst_div),
 
+    .app_clk(ddr_usr_clk),
     .app_af_cmd(ddr_af_cmd),
     .app_af_addr(ddr_af_addr),
     .app_af_wren(ddr_af_wren),
@@ -508,7 +510,7 @@ module toplevel(
     .mem_wb_ack_o(wb_ack_i[13]),
     .mem_wb_burst(1'b0),
     //ddr interface
-    .ddr2_clk_o(sys_clk), .ddr2_rst_o(ddr_usr_rst),
+    .ddr2_clk_o(ddr_usr_clk), .ddr2_rst_o(ddr_usr_rst),
     .ddr2_phy_rdy(ddr_phy_ready),
     .ddr2_request_o(ddr_arb), .ddr2_granted_i(ddr_arb),
     .ddr2_af_cmnd_o(ddr_af_cmd), .ddr2_af_addr_o(ddr_af_addr), .ddr2_af_wen_o(ddr_af_wren),
