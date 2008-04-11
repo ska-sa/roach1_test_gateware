@@ -37,7 +37,6 @@ module ml505_ddr2_usr_wr_0 #
    input                         clk0,
    input                         clk90,
    input                         rst0,
-   input                         app_clk,
    // Write data FIFO interface
    input                         app_wdf_wren,
    input [APPDATA_WIDTH-1:0]     app_wdf_data,
@@ -134,7 +133,7 @@ module ml505_ddr2_usr_wr_0 #
              .RDCLK       (clk90),
              .RDEN        (wdf_rden),
              .RST         (rst_r),          // or can use rst0
-             .WRCLK       (app_clk),
+             .WRCLK       (clk0),
              .WREN        (app_wdf_wren)
              );
       end
@@ -188,7 +187,7 @@ module ml505_ddr2_usr_wr_0 #
            .RDCLK       (clk90),
            .RDEN        (wdf_rden),
            .RST         (rst_r),          // or can use rst0
-           .WRCLK       (app_clk),
+           .WRCLK       (clk0),
            .WREN        (app_wdf_wren)
            );
     end else begin
@@ -287,7 +286,7 @@ module ml505_ddr2_usr_wr_0 #
              .RDCLK       (clk90),
              .RDEN        (wdf_rden),
              .RST         (rst_r),          // or can use rst0
-             .WRCLK       (app_clk),
+             .WRCLK       (clk0),
              .WREN        (app_wdf_wren)
              );
       end

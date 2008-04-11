@@ -189,12 +189,12 @@ module toplevel(
 
   localparam NUM_SLAVES = 14;
 
-  localparam SLAVE_ADDR = {32'hffff_ffff, 32'h0800_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
+  localparam SLAVE_ADDR = {32'hf000_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
                            32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000, //slaves 9:6
                            32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000, //slaves 5:2
                            32'h0001_0000, 32'h0000_0000};                              //slaves 1:0
 
-  localparam SLAVE_HIGH = {32'h000d_ffff, 32'h000c_ffff, 32'h000b_ffff, 32'h000a_ffff, //slaves 13:10
+  localparam SLAVE_HIGH = {32'hffff_ffff, 32'h000c_ffff, 32'h000b_ffff, 32'h000a_ffff, //slaves 13:10
                            32'h0009_ffff, 32'h0008_ffff, 32'h0007_ffff, 32'h0006_ffff, //slaves 9:6
                            32'h0005_ffff, 32'h0004_ffff, 32'h0003_ffff, 32'h0002_ffff, //slaves 5:2
                            32'h0001_ffff, 32'h0000_ffff};                              //slaves 1:0
@@ -214,7 +214,7 @@ module toplevel(
     .NUM_SLAVES(NUM_SLAVES),
     .SLAVE_ADDR(SLAVE_ADDR),
     .SLAVE_HIGH(SLAVE_HIGH),
-    .TIMEOUT(100)
+    .TIMEOUT(1000)
   ) wbs_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o), .wbm_sel_i(wbi_sel_o),
@@ -441,7 +441,9 @@ module toplevel(
 
   wire [6:0] debug_int;
 
-  ddr2_infrastructure ddr2_infrastructure_inst (
+  ddr2_infrastructure #(
+    .CLK_FREQ("266")
+  ) ddr2_infrastructure_inst (
     .reset(sys_reset | ~idelay_ready),
     .clk_in(sys_clk),
     .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90), .ddr_clk_div(ddr_clk_div),
@@ -458,7 +460,6 @@ module toplevel(
     .rst90(ddr_rst_90),
     .rstdiv0(ddr_rst_div),
 
-    .app_clk(ddr_usr_clk),
     .app_af_cmd(ddr_af_cmd),
     .app_af_addr(ddr_af_addr),
     .app_af_wren(ddr_af_wren),
@@ -493,6 +494,7 @@ module toplevel(
   ddr2_cpu_interface #(
     .SOFT_ADDR_BITS(8)
   ) ddr2_cpu_interface_inst (
+    .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90),
     .debug({1'b1, debug_int}),
     //memory wb slave IF
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
@@ -503,11 +505,11 @@ module toplevel(
     .reg_wb_dat_o(wb_dat_i[16*(2 + 1) - 1: 16*2]),
     .reg_wb_ack_o(wb_ack_i[2]),
     //memory wb slave IF
-    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[13]), .mem_wb_stb_i(wb_stb_o[13]),
+    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[3]), .mem_wb_stb_i(wb_stb_o[3]),
     .mem_wb_sel_i(wb_sel_o),
     .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
-    .mem_wb_dat_o(wb_dat_i[16*(13 + 1) - 1: 16*13]),
-    .mem_wb_ack_o(wb_ack_i[13]),
+    .mem_wb_dat_o(wb_dat_i[16*(3 + 1) - 1: 16*3]),
+    .mem_wb_ack_o(wb_ack_i[3]),
     .mem_wb_burst(1'b0),
     //ddr interface
     .ddr2_clk_o(ddr_usr_clk), .ddr2_rst_o(ddr_usr_rst),
@@ -523,12 +525,12 @@ module toplevel(
 /********** LED flashers ************/
 
   reg [25:0] counter_0;
-  always @(posedge mgt_clk) begin
+  always @(posedge ddr_clk_0) begin
      counter_0 <= counter_0 + 1; 
   end
 
   reg [26:0] counter_1;
-  always @(posedge sys_clk) begin
+  always @(posedge ddr_clk_90) begin
      counter_1 <= counter_1 + 1; 
   end
 
