@@ -189,7 +189,7 @@ module toplevel(
 
   localparam NUM_SLAVES = 14;
 
-  localparam SLAVE_ADDR = {32'hf000_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
+  localparam SLAVE_ADDR = {32'hffff_f000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
                            32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000, //slaves 9:6
                            32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000, //slaves 5:2
                            32'h0001_0000, 32'h0000_0000};                              //slaves 1:0
@@ -523,8 +523,21 @@ module toplevel(
     .ddr2_df_afull_i(ddr_df_afull),
     .ddr2_data_i(ddr_rd_data), .ddr2_dvalid_i(ddr_rd_dvalid)
   );
+  /********** Boot Memory ************/
+  
+  /* 4KB data memory */
+  bram_controller #(
+    .RAM_SIZE_K(4)
+  ) bram_controller_bootrom (
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[13]), .wb_stb_i(wb_stb_o[13]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(13 + 1) - 1: 16*13]),
+    .wb_ack_o(wb_ack_i[13])
+  );
 
-/********** LED flashers ************/
+  /********** LED flashers ************/
 
   reg [25:0] counter_0;
   always @(posedge ddr_clk_0) begin
