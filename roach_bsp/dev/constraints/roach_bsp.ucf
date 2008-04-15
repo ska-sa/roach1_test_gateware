@@ -11,6 +11,12 @@ TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
 #Net dly_clk TNM_NET = dly_clk;
 #TIMESPEC TS_dly_clk = PERIOD dly_clk 200 MHz;
 
+Net ddr_clk_0 TNM_NET = ddr_clk_0;
+TIMESPEC TS_ddr_clk_0 = PERIOD ddr_clk_0 266 MHz;
+
+Net ddr_clk_90 TNM_NET = ddr_clk_90;
+TIMESPEC TS_ddr_clk_90 = PERIOD ddr_clk_90 266 MHz;
+
 
 # NET  AUDIO_BIT_CLK        LOC="AF18";  # Bank 4, Vcco=3.3V, No DCI    
 # NET  AUDIO_SDATA_IN       LOC="AE18";  # Bank 4, Vcco=3.3V, No DCI    

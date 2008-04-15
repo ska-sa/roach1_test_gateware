@@ -10,7 +10,7 @@ sim: $(SRC)
 	@echo "not implemented"
 
 bits: build_parameters $(SRC) $(PCFILE) Makefile.defs
-	@rm -f ./$(GEN_DIR)/{*.bit,*.jed}
+	#@rm -f ./$(GEN_DIR)/{*.bit,*.jed}
 	@make -C build bits \
 	   PROJ_FILE="../Makefile.defs" \
 	   SRC="$(addprefix ../,$(SRC))" PCFILE="$(addprefix ../,$(PCFILE))" \

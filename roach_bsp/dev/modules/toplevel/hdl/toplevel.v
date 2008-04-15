@@ -452,7 +452,9 @@ module toplevel(
     , .debug(debug_int)
   );
 
-  ddr2_controller ddr2_controller_inst (
+  ddr2_controller #(
+   // .CLK_PERIOD(5000)
+  ) ddr2_controller_inst (
     .clk0(ddr_clk_0),
     .clk90(ddr_clk_90),
     .clkdiv0(ddr_clk_div),
