@@ -3,7 +3,7 @@ include Makefile.defs
 default:
 	@echo ""
 	@echo "Invalid make option: select one of the following"
-	@echo "bits, sim, build_parameters, clean"
+	@echo "bits, sim, build_parameters, data2mem, clean"
 	@echo ""
 
 sim: $(SRC)
