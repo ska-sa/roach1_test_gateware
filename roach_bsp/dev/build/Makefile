@@ -38,7 +38,6 @@ $(PROJECT).twr: $(PROJECT).ncd
 
 $(PROJECT).bit: $(PROJECT).twr 
 	$(BITGEN) $(BITGEN_FLAGS) $(PROJECT).ncd $@ >& bitgen.log
-	@cp $@ $(GEN_DIR)/$@
 
 
 #CPLD COMMANDS

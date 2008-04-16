@@ -36,6 +36,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/ten_gig_eth/hdl/wb_attach.v \
     ./modules/ten_gig_eth/hdl/retimer.vhd \
     ./modules/ten_gig_eth/hdl/addr_fifo.v \
+    ./modules/bram_controller/hdl/bram_controller.v \
     ./modules/ddr2_controller/hdl/ddr2_controller.v \
     ./modules/ddr2_controller/hdl/ml505_ddr2_black_box.v \
     ./modules/ddr2_controller/hdl/ml505_ddr2_ctrl_0.v \
