@@ -225,7 +225,7 @@ module toplevel(
   wire v5c_init_n_oen_1;
 
   assign v5c_mode       = prog_serial ? v5c_mode_0     : v5c_mode_1;
-  assign v5c_prog_n     = prog_serial ? v5c_prog_n_0   : v5c_prog_n_1;  
+  assign v5c_prog_n     = !reset_por_n ? 1'b0 : prog_serial ? v5c_prog_n_0   : v5c_prog_n_1;  
   assign v5c_init_n_o   = prog_serial ? v5c_init_n_o_0 : v5c_init_n_o_1;  
   assign v5c_init_n_oen = prog_serial ? 1'b1           : v5c_init_n_oen_1;  
 
