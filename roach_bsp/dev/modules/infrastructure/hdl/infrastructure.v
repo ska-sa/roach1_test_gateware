@@ -1,51 +1,45 @@
 module infrastructure(
-    reset,
-    sys_clk_buf,
+    sys_clk_n, sys_clk_p,
     sys_clk,
+    dly_clk_n, dly_clk_p,
     dly_clk,
-    dly_rdy
+    epb_clk_buf,
+    epb_clk,
+    idelay_rst, idelay_rdy,
+    aux_clk0_n, aux_clk0_p,
+    aux_clk_0,
+    aux_clk1_n, aux_clk1_p,
+    aux_clk_1
   );
-  input  reset;
-  input  sys_clk_buf;
+  input  sys_clk_n, sys_clk_p;
   output sys_clk;
+  input  dly_clk_n, dly_clk_p;
   output dly_clk;
-  output dly_rdy;
+  input  epb_clk_buf;
+  output epb_clk;
+  input  aux_clk0_n, aux_clk0_p;
+  output aux_clk_0;
+  input  aux_clk1_n, aux_clk1_p;
+  output aux_clk_1;
 
-  IBUFG ibufg (
-    .I(sys_clk_buf),
-    .O(sys_clk)
+  input  idelay_rst;
+  output idelay_rdy;
+
+  IBUFG ibufg_epb(
+    .I(epb_clk_buf),
+    .O(epb_clk)
   );
 
-  wire dly_clk_int;
-  wire dly_clk_lock;
-
-  wire clk_fb;
-  DCM_BASE DCM_BASE_inst (
-    .CLK0(clk_fb),
-    .CLK180(),
-    .CLK270(),
-    .CLK2X(dly_clk_int),
-    .CLK2X180(),
-    .CLK90(),
-    .CLKDV(),
-    .CLKFX(),
-    .CLKFX180(),
-    .LOCKED(dly_clk_lock),
-    .CLKFB(clk_fb),
-    .CLKIN(sys_clk),
-    .RST(reset)
+  IBUFGDS ibufgd_arr [3:0](
+    .I ({sys_clk_p, dly_clk_p, aux_clk1_p, aux_clk0_p}),
+    .IB({sys_clk_n, dly_clk_n, aux_clk1_n, aux_clk0_n}),
+    .O ({sys_clk,   dly_clk,   aux_clk_1,   aux_clk_0})
   );
-
-  BUFG bufg_dly (
-    .I(dly_clk_int), .O(dly_clk)
-  );
-
-  wire dly_clk;
 
   IDELAYCTRL idelayctrl_inst(
     .REFCLK(dly_clk),
-    .RST(reset | ~dly_clk_lock),
-    .RDY(dly_rdy)
+    .RST(idelay_rst),
+    .RDY(idelay_rdy)
   );
 
 

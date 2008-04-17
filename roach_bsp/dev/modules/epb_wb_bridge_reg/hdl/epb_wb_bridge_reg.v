@@ -8,7 +8,7 @@ module epb_wb_bridge_reg(
 
     epb_clk,
     epb_cs_n, epb_r_w_n, epb_oe_n, epb_be_n, 
-    epb_addr, epb_addr_gb,
+    epb_addr, epb_addr_gp,
     epb_data_i, epb_data_o,
     epb_rdy
   );
@@ -24,7 +24,7 @@ module epb_wb_bridge_reg(
   input  epb_cs_n, epb_r_w_n, epb_oe_n;
   input   [1:0] epb_be_n;
   input  [22:0] epb_addr;
-  input   [5:0] epb_addr_gb;
+  input   [5:0] epb_addr_gp;
   input  [15:0] epb_data_i;
   output [15:0] epb_data_o;
   output epb_rdy;
@@ -40,8 +40,9 @@ module epb_wb_bridge_reg(
   /******* EPB Bus control ******/
 
   reg cmnd_got_reg;
-  assign cmnd_got_unstable = prev_cs_n != epb_cs_n && !epb_cs_n | cmnd_got_reg; 
   reg prev_cs_n; 
+
+  assign cmnd_got_unstable = prev_cs_n != epb_cs_n && !epb_cs_n | cmnd_got_reg; 
 
   /* Command Generation */
   always @(posedge epb_clk) begin
@@ -89,7 +90,7 @@ module epb_wb_bridge_reg(
   reg [15:0] wb_dat_i_reg;
   assign epb_data_o = wb_dat_i_reg;
   assign wb_dat_o   = epb_data_i;
-  assign wb_adr_o   = {2'b0, epb_addr_gb, epb_addr, 1'b0};
+  assign wb_adr_o   = {2'b0, epb_addr_gp, epb_addr, 1'b0};
   assign wb_sel_o   = ~epb_be_n;
   assign wb_we_o    = ~epb_r_w_n;
 
@@ -149,39 +150,39 @@ module epb_wb_bridge_reg(
     resp_got_retimed <= resp_got_unstable;
     resp_got         <= resp_got_retimed;
   end
-  //synthesis attribute USET of resp_got_retimed is SET0
-  //synthesis attribute USET of resp_got         is SET0
-  //synthesis attribute RLOC of resp_got_retimed is R0C0
-  //synthesis attribute RLOC of resp_got         is R0C1
+  //synthesis attribute U_SET of resp_got_retimed is SET0
+  //synthesis attribute U_SET of resp_got         is SET0
+  //synthesis attribute RLOC of resp_got_retimed is X0Y0
+  //synthesis attribute RLOC of resp_got         is X2Y0
 
   reg resp_ack_retimed;
   always @(posedge wb_clk_i) begin
     resp_ack_retimed <= resp_ack_unstable;
     resp_ack         <= resp_ack_retimed;
   end
-  //synthesis attribute USET of resp_ack_retimed is SET1
-  //synthesis attribute USET of resp_ack         is SET1
-  //synthesis attribute RLOC of resp_ack_retimed is R0C0
-  //synthesis attribute RLOC of resp_ack         is R0C1
+  //synthesis attribute U_SET of resp_ack_retimed is SET1
+  //synthesis attribute U_SET of resp_ack         is SET1
+  //synthesis attribute RLOC of resp_ack_retimed is X0Y0
+  //synthesis attribute RLOC of resp_ack         is X2Y0
 
   reg cmnd_got_retimed;
   always @(posedge wb_clk_i) begin
     cmnd_got_retimed <= cmnd_got_unstable;
     cmnd_got         <= cmnd_got_retimed;
   end
-  //synthesis attribute USET of cmnd_got_retimed is SET2
-  //synthesis attribute USET of cmnd_got         is SET2
-  //synthesis attribute RLOC of cmnd_got_retimed is R0C0
-  //synthesis attribute RLOC of cmnd_got         is R0C1
+  //synthesis attribute U_SET of cmnd_got_retimed is SET2
+  //synthesis attribute U_SET of cmnd_got         is SET2
+  //synthesis attribute RLOC of cmnd_got_retimed is X0Y0
+  //synthesis attribute RLOC of cmnd_got         is X2Y0
 
   reg cmnd_ack_retimed;
   always @(posedge epb_clk) begin
     cmnd_ack_retimed <= cmnd_ack_unstable;
     cmnd_ack         <= cmnd_ack_retimed;
   end
-  //synthesis attribute USET of cmnd_ack_retimed is SET3
-  //synthesis attribute USET of cmnd_ack         is SET3
-  //synthesis attribute RLOC of cmnd_ack_retimed is R0C0
-  //synthesis attribute RLOC of cmnd_ack         is R0C1
+  //synthesis attribute U_SET of cmnd_ack_retimed is SET3
+  //synthesis attribute U_SET of cmnd_ack         is SET3
+  //synthesis attribute RLOC of cmnd_ack_retimed is X0Y0
+  //synthesis attribute RLOC of cmnd_ack         is X2Y0
 
 endmodule

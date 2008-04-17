@@ -18,13 +18,14 @@ module ddr2_cpu_interface(
     ddr2_df_afull_i,
     ddr2_data_i, ddr2_dvalid_i,
     ddr_clk_0, ddr_clk_90
-    ,debug
   );
-  input ddr_clk_0, ddr_clk_90;
-  input [7:0] debug;
-  reg   [15:0] debug_int;
+  parameter ECC_ENABLED_DIMM = 0;
+  parameter SOFT_ADDR_BITS   = 8;
 
-  parameter SOFT_ADDR_BITS  = 8;
+  localparam DATA_BITS = ECC_ENABLED_DIMM ? 144 : 128;
+  localparam MASK_BITS = ECC_ENABLED_DIMM ? 18  : 16;
+
+  input ddr_clk_0, ddr_clk_90;
   
   input  wb_clk_i;
   input  wb_rst_i;
@@ -56,29 +57,20 @@ module ddr2_cpu_interface(
   output  [30:0] ddr2_af_addr_o;
   output ddr2_af_wen_o;
   input  ddr2_af_afull_i;
-  output [127:0] ddr2_df_data_o;
-  output  [15:0] ddr2_df_mask_o;
+  output [DATA_BITS - 1:0] ddr2_df_data_o;
+  output [MASK_BITS - 1:0] ddr2_df_mask_o;
   output ddr2_df_wen_o;
   input  ddr2_df_afull_i;
-  input  [127:0] ddr2_data_i;
+  input  [DATA_BITS - 1:0] ddr2_data_i;
   input  ddr2_dvalid_i;
 
   wire [SOFT_ADDR_BITS - 1:0] soft_addr;
 
   wire ddr_reset_int;
 
-  reg [127:0] ddr2_data_i_reg;
-  reg ddr2_dvalid_i_reg;
-
-  always @(posedge ddr_clk_0) begin
-    ddr2_dvalid_i_reg <= ddr2_dvalid_i;
-    ddr2_data_i_reg   <= ddr2_data_i;
-  end
-
   reg_wb_attach #(
     .SOFT_ADDR_BITS(SOFT_ADDR_BITS)
   ) reg_wb_attach_inst (
-    .debug(debug_int),
     //memory wb slave IF
     .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
     .wb_we_i(reg_wb_we_i), .wb_cyc_i(reg_wb_cyc_i), .wb_stb_i(reg_wb_stb_i), .wb_sel_i(reg_wb_sel_i),
@@ -103,9 +95,7 @@ module ddr2_cpu_interface(
 
   assign ddr2_clk_o = wb_clk_i;
 
-
   /*************** Indirect Interface ****************/
-
 
   reg  wr_strb, rd_strb;
   reg  rd_done, wr_done;
@@ -113,9 +103,9 @@ module ddr2_cpu_interface(
   reg  wr_got, rd_got;
   reg  wr_ack, rd_ack;
 
-  reg [255:0] rd_buffer;
-  reg [255:0] wr_buffer;
-  reg  [31:0] mask_buffer;
+  reg [2*DATA_BITS - 1:0] rd_buffer;
+  reg [2*DATA_BITS - 1:0] wr_buffer;
+  reg [2*MASK_BITS - 1:0] mask_buffer;
   reg  [30:0] addr_buffer;
 
   reg  [15:0] mem_wb_dat_o;
@@ -182,214 +172,258 @@ module ddr2_cpu_interface(
               mem_wb_dat_o <= mask_buffer[31:16];
             end
           end
-          /* Wr Data */
           7'd6: begin
+            if (MASK_BITS == 18) begin
+              if (mem_wb_we_i) begin
+                mask_buffer[35:32] <= mem_wb_dat_i;
+              end else begin
+                mem_wb_dat_o <= {12'b0, mask_buffer[35:32]};
+              end
+            end
+          end
+
+          /* Wr Data */
+          7'd7: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+0) - 1:16*0] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+0) - 1:16*0];
             end
           end
-          7'd7: begin
+          7'd8: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+1) - 1:16*1] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+1) - 1:16*1];
             end
           end
-          7'd8: begin
+          7'd9: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+2) - 1:16*2] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+2) - 1:16*2];
             end
           end
-          7'd9: begin
+          7'd10: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+3) - 1:16*3] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+3) - 1:16*3];
             end
           end
-          7'd10: begin
+          7'd11: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+4) - 1:16*4] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+4) - 1:16*4];
             end
           end
-          7'd11: begin
+          7'd12: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+5) - 1:16*5] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+5) - 1:16*5];
             end
           end
-          7'd12: begin
+          7'd13: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+6) - 1:16*6] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+6) - 1:16*6];
             end
           end
-          7'd13: begin
+          7'd14: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+7) - 1:16*7] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+7) - 1:16*7];
             end
           end
-          7'd14: begin
+          7'd15: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+8) - 1:16*8] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+8) - 1:16*8];
             end
           end
-          7'd15: begin
+          7'd16: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+9) - 1:16*9] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+9) - 1:16*9];
             end
           end
-          7'd16: begin
+          7'd17: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+10) - 1:16*10] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+10) - 1:16*10];
             end
           end
-          7'd17: begin
+          7'd18: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+11) - 1:16*11] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+11) - 1:16*11];
             end
           end
-          7'd18: begin
+          7'd19: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+12) - 1:16*12] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+12) - 1:16*12];
             end
           end
-          7'd19: begin
+          7'd20: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+13) - 1:16*13] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+13) - 1:16*13];
             end
           end
-          7'd20: begin
+          7'd21: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+14) - 1:16*14] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+14) - 1:16*14];
             end
           end
-          7'd21: begin
+          7'd22: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+15) - 1:16*15] <= mem_wb_dat_i;
             end else begin
               mem_wb_dat_o <= wr_buffer[16*(1+15) - 1:16*15];
             end
           end
+          7'd23: begin
+            if (DATA_BITS == 144) begin
+              if (mem_wb_we_i) begin
+                wr_buffer[16*(1+16) - 1:16*16] <= mem_wb_dat_i;
+              end else begin
+                mem_wb_dat_o <= wr_buffer[16*(1+16) - 1:16*16];
+              end
+            end
+          end
+          7'd24: begin
+            if (DATA_BITS == 144) begin
+              if (mem_wb_we_i) begin
+                wr_buffer[16*(1+17) - 1:16*17] <= mem_wb_dat_i;
+              end else begin
+                mem_wb_dat_o <= wr_buffer[16*(1+17) - 1:16*17];
+              end
+            end
+          end
           /* Rd Data */
-          7'd22: begin
+          7'd25: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+0) - 1:16*0];
             end
           end
-          7'd23: begin
+          7'd26: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+1) - 1:16*1];
             end
           end
-          7'd24: begin
+          7'd27: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+2) - 1:16*2];
             end
           end
-          7'd25: begin
+          7'd28: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+3) - 1:16*3];
             end
           end
-          7'd26: begin
+          7'd29: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+4) - 1:16*4];
             end
           end
-          7'd27: begin
+          7'd30: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+5) - 1:16*5];
             end
           end
-          7'd28: begin
+          7'd31: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+6) - 1:16*6];
             end
           end
-          7'd29: begin
+          7'd32: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+7) - 1:16*7];
             end
           end
-          7'd30: begin
+          7'd33: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+8) - 1:16*8];
             end
           end
-          7'd31: begin
+          7'd34: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+9) - 1:16*9];
             end
           end
-          7'd32: begin
+          7'd35: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+10) - 1:16*10];
             end
           end
-          7'd33: begin
+          7'd36: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+11) - 1:16*11];
             end
           end
-          7'd34: begin
+          7'd37: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+12) - 1:16*12];
             end
           end
-          7'd35: begin
+          7'd38: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+13) - 1:16*13];
             end
           end
-          7'd36: begin
+          7'd39: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+14) - 1:16*14];
             end
           end
-          7'd37: begin
+          7'd40: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+15) - 1:16*15];
+            end
+          end
+          7'd41: begin
+            if (DATA_BITS == 144) begin
+              if (mem_wb_we_i) begin
+              end else begin
+                mem_wb_dat_o <= rd_buffer[16*(1+16) - 1:16*16];
+              end
+            end
+          end
+          7'd42: begin
+            if (DATA_BITS == 144) begin
+              if (mem_wb_we_i) begin
+              end else begin
+                mem_wb_dat_o <= rd_buffer[16*(1+17) - 1:16*17];
+              end
             end
           end
           /* */
@@ -469,9 +503,9 @@ module ddr2_cpu_interface(
       if (ddr2_dvalid_i) begin
         rd_index <= rd_index + 1;
         if (!rd_index) begin
-          rd_buffer[127:0]   <= ddr2_data_i;
+          rd_buffer[DATA_BITS - 1:0]   <= ddr2_data_i;
         end else begin
-          rd_buffer[255:128] <= ddr2_data_i;
+          rd_buffer[DATA_BITS*2 - 1:DATA_BITS] <= ddr2_data_i;
           rd_done <= 1'b1;
         end
       end
@@ -482,8 +516,8 @@ module ddr2_cpu_interface(
   assign ddr2_af_addr_o = addr_buffer;
   assign ddr2_af_wen_o  = rd_strb || wr_state == WR_STATE_0;
 
-  assign ddr2_df_data_o = wr_state == WR_STATE_0 ?   wr_buffer[127:0] :   wr_buffer[255:128];
-  assign ddr2_df_mask_o = wr_state == WR_STATE_0 ? mask_buffer[15:0]  : mask_buffer[31:16];
+  assign ddr2_df_data_o = wr_state == WR_STATE_0 ?   wr_buffer[DATA_BITS - 1:0] :   wr_buffer[DATA_BITS*2 - 1:DATA_BITS];
+  assign ddr2_df_mask_o = wr_state == WR_STATE_0 ? mask_buffer[MASK_BITS - 1:0] : mask_buffer[MASK_BITS*2 - 1:MASK_BITS];
   assign ddr2_df_wen_o  = wr_state != WR_STATE_IDLE; 
 
 

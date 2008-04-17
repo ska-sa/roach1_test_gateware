@@ -23,5 +23,11 @@
 //`define ENABLE_XAUI_3
 
 
+`define DDR2_CLK_FREQ "266"
+
+
+
+
+
 
 `endif

@@ -29,29 +29,29 @@
 module ddr2_controller #
   (
    parameter BANK_WIDTH     = 2,      // # of memory bank addr bits
-   parameter CKE_WIDTH      = 1,      // # of memory clock enable outputs
-   parameter CLK_WIDTH      = 2,      // # of clock outputs
+   parameter CKE_WIDTH      = 2,      // # of memory clock enable outputs
+   parameter CLK_WIDTH      = 3,      // # of clock outputs
    parameter COL_WIDTH      = 10,     // # of memory column bits
-   parameter CS_NUM         = 1,      // # of separate memory chip selects
-   parameter CS_BITS        = 0,      // set to log2(CS_NUM) (rounded up)
-   parameter CS_WIDTH       = 1,      // # of total memory chip selects
-   parameter DM_WIDTH       = 8,      // # of data mask bits
-   parameter DQ_WIDTH       = 64,     // # of data width
-   parameter DQ_BITS        = 6,      // set to log2(DQS_WIDTH*DQ_PER_DQS)
+   parameter CS_NUM         = 2,      // # of separate memory chip selects
+   parameter CS_BITS        = 1,      // set to log2(CS_NUM) (rounded up)
+   parameter CS_WIDTH       = 2,      // # of total memory chip selects
+   parameter DM_WIDTH       = 9,      // # of data mask bits
+   parameter DQ_WIDTH       = 72,     // # of data width
+   parameter DQ_BITS        = 7,      // set to log2(DQS_WIDTH*DQ_PER_DQS)
    parameter DQ_PER_DQS     = 8,      // # of DQ data bits per strobe
-   parameter DQS_WIDTH      = 8,      // # of DQS strobes
-   parameter DQS_BITS       = 3,      // set to log2(DQS_WIDTH)
-   parameter ODT_WIDTH      = 1,      // # of memory on-die term enables
-   parameter ROW_WIDTH      = 13,     // # of memory row & # of addr bits
-   parameter APPDATA_WIDTH  = 128,    // # of usr read/write data bus bits
+   parameter DQS_WIDTH      = 9,      // # of DQS strobes
+   parameter DQS_BITS       = 4,      // set to log2(DQS_WIDTH)
+   parameter ODT_WIDTH      = 2,      // # of memory on-die term enables
+   parameter ROW_WIDTH      = 14,     // # of memory row & # of addr bits
+   parameter APPDATA_WIDTH  = 144,    // # of usr read/write data bus bits
    parameter ADDITIVE_LAT   = 0,      // additive write latency
    parameter BURST_LEN      = 4,      // burst length (in double words)
    parameter BURST_TYPE     = 0,      // burst type (=0 seq; =1 interlved)
-   parameter CAS_LAT        = 4,      // CAS latency
+   parameter CAS_LAT        = 5,      // CAS latency
    parameter ECC_ENABLE     = 0,      // enable ECC (=1 enable)
    parameter ODT_TYPE       = 1,      // ODT (=0(none),=1(75),=2(150),=3(50))
    parameter MULTI_BANK_EN  = 1,      // enable bank management
-   parameter TWO_T_TIME_EN  = 1,      // 2t timing for unbuffered dimms
+   parameter TWO_T_TIME_EN  = 0,      // 2t timing for unbuffered dimms
    parameter REDUCE_DRV     = 0,      // reduced strength mem I/O (=1 yes)
    parameter REG_ENABLE     = 0,      // registered addr/ctrl (=1 yes)
    parameter TREFI_NS       = 7800,   // auto refresh interval (ns)
@@ -114,7 +114,7 @@ module ddr2_controller #
 
 
   // memory initialization/control logic
-  ml505_ddr2_mem_if_top_0 #
+  mig_mem_if_top_0 #
     (
      .BANK_WIDTH     (BANK_WIDTH),
      .CKE_WIDTH      (CKE_WIDTH),

@@ -11,9 +11,7 @@ module reg_wb_attach(
     ddr2_reset,
     ddr2_bus_rqst,
     ddr2_bus_grntd
-    ,debug
   );
-  input  [15:0] debug;
   parameter SOFT_ADDR_BITS = 4;
   
   input  wb_clk_i;
@@ -42,8 +40,7 @@ module reg_wb_attach(
 
   reg wb_ack_o;
   reg [2:0] wb_dat_o_src;
-//  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_PHY_READY ? {debug, 7'b0, phy_ready}      :
-  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_PHY_READY ? {debug}      :
+  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_PHY_READY ? {15'b0, phy_ready}      :
                     wb_dat_o_src == `REG_DDR2_SOFT_ADDR ? soft_addr_reg           :
                     wb_dat_o_src == `REG_DDR2_RESET     ? 16'b0                   :
                     wb_dat_o_src == `REG_DDR2_BUS_RQST  ? {15'b0, ddr2_bus_rqst}  :

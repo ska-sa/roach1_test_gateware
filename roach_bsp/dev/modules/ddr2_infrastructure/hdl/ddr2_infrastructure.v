@@ -4,10 +4,7 @@ module ddr2_infrastructure(
     ddr_clk_0, ddr_clk_90, ddr_clk_div,
     ddr_rst_0, ddr_rst_90, ddr_rst_div,
     usr_rst, usr_clk
-    ,debug
   );
-  output [6:0] debug;
-  
   parameter CLK_FREQ = "266";
   input  reset, clk_in;
   output ddr_clk_0, ddr_clk_90, ddr_clk_div;
@@ -109,8 +106,6 @@ module ddr2_infrastructure(
   reg [7:0] usr_rst_reg;
 
   wire usr_rst_int = usr_rst_reg[7];
-
-  assign debug = {reset, ~mem_clk_lock, ~pll_locked, usr_rst_int, ddr_rst_0, ddr_rst_90, ddr_rst_div};
 
   always @(posedge usr_clk) begin
     if (usr_rst | reset) begin

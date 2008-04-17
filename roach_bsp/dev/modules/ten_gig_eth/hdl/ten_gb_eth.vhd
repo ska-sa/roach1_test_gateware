@@ -99,6 +99,7 @@ entity ten_gb_eth is
                 mgt_code_valid        : in  std_logic_vector(7  downto 0);
                 mgt_code_comma        : in  std_logic_vector(7  downto 0);
                 mgt_rxlock            : in  std_logic_vector(3  downto 0);
+                mgt_rxbuffer          : in  std_logic_vector(3  downto 0);
                 mgt_loopback          : out std_logic;
                 mgt_syncok            : in  std_logic_vector(3  downto 0);
                 mgt_en_chan_sync      : out std_logic;

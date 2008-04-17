@@ -9,9 +9,7 @@ module wbs_arbiter(
     wbs_cyc_o, wbs_stb_o, wbs_we_o, wbs_sel_o,
     wbs_adr_o, wbs_dat_o, wbs_dat_i,
     wbs_ack_i
-    , debug
   );
-  output [3:0] debug;
   parameter NUM_SLAVES = 14;
   parameter SLAVE_ADDR = 0;
   parameter SLAVE_HIGH = 0;
@@ -126,8 +124,6 @@ module wbs_arbiter(
 
   assign timeout_reset = ~(state == STATE_WAIT);
   
-  reg [3:0] debug;
-
   always @(posedge wb_clk_i) begin
     /* strobes */
     wbs_cyc_o <= {NUM_SLAVES{1'b0}};
@@ -140,7 +136,6 @@ module wbs_arbiter(
       case (state)
         STATE_IDLE: begin
           if (wbm_cyc_i & wbm_stb_i) begin
-            debug <= wbs_sel[3:0];
             wbs_active <= wbs_sel;
             wbs_adr_o_reg <= wbs_adr_o_int;
             wbs_cyc_o <= wbs_sel;
