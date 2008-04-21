@@ -126,7 +126,7 @@ module TB_adc_controller();
   `define MODE_VALUE_LOAD 2'd2
   `define MODE_ADC_RUN    2'd3
   adc_controller #(
-    .DEFAULT_SAMPLE_AVERAGING(0)
+    .DEFAULT_SAMPLE_AVERAGING(4)
   ) adc_controller_inst (
     .wb_clk_i(clk), .wb_rst_i(reset || mode == `MODE_ACM_CONF),
     .wb_stb_i(wb_stb_i), .wb_cyc_i(wb_cyc_i), .wb_we_i(wb_we_i),

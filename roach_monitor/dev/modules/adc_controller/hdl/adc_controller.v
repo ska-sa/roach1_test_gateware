@@ -141,8 +141,10 @@ module adc_controller(
             temp_stb <= 11'b0;
             averaged_value<= averaged_value + ADC_RESULT;
             state<=STATE_DONE;
-            if (averaging >= (sample_cnt_target - 1))
+            if (averaging >= (sample_cnt_target - 1)) begin
               adc_strb <= 1'b1;
+            end
+            $display("foo: %d - %d", sample_cnt_target - 1, averaging);
 
 `ifdef DEBUG
             $display("adc_c: got value %d, channel %d",ADC_RESULT,ADC_CHNUM);
@@ -154,7 +156,7 @@ module adc_controller(
             averaging <= 4'b0;
             ADC_CHNUM <= ADC_CHNUM + 1;
           end else begin
-            if (averaging < sample_averaging) begin
+            if (averaging < sample_cnt_target - 1) begin
               averaging <= averaging + 1;
             end else begin
               averaging <= 4'b0;
