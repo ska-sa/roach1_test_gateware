@@ -74,16 +74,17 @@ module adc_controller(
   reg [8:0] stb_counter;
 
   reg [3:0] averaging;
-  reg [3:0] sample_averaging;
 
-  wire [1:0] averaging_bits = (`LOG2_UP(sample_averaging));
+  reg [2:0] sample_averaging; // 0 - none, 1 - /2, 2 - /4, 3 - /8, >= 4 - /16
+  reg [12 + 4 - 1:0] averaged_value;
 
-  reg [12 + 2 - 1:0] averaged_value;
+  wire [4:0] sample_cnt_target = 1 << sample_averaging;
 
-  assign adc_result = averaging_bits == 0 ? averaged_value[12 + 0 - 1: 0 + 0] :
-                      averaging_bits == 1 ? averaged_value[12 + 1 - 1: 0 + 1] :
-                      averaging_bits == 2 ? averaged_value[12 + 2 - 1: 0 + 2] :
-                                            averaged_value[12 + 3 - 1: 0 + 3];
+  assign adc_result = sample_averaging == 0 ? averaged_value[12 + 0 - 1: 0 + 0] :
+                      sample_averaging == 1 ? averaged_value[12 + 1 - 1: 0 + 1] :
+                      sample_averaging == 2 ? averaged_value[12 + 2 - 1: 0 + 2] :
+                      sample_averaging == 3 ? averaged_value[12 + 3 - 1: 0 + 3] :
+                                              averaged_value[12 + 4 - 1: 0 + 4];
 
   always @(posedge wb_clk_i) begin
     //strobes
@@ -124,7 +125,7 @@ module adc_controller(
         end
         STATE_CONVERT: begin
           if (averaging == 4'b0) begin //if this is the first value to be averaged
-            averaged_value <= {12 + 2 {1'b0}}; //clear the averaged value
+            averaged_value <= {12 + 4 {1'b0}}; //clear the averaged value
           end
           if (ADC_BUSY | ADC_DATAVALID) begin
             ADC_START <= 1'b0;
@@ -140,7 +141,7 @@ module adc_controller(
             temp_stb <= 11'b0;
             averaged_value<= averaged_value + ADC_RESULT;
             state<=STATE_DONE;
-            if (averaging >= sample_averaging)
+            if (averaging >= (sample_cnt_target - 1))
               adc_strb <= 1'b1;
 
 `ifdef DEBUG
@@ -175,7 +176,7 @@ module adc_controller(
                     wb_dat_o_src == 3'd2 ? {6'b0, cmon_en} :
                     wb_dat_o_src == 3'd3 ? {5'b0, tmon_en} :
                     wb_dat_o_src == 3'd4 ? {15'b0, adc_en} :
-                    wb_dat_o_src == 3'd5 ? {12'b0, sample_averaging} :
+                    wb_dat_o_src == 3'd5 ? {13'b0, sample_averaging} :
                     wb_dat_o_src == 3'd6 ? {9'b0, state, ADC_BUSY, ADC_SAMPLE, ADC_DATAVALID, ADC_CALIBRATE} :
                     16'd0;
 
@@ -246,7 +247,7 @@ module adc_controller(
           `REG_AVG_CONF: begin
             wb_dat_o_src <= 3'd5;
             if (wb_we_i) begin
-              sample_averaging <= wb_dat_i[3:0];
+              sample_averaging <= wb_dat_i[2:0];
             end
           end
           `REG_ADC_STATUS: begin
