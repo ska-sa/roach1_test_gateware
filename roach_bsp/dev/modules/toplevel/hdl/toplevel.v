@@ -204,7 +204,37 @@ module toplevel(
   );
 
   /************************* LEDs ************************/
-  assign led_n = 4'b1011;
+
+  reg [25:0] counter [3:0];
+  assign led_n = {counter[0][25], counter[1][25], counter[2][25], counter[3][25]};
+
+  always @(posedge sys_clk) begin
+    if (sys_reset) begin
+      counter[0] <= 26'b0;
+    end else begin
+      counter[0] <= counter[0] + 1;
+    end
+  end
+
+  always @(posedge sys_clk) begin
+    counter[1] <= counter[1] + 1;
+  end
+
+  always @(posedge dly_clk) begin
+    if (sys_reset) begin
+      counter[2] <= 26'b0;
+    end else begin
+      counter[2] <= counter[0] + 1;
+    end
+  end
+
+  always @(posedge mgt_clk) begin
+    if (sys_reset) begin
+      counter[3] <= 26'b0;
+    end else begin
+      counter[3] <= counter[0] + 1;
+    end
+  end
 
   /**************** Serial Communications ****************/
   wire serial_in, serial_out;

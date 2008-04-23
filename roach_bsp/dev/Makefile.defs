@@ -69,7 +69,7 @@ NETLIST_DIRS=./modules/xaui_pipe/netlist\
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel
 # Logic Device Part Number
-PARTNUM=5vsx95t-ff1136-3
+PARTNUM=5vsx95t-ff1136-1
 
 # Verilog Include Directory
 VINC=include
