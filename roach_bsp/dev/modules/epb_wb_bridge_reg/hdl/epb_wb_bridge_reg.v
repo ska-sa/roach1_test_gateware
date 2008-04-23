@@ -7,7 +7,7 @@ module epb_wb_bridge_reg(
     wb_ack_i, wb_err_i,
 
     epb_clk,
-    epb_cs_n, epb_r_w_n, epb_oe_n, epb_be_n, 
+    epb_cs_n, epb_r_w_n, epb_be_n, 
     epb_addr, epb_addr_gp,
     epb_data_i, epb_data_o,
     epb_rdy
@@ -21,7 +21,7 @@ module epb_wb_bridge_reg(
   input  wb_ack_i, wb_err_i;
 
   input  epb_clk;
-  input  epb_cs_n, epb_r_w_n, epb_oe_n;
+  input  epb_cs_n, epb_r_w_n;
   input   [1:0] epb_be_n;
   input  [22:0] epb_addr;
   input   [5:0] epb_addr_gp;
@@ -96,8 +96,12 @@ module epb_wb_bridge_reg(
 
   /* Register Data */
   always @(posedge wb_clk_i) begin
-    if (wb_ack_i) begin
-      wb_dat_i_reg <= wb_dat_i;
+    if (wb_rst_i) begin
+      wb_dat_i_reg <= 16'b0;
+    end else begin
+      if (wb_ack_i) begin
+        wb_dat_i_reg <= wb_dat_i;
+      end
     end
   end
 
@@ -153,7 +157,7 @@ module epb_wb_bridge_reg(
   //synthesis attribute U_SET of resp_got_retimed is SET0
   //synthesis attribute U_SET of resp_got         is SET0
   //synthesis attribute RLOC of resp_got_retimed is X0Y0
-  //synthesis attribute RLOC of resp_got         is X2Y0
+  //synthesis attribute RLOC of resp_got         is X1Y0
 
   reg resp_ack_retimed;
   always @(posedge wb_clk_i) begin
@@ -163,7 +167,7 @@ module epb_wb_bridge_reg(
   //synthesis attribute U_SET of resp_ack_retimed is SET1
   //synthesis attribute U_SET of resp_ack         is SET1
   //synthesis attribute RLOC of resp_ack_retimed is X0Y0
-  //synthesis attribute RLOC of resp_ack         is X2Y0
+  //synthesis attribute RLOC of resp_ack         is X1Y0
 
   reg cmnd_got_retimed;
   always @(posedge wb_clk_i) begin
@@ -173,7 +177,7 @@ module epb_wb_bridge_reg(
   //synthesis attribute U_SET of cmnd_got_retimed is SET2
   //synthesis attribute U_SET of cmnd_got         is SET2
   //synthesis attribute RLOC of cmnd_got_retimed is X0Y0
-  //synthesis attribute RLOC of cmnd_got         is X2Y0
+  //synthesis attribute RLOC of cmnd_got         is X1Y0
 
   reg cmnd_ack_retimed;
   always @(posedge epb_clk) begin
@@ -183,6 +187,6 @@ module epb_wb_bridge_reg(
   //synthesis attribute U_SET of cmnd_ack_retimed is SET3
   //synthesis attribute U_SET of cmnd_ack         is SET3
   //synthesis attribute RLOC of cmnd_ack_retimed is X0Y0
-  //synthesis attribute RLOC of cmnd_ack         is X2Y0
+  //synthesis attribute RLOC of cmnd_ack         is X1Y0
 
 endmodule

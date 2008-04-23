@@ -169,7 +169,6 @@ module toplevel(
   wire sys_clk, dly_clk, epb_clk, mgt_clk, aux_clk_0, aux_clk_1;
   // Ensure that the above nets are not synthesized away
   // synthesis attribute KEEP of sys_clk is TRUE
-  // synthesis attribute KEEP of dly_clk is TRUE
   // synthesis attribute KEEP of mgt_clk is TRUE
   // synthesis attribute KEEP of epb_clk is TRUE
   wire sys_reset;
@@ -249,6 +248,25 @@ module toplevel(
   /******* PPC Master ********/
   assign ppc_irq = 1'b0;
   
+  wire epb_cs_n_dly, epb_r_w_n_dly, epb_oe_n_dly;
+  wire  [1:0] epb_be_n_dly;
+  wire [22:0] epb_addr_dly;
+  wire  [5:0] epb_addr_gp_dly;
+
+  wire [15:0] epb_data_i;
+  wire [15:0] epb_data_o;
+
+  epb_infrastructure epb_infrastructure_inst(
+    .epb_data_buf(epb_data),
+    .epb_data_oe_n_i(epb_oe_n),
+    .epb_data_out_i(epb_data_o), .epb_data_in_o(epb_data_i),
+    .epb_cs_n_buf(epb_cs_n), .epb_cs_n(epb_cs_n_dly),
+    .epb_r_w_n_buf(epb_r_w_n), .epb_r_w_n(epb_r_w_n_dly), 
+    .epb_be_n_buf(epb_be_n), .epb_be_n(epb_be_n_dly),
+    .epb_addr_buf(epb_addr), .epb_addr(epb_addr_dly),
+    .epb_addr_gp_buf(epb_addr_gp), .epb_addr_gp(epb_addr_gp_dly)
+  );
+
   wire wbm_stb_o_1, wbm_cyc_o_1, wbm_we_o_1;
   wire  [1:0] wbm_sel_o_1;
   wire [31:0] wbm_adr_o_1;
@@ -256,23 +274,6 @@ module toplevel(
   wire [15:0] wbm_dat_i_1;
   wire wbm_ack_i_1, wbm_err_i_1;
 
-  wire epb_cs_n_dly, epb_r_w_n_dly, epb_oe_n_dly;
-  wire  [1:0] epb_be_n_dly;
-  wire [22:0] epb_addr_dly;
-  wire  [5:0] epb_addr_gp_dly;
-
-  wire [15:0] epb_data_i, epb_data_o;
-
-  epb_infrastructure epb_infrastructure_inst(
-    .epb_data_buf(epb_data),
-    .epb_data_oe_n_i(epb_oe_n),
-    .epb_data_out_i(epb_data_o), .epd_data_in_o(epd_data_i),
-    .epb_cs_n_buf(epb_cs_n), .epb_cs_n(epb_cs_n_dly),
-    .epb_r_w_n_buf(epb_r_w_n), .epb_r_w_n(epb_r_w_n_dly), 
-    .epb_be_n_buf(epb_be_n), .epb_be_n(epb_be_n_dly),
-    .epb_addr_buf(epb_addr), .epb_addr(epb_addr_dly),
-    .epb_addr_gp_buf(epb_addr_gp), .epb_addr_gp(epb_addr_gp_dly)
-  );
 
   epb_wb_bridge_reg epb_wb_bridge_reg_inst(
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
@@ -283,7 +284,7 @@ module toplevel(
 
     .epb_clk(epb_clk),
     .epb_cs_n(epb_cs_n_dly), .epb_r_w_n(epb_r_w_n_dly),
-    .epb_oe_n(epb_oe_n_dly), .epb_be_n(epb_be_n_dly), 
+    .epb_be_n(epb_be_n_dly), 
     .epb_addr(epb_addr_dly), .epb_addr_gp(epb_addr_gp_dly),
     .epb_data_i(epb_data_i), .epb_data_o(epb_data_o),
     .epb_rdy(epb_rdy)
@@ -874,10 +875,29 @@ module toplevel(
 `endif
 `endif
 
+
+
+
   /*********** DDR2 Memory Controller ***************/
 
+  // synthesis attribute KEEP of ddr_clk_0  is TRUE
+  // synthesis attribute KEEP of ddr_clk_90 is TRUE
   wire ddr_clk_0, ddr_clk_90, ddr_clk_div;
+
+`ifdef ENABLE_DDR2
+
   wire ddr_rst_0, ddr_rst_90, ddr_rst_div;
+  wire ddr_usr_rst;
+
+  ddr2_infrastructure #(
+    .CLK_FREQ(`DDR2_CLK_FREQ)
+  ) ddr2_infrastructure_inst (
+    .reset(sys_reset | ~idelay_ready),
+    .clk_in(sys_clk),
+    .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90), .ddr_clk_div(ddr_clk_div),
+    .ddr_rst_0(ddr_rst_0), .ddr_rst_90(ddr_rst_90), .ddr_rst_div(ddr_rst_div),
+    .usr_clk(sys_clk), .usr_rst(ddr_usr_rst)
+  );
 
   wire  [2:0] ddr_af_cmd;
   wire [30:0] ddr_af_addr;
@@ -891,19 +911,8 @@ module toplevel(
   wire ddr_rd_dvalid;
 
   wire ddr_phy_ready;
-  wire ddr_usr_rst;
   wire ddr_usr_clk;
-
-  ddr2_infrastructure #(
-    .CLK_FREQ(`DDR2_CLK_FREQ)
-  ) ddr2_infrastructure_inst (
-    .reset(sys_reset | ~idelay_ready),
-    .clk_in(sys_clk),
-    .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90), .ddr_clk_div(ddr_clk_div),
-    .ddr_rst_0(ddr_rst_0), .ddr_rst_90(ddr_rst_90), .ddr_rst_div(ddr_rst_div),
-    .usr_clk(sys_clk), .usr_rst(ddr_usr_rst)
-  );
-
+  
   localparam DDR_PERIOD = `DDR2_CLK_FREQ == "200" ? 5000 :
                           `DDR2_CLK_FREQ == "333" ? 3003 :
                           `DDR2_CLK_FREQ == "266" ? 3759 :
@@ -928,7 +937,6 @@ module toplevel(
     .app_wdf_afull(ddr_df_afull),
     .rd_data_valid(ddr_rd_dvalid),
     .rd_data_fifo_out(ddr_rd_data),
-    .rd_ecc_error(),
     .phy_init_done(ddr_phy_ready),
     
     .ddr2_ck  ({ddr2_ck_2_p, ddr2_ck_1_p, ddr2_ck_0_p}),
@@ -946,7 +954,9 @@ module toplevel(
     .ddr2_dqs_n(ddr2_dqs_n),
     .ddr2_dq(ddr2_dq)
   );
+
   assign ddr2_par_out = ddr2_par_in;
+  assign ddr2_reset_n = 1'b0;
 
   assign ddr2_scl = 1'b1;
   assign ddr2_sda = 1'b1;
@@ -982,6 +992,39 @@ module toplevel(
     .ddr2_df_afull_i(ddr_df_afull),
     .ddr2_data_i(ddr_rd_data), .ddr2_dvalid_i(ddr_rd_dvalid)
   );
+`else
+  assign ddr2_dq = {72{1'bz}};
+  assign ddr2_dm = 9'b0;
+  assign ddr2_a = 16'b0;
+  assign ddr2_ba = 3'b0;
+  assign ddr2_ras_n = 1'b1;
+  assign ddr2_cas_n = 1'b1; 
+  assign ddr2_we_n  = 1'b1;
+  assign ddr2_reset_n = 1'b0;
+  assign ddr2_cke_0 = 1'b0;
+  assign ddr2_cke_1 = 1'b0;
+  assign ddr2_cs_n_0 = 1'b1;
+  assign ddr2_cs_n_1 = 1'b1;
+  assign ddr2_odt_0 = 1'b1;
+  assign ddr2_odt_1 = 1'b1;
+
+  assign ddr2_par_out = ddr2_par_in;
+
+  assign ddr2_scl = 1'b1;
+  assign ddr2_sda = 1'b1;
+
+  IOBUFDS iobufds_dqs[8:0](
+    .IO(ddr2_dqs_p),
+    .IOB(ddr2_dqs_n),
+    .O(), .I({9{1'b1}}), .T(1'b1)
+  );
+
+  OBUFDS obufds_inst[2:0](
+    .O( {ddr2_ck_2_p, ddr2_ck_1_p, ddr2_ck_0_p}),
+    .OB({ddr2_ck_2_n, ddr2_ck_1_n, ddr2_ck_0_n}),
+    .I(3'b0)
+  );
+`endif
 
   /***************** QDR0 ************************/
 

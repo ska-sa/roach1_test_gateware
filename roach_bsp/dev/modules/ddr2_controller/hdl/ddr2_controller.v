@@ -28,79 +28,79 @@
 
 module ddr2_controller #
   (
-   parameter BANK_WIDTH     = 2,      // # of memory bank addr bits
-   parameter CKE_WIDTH      = 2,      // # of memory clock enable outputs
-   parameter CLK_WIDTH      = 3,      // # of clock outputs
-   parameter COL_WIDTH      = 10,     // # of memory column bits
-   parameter CS_NUM         = 2,      // # of separate memory chip selects
-   parameter CS_BITS        = 1,      // set to log2(CS_NUM) (rounded up)
-   parameter CS_WIDTH       = 2,      // # of total memory chip selects
-   parameter DM_WIDTH       = 9,      // # of data mask bits
-   parameter DQ_WIDTH       = 72,     // # of data width
-   parameter DQ_BITS        = 7,      // set to log2(DQS_WIDTH*DQ_PER_DQS)
-   parameter DQ_PER_DQS     = 8,      // # of DQ data bits per strobe
-   parameter DQS_WIDTH      = 9,      // # of DQS strobes
-   parameter DQS_BITS       = 4,      // set to log2(DQS_WIDTH)
-   parameter ODT_WIDTH      = 2,      // # of memory on-die term enables
-   parameter ROW_WIDTH      = 14,     // # of memory row & # of addr bits
-   parameter APPDATA_WIDTH  = 144,    // # of usr read/write data bus bits
-   parameter ADDITIVE_LAT   = 0,      // additive write latency
-   parameter BURST_LEN      = 4,      // burst length (in double words)
-   parameter BURST_TYPE     = 0,      // burst type (=0 seq; =1 interlved)
-   parameter CAS_LAT        = 5,      // CAS latency
-   parameter ECC_ENABLE     = 0,      // enable ECC (=1 enable)
-   parameter ODT_TYPE       = 1,      // ODT (=0(none),=1(75),=2(150),=3(50))
-   parameter MULTI_BANK_EN  = 1,      // enable bank management
-   parameter TWO_T_TIME_EN  = 0,      // 2t timing for unbuffered dimms
-   parameter REDUCE_DRV     = 0,      // reduced strength mem I/O (=1 yes)
-   parameter REG_ENABLE     = 0,      // registered addr/ctrl (=1 yes)
-   parameter TREFI_NS       = 7800,   // auto refresh interval (ns)
-   parameter TRAS           = 40000,  // active->precharge delay
-   parameter TRCD           = 15000,  // active->read/write delay
-   parameter TRFC           = 105000,  // ref->ref, ref->active delay
-   parameter TRP            = 15000,  // precharge->command delay
-   parameter TRTP           = 7500,   // read->precharge delay
-   parameter TWR            = 15000,  // used to determine wr->prech
-   parameter TWTR           = 7500,   // write->read delay
-   parameter CLK_PERIOD     = 3750,   // Core/Mem clk period (in ps)
-   parameter SIM_ONLY       = 0,      // = 1 to skip power up delay
-   parameter DEBUG_EN       = 0,      // Enable debug signals/controls
-   parameter DQS_IO_COL     = 0,      // I/O column location of DQS groups
-   parameter DQ_IO_MS       = 64'b0       // Master/Slave location of DQ I/O
+   parameter BANK_WIDTH           = 2,       // # of memory bank addr bits
+   parameter CKE_WIDTH            = 2,       // # of memory clock enable outputs
+   parameter CLK_WIDTH            = 3,       // # of clock outputs
+   parameter COL_WIDTH            = 11,      // # of memory column bits
+   parameter CS_NUM               = 2,       // # of separate memory chip selects
+   parameter CS_WIDTH             = 2,       // # of total memory chip selects
+   parameter CS_BITS              = 1,       // set to log2(CS_NUM) (rounded up)
+   parameter DM_WIDTH             = 9,       // # of data mask bits
+   parameter DQ_WIDTH             = 72,      // # of data width
+   parameter DQ_PER_DQS           = 8,       // # of DQ data bits per strobe
+   parameter DQS_WIDTH            = 9,       // # of DQS strobes
+   parameter DQ_BITS              = 7,       // set to log2(DQS_WIDTH*DQ_PER_DQS)
+   parameter DQS_BITS             = 4,       // set to log2(DQS_WIDTH)
+   parameter ODT_WIDTH            = 2,       // # of memory on-die term enables
+   parameter ROW_WIDTH            = 14,      // # of memory row and # of addr bits
+   parameter ADDITIVE_LAT         = 0,       // additive write latency 
+   parameter BURST_LEN            = 4,       // burst length (in double words)
+   parameter BURST_TYPE           = 0,       // burst type (=0 seq; =1 interleaved)
+   parameter CAS_LAT              = 4,       // CAS latency
+   parameter ECC_ENABLE           = 0,       // enable ECC (=1 enable)
+   parameter APPDATA_WIDTH        = 144,       // # of usr read/write data bus bits
+   parameter MULTI_BANK_EN        = 1,       // Keeps multiple banks open. (= 1 enable)
+   parameter TWO_T_TIME_EN        = 0,       // 2t timing for unbuffered dimms
+   parameter ODT_TYPE             = 1,       // ODT (=0(none),=1(75),=2(150),=3(50))
+   parameter REDUCE_DRV           = 0,       // reduced strength mem I/O (=1 yes)
+   parameter REG_ENABLE           = 1,       // registered addr/ctrl (=1 yes)
+   parameter TREFI_NS             = 7800,       // auto refresh interval (ns)
+   parameter TRAS                 = 40000,       // active->precharge delay
+   parameter TRCD                 = 15000,       // active->read/write delay
+   parameter TRFC                 = 127500,       // refresh->refresh, refresh->active delay
+   parameter TRP                  = 15000,       // precharge->command delay
+   parameter TRTP                 = 7500,       // read->precharge delay
+   parameter TWR                  = 15000,       // used to determine write->precharge
+   parameter TWTR                 = 10000,       // write->read delay
+   parameter SIM_ONLY             = 0,       // = 1 to skip SDRAM power up delay
+   parameter DEBUG_EN             = 0,       // Enable debug signals/controls
+   parameter DQS_IO_COL           = 36'b000000000000000000000000000000000000,       // I/O column location of DQS groups (=0, left; =1 center, =2 right)
+   parameter DQ_IO_MS             = 80'b0101_0101_1010_1011_0101_0101_1010_1011_0101_0101_1010_1011_0101_0101_1010_1011_0101_0101,       // Master/Slave location of DQ I/O (=0 slave) 
+   parameter CLK_PERIOD           = 3750,       // Core/Memory clock period (in ps)
+   parameter RST_ACT_LOW          = 1        // =1 for active low reset, =0 for active high
    )
   (
-   input                                    clk0,
-   input                                    clk90,
-   input                                    clkdiv0,
-   input                                    rst0,
-   input                                    rst90,
-   input                                    rstdiv0,
-   input [2:0]                              app_af_cmd,
-   input [30:0]                             app_af_addr,
-   input                                    app_af_wren,
-   input                                    app_wdf_wren,
-   input [APPDATA_WIDTH-1:0]                app_wdf_data,
-   input [(APPDATA_WIDTH/8)-1:0]            app_wdf_mask_data,
-   output                                   app_af_afull,
-   output                                   app_wdf_afull,
-   output                                   rd_data_valid,
-   output [APPDATA_WIDTH-1:0]               rd_data_fifo_out,
-   output [1:0]                             rd_ecc_error,
-   output                                   phy_init_done,
-   output [CLK_WIDTH-1:0]                   ddr2_ck,
-   output [CLK_WIDTH-1:0]                   ddr2_ck_n,
-   output [ROW_WIDTH-1:0]                   ddr2_a,
-   output [BANK_WIDTH-1:0]                  ddr2_ba,
-   output                                   ddr2_ras_n,
-   output                                   ddr2_cas_n,
-   output                                   ddr2_we_n,
-   output [CS_WIDTH-1:0]                    ddr2_cs_n,
-   output [CKE_WIDTH-1:0]                   ddr2_cke,
-   output [ODT_WIDTH-1:0]                   ddr2_odt,
-   output [DM_WIDTH-1:0]                    ddr2_dm,
-   inout [DQS_WIDTH-1:0]                    ddr2_dqs,
-   inout [DQS_WIDTH-1:0]                    ddr2_dqs_n,
-   inout [DQ_WIDTH-1:0]                     ddr2_dq
+   input          clk0,
+   input          clk90,
+   input          clkdiv0,
+   input          rst0,
+   input          rst90,
+   input          rstdiv0,
+   input    [2:0] app_af_cmd,
+   input   [30:0] app_af_addr,
+   input          app_af_wren,
+   input          app_wdf_wren,
+   input  [143:0] app_wdf_data,
+   input   [15:0] app_wdf_mask_data,
+   output         app_af_afull,
+   output         app_wdf_afull,
+   output         rd_data_valid,
+   output [143:0] rd_data_fifo_out,
+   output         phy_init_done,
+   output   [2:0] ddr2_ck,
+   output   [2:0] ddr2_ck_n,
+   output  [15:0] ddr2_a,
+   output   [2:0] ddr2_ba,
+   output         ddr2_ras_n,
+   output         ddr2_cas_n,
+   output         ddr2_we_n,
+   output   [1:0] ddr2_cs_n,
+   output   [1:0] ddr2_cke,
+   output   [1:0] ddr2_odt,
+   output   [8:0] ddr2_dm,
+   inout    [8:0] ddr2_dqs,
+   inout    [8:0] ddr2_dqs_n,
+   inout   [71:0] ddr2_dq
    );
 
    wire [3:0]                             dbg_calib_done_nc;
@@ -114,7 +114,7 @@ module ddr2_controller #
 
 
   // memory initialization/control logic
-  mig_mem_if_top_0 #
+  mem_if_top #
     (
      .BANK_WIDTH     (BANK_WIDTH),
      .CKE_WIDTH      (CKE_WIDTH),
@@ -157,7 +157,7 @@ module ddr2_controller #
      .DQS_IO_COL     (DQS_IO_COL),
      .DQ_IO_MS       (DQ_IO_MS)
      )
-    u_mem_if_top_0
+    mem_if_top_inst
       (
        .clk0                   (clk0),
        .clk90                  (clk90),

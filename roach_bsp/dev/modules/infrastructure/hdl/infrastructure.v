@@ -30,10 +30,28 @@ module infrastructure(
     .O(epb_clk)
   );
 
-  IBUFGDS ibufgd_arr [3:0](
-    .I ({sys_clk_p, dly_clk_p, aux_clk1_p, aux_clk0_p}),
-    .IB({sys_clk_n, dly_clk_n, aux_clk1_n, aux_clk0_n}),
-    .O ({sys_clk,   dly_clk,   aux_clk_1,   aux_clk_0})
+  wire [2:0] foo;
+
+  IBUFGDS ibufgd_arr [2:0](
+    .I ({sys_clk_p, aux_clk1_p, aux_clk0_p}),
+    .IB({sys_clk_n, aux_clk1_n, aux_clk0_n}),
+    .O (foo)
+  );
+
+  BUFG foop[2:0](
+    .I(foo), .O({sys_clk, aux_clk_1, aux_clk_0})
+  );
+
+  wire dly_clk_int;
+  IBUFDS ibufds_foo(
+    .I(dly_clk_p),
+    .IB(dly_clk_n),
+    .O(dly_clk_int)
+  );
+
+  BUFG bufg_inst(
+    .I(dly_clk_int),
+    .O(dly_clk)
   );
 
   IDELAYCTRL idelayctrl_inst(

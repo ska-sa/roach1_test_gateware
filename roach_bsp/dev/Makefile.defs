@@ -40,21 +40,22 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/ten_gig_eth/hdl/addr_fifo.v \
     ./modules/bram_controller/hdl/bram_controller.v \
     ./modules/ddr2_controller/hdl/ddr2_controller.v \
-    ./modules/ddr2_controller/hdl/mig_ctrl_0.v \
-    ./modules/ddr2_controller/hdl/mig_mem_if_top_0.v \
-    ./modules/ddr2_controller/hdl/mig_phy_calib_0.v \
-    ./modules/ddr2_controller/hdl/mig_phy_ctl_io_0.v \
-    ./modules/ddr2_controller/hdl/mig_phy_dm_iob.v \
-    ./modules/ddr2_controller/hdl/mig_phy_dq_iob.v \
-    ./modules/ddr2_controller/hdl/mig_phy_dqs_iob.v \
-    ./modules/ddr2_controller/hdl/mig_phy_init_0.v \
-    ./modules/ddr2_controller/hdl/mig_phy_io_0.v \
-    ./modules/ddr2_controller/hdl/mig_phy_top_0.v \
-    ./modules/ddr2_controller/hdl/mig_phy_write_0.v \
-    ./modules/ddr2_controller/hdl/mig_usr_addr_fifo_0.v \
-    ./modules/ddr2_controller/hdl/mig_usr_rd_0.v \
-    ./modules/ddr2_controller/hdl/mig_usr_top_0.v \
-    ./modules/ddr2_controller/hdl/mig_usr_wr_0.v \
+    ./modules/ddr2_controller/hdl/ctrl.v \
+    ./modules/ddr2_controller/hdl/ddr2_sdram.v \
+    ./modules/ddr2_controller/hdl/mem_if_top.v \
+    ./modules/ddr2_controller/hdl/phy_calib.v \
+    ./modules/ddr2_controller/hdl/phy_ctl_io.v \
+    ./modules/ddr2_controller/hdl/phy_dm_iob.v \
+    ./modules/ddr2_controller/hdl/phy_dq_iob.v \
+    ./modules/ddr2_controller/hdl/phy_dqs_iob.v \
+    ./modules/ddr2_controller/hdl/phy_init.v \
+    ./modules/ddr2_controller/hdl/phy_io.v \
+    ./modules/ddr2_controller/hdl/phy_top.v \
+    ./modules/ddr2_controller/hdl/phy_write.v \
+    ./modules/ddr2_controller/hdl/usr_addr_fifo.v \
+    ./modules/ddr2_controller/hdl/usr_rd.v \
+    ./modules/ddr2_controller/hdl/usr_top.v \
+    ./modules/ddr2_controller/hdl/usr_wr.v \
     ./modules/ddr2_cpu_interface/hdl/ddr2_cpu_interface.v \
     ./modules/ddr2_cpu_interface/hdl/mem_rd_cache.v \
     ./modules/ddr2_cpu_interface/hdl/mem_wr_cache.v \

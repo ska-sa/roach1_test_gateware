@@ -85,9 +85,9 @@ module wbm_arbiter(
 
   reg wb_busy;
 
-  function [NUM_MASTERS - 1:0] sel_active_master;
+  function [NUM_MASTERS_BITS - 1:0] sel_active_master;
     input [NUM_MASTERS - 1:0] pending_i;
-    reg [NUM_MASTERS - 1:0] j;
+    integer j;
     begin
       sel_active_master = 0; //default is zero
       for (j=0; j < NUM_MASTERS; j=j+1) begin

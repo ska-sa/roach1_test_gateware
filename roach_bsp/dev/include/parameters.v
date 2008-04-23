@@ -21,9 +21,12 @@
 //`define ENABLE_XAUI_2
 //`define ENABLE_TEN_GB_ETH_3
 //`define ENABLE_XAUI_3
+//
+
+`define ENABLE_DDR2
 
 
-`define DDR2_CLK_FREQ "266"
+`define DDR2_CLK_FREQ "200"
 
 
 

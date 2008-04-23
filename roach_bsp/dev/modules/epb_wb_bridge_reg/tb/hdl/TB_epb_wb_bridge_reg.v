@@ -18,7 +18,6 @@ module TB_epb_wb_bridge_reg();
   wire epb_clk;
   reg  epb_cs_n;
   reg  epb_r_w_n;
-  wire epb_oe_n;
   wire  [1:0] epb_be_n;
   wire [22:0] epb_addr;
   wire  [5:0] epb_addr_gb;
@@ -33,7 +32,7 @@ module TB_epb_wb_bridge_reg();
     .wb_ack_i(wb_ack_i), .wb_err_i(wb_err_i),
 
     .epb_clk(epb_clk),
-    .epb_cs_n(epb_cs_n), .epb_r_w_n(epb_r_w_n), .epb_oe_n(epb_oe_n), .epb_be_n(epb_be_n), 
+    .epb_cs_n(epb_cs_n), .epb_r_w_n(epb_r_w_n), .epb_be_n(epb_be_n), 
     .epb_addr(epb_addr), .epb_addr_gb(epb_addr_gb),
     .epb_data_i(epb_data_i), .epb_data_o(epb_data_o), 
     .epb_rdy(epb_rdy)
@@ -149,8 +148,6 @@ module TB_epb_wb_bridge_reg();
   reg [28:0] epb_addr_r;
   assign epb_addr = epb_addr_r[22:0];
   assign epb_addr_gb = epb_addr_r[28:23];
-
-  assign epb_oe_n = epb_cs_n;
 
   assign epb_be_n = 2'b00;
 

@@ -14,12 +14,6 @@ TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
 Net epb_clk TNM_NET = epb_clk;
 TIMESPEC TS_epb_clk = PERIOD epb_clk 88 MHz;
 
-Net ddr_clk_0 TNM_NET = ddr_clk_0;
-TIMESPEC TS_ddr_clk_0 = PERIOD ddr_clk_0 266 MHz;
-
-Net ddr_clk_90 TNM_NET = ddr_clk_90;
-TIMESPEC TS_ddr_clk_90 = PERIOD ddr_clk_90 266 MHz;
-
 
 ###################ROACH constraints
 
@@ -38,10 +32,10 @@ NET "aux_clk0_p"  LOC = G15;
 NET "aux_clk1_n"  LOC = H14;
 NET "aux_clk1_p"  LOC = H15;
 
-NET "led_n<0>"    LOC = AP26;
-NET "led_n<1>"    LOC = AP25;
-NET "led_n<2>"    LOC = AL25;
-NET "led_n<3>"    LOC = AL24;
+NET "led_n<0>"    IOSTANDARD = LVCMOS18 | LOC = AP26;
+NET "led_n<1>"    IOSTANDARD = LVCMOS18 | LOC = AP25;
+NET "led_n<2>"    IOSTANDARD = LVCMOS18 | LOC = AL25;
+NET "led_n<3>"    IOSTANDARD = LVCMOS18 | LOC = AL24;
 
 #
 # PPC External Peripheral Bus [EPB]
@@ -430,8 +424,8 @@ NET "qdr1_sa<0>"     LOC = B16;
 NET "qdr1_w_n"       LOC = F15;
 NET "qdr1_r_n"       LOC = C15;
 NET "qdr1_dll_off_n" LOC = D20;
-NET "qdr1_bw<0>"     LOC = D15;
-NET "qdr1_bw<1>"     LOC = D16;
+NET "qdr1_bw_n<0>"   LOC = D15;
+NET "qdr1_bw_n<1>"   LOC = D16;
 NET "qdr1_cq_p"      LOC = C24;
 NET "qdr1_cq_n"      LOC = D25;
 NET "qdr1_k_p"       LOC = D14;
@@ -523,24 +517,24 @@ NET "ddr2_dm<5>"   IOSTANDARD = SSTL18_II | LOC = AA8;
 NET "ddr2_dm<6>"   IOSTANDARD = SSTL18_II | LOC = AG10;
 NET "ddr2_dm<7>"   IOSTANDARD = SSTL18_II | LOC = AM12;
 NET "ddr2_dm<8>"   IOSTANDARD = SSTL18_II | LOC = AN17;
-NET "ddr2_dqs_n_0" IOSTANDARD = DIFF_SSTL18_II | LOC = AL26;
-NET "ddr2_dqs_n_1" IOSTANDARD = DIFF_SSTL18_II | LOC = AM25;
-NET "ddr2_dqs_n_2" IOSTANDARD = DIFF_SSTL18_II | LOC = AK21;
-NET "ddr2_dqs_n_3" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ20;
-NET "ddr2_dqs_n_4" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ11;
-NET "ddr2_dqs_n_5" IOSTANDARD = DIFF_SSTL18_II | LOC = AD11;
-NET "ddr2_dqs_n_6" IOSTANDARD = DIFF_SSTL18_II | LOC = AD9;
-NET "ddr2_dqs_n_7" IOSTANDARD = DIFF_SSTL18_II | LOC = V7;
-NET "ddr2_dqs_n_8" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ15;
-NET "ddr2_dqs_p_0" IOSTANDARD = DIFF_SSTL18_II | LOC = AM26;
-NET "ddr2_dqs_p_1" IOSTANDARD = DIFF_SSTL18_II | LOC = AN25;
-NET "ddr2_dqs_p_2" IOSTANDARD = DIFF_SSTL18_II | LOC = AL21;
-NET "ddr2_dqs_p_3" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ21;
-NET "ddr2_dqs_p_4" IOSTANDARD = DIFF_SSTL18_II | LOC = AK11;
-NET "ddr2_dqs_p_5" IOSTANDARD = DIFF_SSTL18_II | LOC = AD10;
-NET "ddr2_dqs_p_6" IOSTANDARD = DIFF_SSTL18_II | LOC = AE8;
-NET "ddr2_dqs_p_7" IOSTANDARD = DIFF_SSTL18_II | LOC = W7;
-NET "ddr2_dqs_p_8" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ16;
+NET "ddr2_dqs_n<0>" IOSTANDARD = DIFF_SSTL18_II | LOC = AL26;
+NET "ddr2_dqs_n<1>" IOSTANDARD = DIFF_SSTL18_II | LOC = AM25;
+NET "ddr2_dqs_n<2>" IOSTANDARD = DIFF_SSTL18_II | LOC = AK21;
+NET "ddr2_dqs_n<3>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ20;
+NET "ddr2_dqs_n<4>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ11;
+NET "ddr2_dqs_n<5>" IOSTANDARD = DIFF_SSTL18_II | LOC = AD11;
+NET "ddr2_dqs_n<6>" IOSTANDARD = DIFF_SSTL18_II | LOC = AD9;
+NET "ddr2_dqs_n<7>" IOSTANDARD = DIFF_SSTL18_II | LOC = V7;
+NET "ddr2_dqs_n<8>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ15;
+NET "ddr2_dqs_p<0>" IOSTANDARD = DIFF_SSTL18_II | LOC = AM26;
+NET "ddr2_dqs_p<1>" IOSTANDARD = DIFF_SSTL18_II | LOC = AN25;
+NET "ddr2_dqs_p<2>" IOSTANDARD = DIFF_SSTL18_II | LOC = AL21;
+NET "ddr2_dqs_p<3>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ21;
+NET "ddr2_dqs_p<4>" IOSTANDARD = DIFF_SSTL18_II | LOC = AK11;
+NET "ddr2_dqs_p<5>" IOSTANDARD = DIFF_SSTL18_II | LOC = AD10;
+NET "ddr2_dqs_p<6>" IOSTANDARD = DIFF_SSTL18_II | LOC = AE8;
+NET "ddr2_dqs_p<7>" IOSTANDARD = DIFF_SSTL18_II | LOC = W7;
+NET "ddr2_dqs_p<8>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ16;
 NET "ddr2_a<15>"   IOSTANDARD = SSTL18_II | LOC = AE7;
 NET "ddr2_a<14>"   IOSTANDARD = SSTL18_II | LOC = AH7;
 NET "ddr2_a<13>"   IOSTANDARD = SSTL18_II | LOC = AC4;
@@ -678,7 +672,7 @@ NET "se_gpio_a<4>"    LOC = B27;
 NET "se_gpio_a<5>"    LOC = D24;
 NET "se_gpio_a<6>"    LOC = E24;
 NET "se_gpio_a<7>"    LOC = A26;
-NET "se_gpio_a_oen_n" LOC = AP22;
+NET "se_gpio_a_oen_n" IOSTANDARD = LVCMOS18 | LOC = AP22;
 NET "se_gpio_b<0>"    LOC = N33;
 NET "se_gpio_b<1>"    LOC = N34;
 NET "se_gpio_b<2>"    LOC = P34;
