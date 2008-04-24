@@ -59,7 +59,7 @@ module toplevel(
   output [7:0] SYS_CONFIG;
 
   input  CHS_POWERDOWN, CHS_RESET_N;
-  output [2:0] CHS_LED,
+  output [1:0] CHS_LED,
 
   input  FAN1_SENSE, FAN2_SENSE, FAN3_SENSE;
   output FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
@@ -576,12 +576,17 @@ module toplevel(
 
   assign CONTROLLER_RESET = ~power_ok;
 
-  assign CHS_LED = {power_ok, hard_reset, ~dma_done};
+
+  reg [26:0] counter;
+  always @(posedge gclk40) begin
+    counter <= counter + 1;
+  end
+  assign CHS_LED = {counter[25], hard_reset};
 
   assign cold_start = ~sys_config_vector[0];
-  //assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
-  //                G3V3_EN, G5V_EN, G12V_EN, 1'b0, 1'b0};
-  assign ag_en = 10'b0;
+  assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
+                  G3V3_EN, G5V_EN, G12V_EN, 1'b0, 1'b0};
+  //assign ag_en = 10'b0;
 
   power_manager #(
     .WATCHDOG_OVERFLOW_DEFAULT(`WATCHDOG_OVERFLOW_DEFAULT),
@@ -601,7 +606,8 @@ module toplevel(
     /* Informational Signals */
     .power_ok(power_ok), .no_power_cause(no_power_cause),
     /* Control Signals */
-    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
+  //  .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
+    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(1'b0),
     .soft_reset(soft_reset), .crash(dma_crash), .chs_powerdown_pending(chs_powerdown_pending),
     /* ATX Power Supply Control */
     .ATX_PS_ON_N(ATX_PS_ON_N), .ATX_PWR_OK(ATX_PWR_OK),

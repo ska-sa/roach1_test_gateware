@@ -68,182 +68,182 @@ set_io ATRET\[2\] -pinname T8  -fixed yes
 set_io ATRET\[3\] -pinname T10 -fixed yes
 set_io ATRET\[4\] -pinname T12 -fixed yes
 
-# #
-# # ATX POWER
-# #
-# 
-# set_io ATX_PWR_OK       -pinname F8  -fixed yes -iostd LVTTL
-# set_io ATX_PS_ON_N      -pinname E8  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io ATX_LOAD_RES_OFF -pinname D16 -fixed yes -iostd LVTTL -SLEW Low  
-# 
-# #
-# # Power Management
-# #
-# 
-# set_io TRACK_2V5      -pinname H1  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io INHIBIT_2V5    -pinname J4  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io INHIBIT_1V8    -pinname A8  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io INHIBIT_1V5    -pinname C11 -fixed yes -iostd LVTTL -SLEW Low  
-# set_io INHIBIT_1V2    -pinname A10 -fixed yes -iostd LVTTL -SLEW Low  
-# set_io INHIBIT_1V0    -pinname A9  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io MGT_AVCC_EN    -pinname A7  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io MGT_AVTTX_EN   -pinname B4  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io MGT_AVCCPLL_EN -pinname A4  -fixed yes -iostd LVTTL -SLEW Low  
-# set_io MGT_AVCC_PG    -pinname A6  -fixed yes -iostd LVTTL
-# set_io MGT_AVTTX_PG   -pinname B3  -fixed yes -iostd LVTTL
-# set_io MGT_AVCCPLL_PG -pinname A3  -fixed yes -iostd LVTTL
-# set_io AUX_3V3_PG     -pinname M5  -fixed yes -iostd LVTTL
-# 
-# #
-# # XPORT Comms
-# #
-# 
-# set_io XPORT_SERIAL_IN  -pinname D9 -fixed yes -iostd LVTTL
-# set_io XPORT_SERIAL_OUT -pinname D8 -fixed yes -iostd LVTTL -SLEW Low  
-# set_io XPORT_GPIO[0]    -pinname D7 -fixed yes -iostd LVTTL 
-# set_io XPORT_GPIO[1]    -pinname D6 -fixed yes -iostd LVTTL 
-# set_io XPORT_GPIO[2]    -pinname C6 -fixed yes -iostd LVTTL 
-# set_io XPORT_RESET_N    -pinname C7 -fixed yes -iostd LVTTL -SLEW Low
-# 
-# #
-# # Controller Comms
-# #
-# 
-# set_io CONTROLLER_I2C_SDA -pinname F1 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io CONTROLLER_I2C_SCL -pinname G1 -fixed yes -iostd LVTTL
-# set_io CONTROLLER_IRQ     -pinname F2 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io CONTROLLER_RESET   -pinname J1 -fixed yes -iostd LVTTL -SLEW Low 
-# 
-# #
-# # System Configuration
-# #
-# 
-# set_io SYS_CONFIG[0] -pinname C8  -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[1] -pinname B14 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[2] -pinname B13 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[3] -pinname B12 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[4] -pinname B11 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[5] -pinname B9  -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[6] -pinname B8  -fixed yes -iostd LVTTL -SLEW Low 
-# set_io SYS_CONFIG[7] -pinname B6  -fixed yes -iostd LVTTL -SLEW Low 
-# 
-# #
-# # Chassis Interface Signals
-# #
-# 
-# set_io CHS_POWERDOWN -pinname N1 -fixed yes -iostd LVTTL
-# set_io CHS_RESET_N   -pinname N1 -fixed yes -iostd LVTTL
-# set_io CHS_LED\[0\]  -pinname D3 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io CHS_LED\[1\]  -pinname D4 -fixed yes -iostd LVTTL -SLEW Low 
-# 
-# #
-# # Fan Control Signals
-# #
-# 
-# set_io FAN1_SENSE   -pinname J15 -fixed yes -iostd LVTTL 
-# set_io FAN1_CONTROL -pinname H15 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io FAN2_SENSE   -pinname L16 -fixed yes -iostd LVTTL 
-# set_io FAN2_CONTROL -pinname J16 -fixed yes -iostd LVTTL -SLEW Low 
-# set_io FAN3_SENSE   -pinname L15 -fixed yes -iostd LVTTL 
-# set_io FAN3_CONTROL -pinname L14 -fixed yes -iostd LVTTL -SLEW Low 
-# 
-# #
-# # Debug Serial Port
-# #
-# 
-# set_io DEBUG_SERIAL_IN  -pinname G16 -fixed yes -iostd LVTTL
-# set_io DEBUG_SERIAL_OUT -pinname H16 -fixed yes -iostd LVTTL -SLEW Low 
-
-
-################### XCC XCC XCC
-
 #
 # ATX POWER
 #
 
 set_io ATX_PWR_OK       -pinname F8  -fixed yes -iostd LVTTL
 set_io ATX_PS_ON_N      -pinname E8  -fixed yes -iostd LVTTL -SLEW Low  
-set_io ATX_LOAD_RES_OFF -pinname J16 -fixed yes -iostd LVTTL -SLEW Low  
+set_io ATX_LOAD_RES_OFF -pinname D16 -fixed yes -iostd LVTTL -SLEW Low  
 
 #
 # Power Management
 #
 
-set_io TRACK_2V5      -pinname J5  -fixed yes -iostd LVTTL -SLEW Low  
-set_io INHIBIT_2V5    -pinname J6  -fixed yes -iostd LVTTL -SLEW Low  
-set_io INHIBIT_1V8    -pinname F4  -fixed yes -iostd LVTTL -SLEW Low  
-set_io INHIBIT_1V5    -pinname F6  -fixed yes -iostd LVTTL -SLEW Low  
-set_io INHIBIT_1V2    -pinname F7  -fixed yes -iostd LVTTL -SLEW Low  
-set_io INHIBIT_1V0    -pinname E5  -fixed yes -iostd LVTTL -SLEW Low  
-set_io MGT_AVCC_EN    -pinname E6  -fixed yes -iostd LVTTL -SLEW Low  
-set_io MGT_AVTTX_EN   -pinname D5  -fixed yes -iostd LVTTL -SLEW Low  
-set_io MGT_AVCCPLL_EN -pinname B5  -fixed yes -iostd LVTTL -SLEW Low  
-set_io MGT_AVCC_PG    -pinname F10 -fixed yes -iostd LVTTL
-set_io MGT_AVTTX_PG   -pinname F11 -fixed yes -iostd LVTTL
-set_io MGT_AVCCPLL_PG -pinname F12 -fixed yes -iostd LVTTL
-set_io AUX_3V3_PG     -pinname F13 -fixed yes -iostd LVTTL
+set_io TRACK_2V5      -pinname H1  -fixed yes -iostd LVTTL -SLEW Low  
+set_io INHIBIT_2V5    -pinname J4  -fixed yes -iostd LVTTL -SLEW Low  
+set_io INHIBIT_1V8    -pinname A8  -fixed yes -iostd LVTTL -SLEW Low  
+set_io INHIBIT_1V5    -pinname C11 -fixed yes -iostd LVTTL -SLEW Low  
+set_io INHIBIT_1V2    -pinname A10 -fixed yes -iostd LVTTL -SLEW Low  
+set_io INHIBIT_1V0    -pinname A9  -fixed yes -iostd LVTTL -SLEW Low  
+set_io MGT_AVCC_EN    -pinname A7  -fixed yes -iostd LVTTL -SLEW Low  
+set_io MGT_AVTTX_EN   -pinname B4  -fixed yes -iostd LVTTL -SLEW Low  
+set_io MGT_AVCCPLL_EN -pinname A4  -fixed yes -iostd LVTTL -SLEW Low  
+set_io MGT_AVCC_PG    -pinname A6  -fixed yes -iostd LVTTL
+set_io MGT_AVTTX_PG   -pinname B3  -fixed yes -iostd LVTTL
+set_io MGT_AVCCPLL_PG -pinname A3  -fixed yes -iostd LVTTL
+set_io AUX_3V3_PG     -pinname M5  -fixed yes -iostd LVTTL
 
 #
 # XPORT Comms
 #
 
-set_io XPORT_SERIAL_IN  -pinname H11 -fixed yes -iostd LVTTL -RES_PULL Up
-set_io XPORT_SERIAL_OUT -pinname E14 -fixed yes -iostd LVTTL -SLEW Low  
-set_io XPORT_GPIO\[0\]    -pinname L1  -fixed yes -iostd LVTTL -RES_PULL Down
-set_io XPORT_GPIO\[1\]    -pinname M2  -fixed yes -iostd LVTTL -RES_PULL Down
-set_io XPORT_GPIO\[2\]    -pinname M3  -fixed yes -iostd LVTTL -RES_PULL Down
-set_io XPORT_RESET_N    -pinname D13 -fixed yes -iostd LVTTL -SLEW Low
+set_io XPORT_SERIAL_IN  -pinname D9 -fixed yes -iostd LVTTL
+set_io XPORT_SERIAL_OUT -pinname D8 -fixed yes -iostd LVTTL -SLEW Low  
+set_io XPORT_GPIO\[0\]    -pinname D7 -fixed yes -iostd LVTTL 
+set_io XPORT_GPIO\[1\]    -pinname D6 -fixed yes -iostd LVTTL 
+set_io XPORT_GPIO\[2\]    -pinname C6 -fixed yes -iostd LVTTL 
+set_io XPORT_RESET_N    -pinname C7 -fixed yes -iostd LVTTL -SLEW Low
 
 #
 # Controller Comms
 #
 
-set_io CONTROLLER_I2C_SDA -pinname G1 -fixed yes -iostd LVTTL -SLEW Low -RES_PULL Up
-set_io CONTROLLER_I2C_SCL -pinname F1 -fixed yes -iostd LVTTL -RES_PULL Up
-# set_io CONTROLLER_IRQ     -pinname G4 -fixed yes -iostd LVTTL -SLEW Low
-set_io CONTROLLER_IRQ     -pinname G4 -fixed yes -iostd LVTTL -SLEW Low
-set_io CONTROLLER_RESET   -pinname N2 -fixed yes -iostd LVTTL -SLEW Low 
+set_io CONTROLLER_I2C_SDA -pinname F1 -fixed yes -iostd LVTTL -SLEW Low 
+set_io CONTROLLER_I2C_SCL -pinname G1 -fixed yes -iostd LVTTL
+set_io CONTROLLER_IRQ     -pinname F2 -fixed yes -iostd LVTTL -SLEW Low 
+set_io CONTROLLER_RESET   -pinname J1 -fixed yes -iostd LVTTL -SLEW Low 
 
 #
 # System Configuration
 #
 
-set_io SYS_CONFIG\[0\] -pinname L2  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[1\] -pinname L3  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[2\] -pinname L4  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[3\] -pinname L5  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[4\] -pinname L6  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[5\] -pinname K1  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[6\] -pinname K4  -fixed yes -iostd LVTTL -SLEW Low 
-set_io SYS_CONFIG\[7\] -pinname K6  -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[0\] -pinname C8  -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[1\] -pinname B14 -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[2\] -pinname B13 -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[3\] -pinname B12 -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[4\] -pinname B11 -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[5\] -pinname B9  -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[6\] -pinname B8  -fixed yes -iostd LVTTL -SLEW Low 
+set_io SYS_CONFIG\[7\] -pinname B6  -fixed yes -iostd LVTTL -SLEW Low 
 
 #
 # Chassis Interface Signals
 #
 
-set_io CHS_POWERDOWN -pinname K3  -fixed yes -iostd LVTTL -RES_PULL Down
-set_io CHS_RESET_N   -pinname F15 -fixed yes -iostd LVTTL -RES_PULL Up
-set_io CHS_LED\[0\]  -pinname D3  -fixed yes -iostd LVTTL -SLEW Low 
-set_io CHS_LED\[1\]  -pinname D4  -fixed yes -iostd LVTTL -SLEW Low 
-set_io CHS_LED\[2\]  -pinname D6  -fixed yes -iostd LVTTL -SLEW Low 
+set_io CHS_POWERDOWN -pinname N1 -fixed yes -iostd LVTTL
+set_io CHS_RESET_N   -pinname C13 -fixed yes -iostd LVTTL
+set_io CHS_LED\[0\]  -pinname N2 -fixed yes -iostd LVTTL -SLEW Low 
+set_io CHS_LED\[1\]  -pinname D1 -fixed yes -iostd LVTTL -SLEW Low 
 
 #
 # Fan Control Signals
 #
 
-set_io FAN1_SENSE   -pinname N3  -fixed yes -iostd LVTTL 
-set_io FAN1_CONTROL -pinname J11 -fixed yes -iostd LVTTL -SLEW Low 
-set_io FAN2_SENSE   -pinname F16 -fixed yes -iostd LVTTL 
-set_io FAN2_CONTROL -pinname D14 -fixed yes -iostd LVTTL -SLEW Low 
-set_io FAN3_SENSE   -pinname G13 -fixed yes -iostd LVTTL 
-set_io FAN3_CONTROL -pinname H12 -fixed yes -iostd LVTTL -SLEW Low 
+set_io FAN1_SENSE   -pinname J15 -fixed yes -iostd LVTTL 
+set_io FAN1_CONTROL -pinname H15 -fixed yes -iostd LVTTL -SLEW Low 
+set_io FAN2_SENSE   -pinname L16 -fixed yes -iostd LVTTL 
+set_io FAN2_CONTROL -pinname J16 -fixed yes -iostd LVTTL -SLEW Low 
+set_io FAN3_SENSE   -pinname L15 -fixed yes -iostd LVTTL 
+set_io FAN3_CONTROL -pinname L14 -fixed yes -iostd LVTTL -SLEW Low 
 
 #
 # Debug Serial Port
 #
- 
-set_io DEBUG_SERIAL_IN  -pinname D9 -schmitt_trigger On -fixed yes -iostd LVCMOS33
-set_io DEBUG_SERIAL_OUT -pinname D8 -fixed yes -iostd LVCMOS33 -SLEW Low 
 
-set_io fet_disable\[0\] -pinname F2 -fixed yes -iostd LVCMOS33 -SLEW Low 
-set_io fet_disable\[1\] -pinname G3 -fixed yes -iostd LVCMOS33 -SLEW Low 
+set_io DEBUG_SERIAL_IN  -pinname G16 -fixed yes -iostd LVTTL
+set_io DEBUG_SERIAL_OUT -pinname H16 -fixed yes -iostd LVTTL -SLEW Low 
+
+
+################### XCC XCC XCC
+#
+##
+## ATX POWER
+##
+#
+#set_io ATX_PWR_OK       -pinname F8  -fixed yes -iostd LVTTL
+#set_io ATX_PS_ON_N      -pinname E8  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io ATX_LOAD_RES_OFF -pinname J16 -fixed yes -iostd LVTTL -SLEW Low  
+#
+##
+## Power Management
+##
+#
+#set_io TRACK_2V5      -pinname J5  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io INHIBIT_2V5    -pinname J6  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io INHIBIT_1V8    -pinname F4  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io INHIBIT_1V5    -pinname F6  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io INHIBIT_1V2    -pinname F7  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io INHIBIT_1V0    -pinname E5  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io MGT_AVCC_EN    -pinname E6  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io MGT_AVTTX_EN   -pinname D5  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io MGT_AVCCPLL_EN -pinname B5  -fixed yes -iostd LVTTL -SLEW Low  
+#set_io MGT_AVCC_PG    -pinname F10 -fixed yes -iostd LVTTL
+#set_io MGT_AVTTX_PG   -pinname F11 -fixed yes -iostd LVTTL
+#set_io MGT_AVCCPLL_PG -pinname F12 -fixed yes -iostd LVTTL
+#set_io AUX_3V3_PG     -pinname F13 -fixed yes -iostd LVTTL
+#
+##
+## XPORT Comms
+##
+#
+#set_io XPORT_SERIAL_IN  -pinname H11 -fixed yes -iostd LVTTL -RES_PULL Up
+#set_io XPORT_SERIAL_OUT -pinname E14 -fixed yes -iostd LVTTL -SLEW Low  
+#set_io XPORT_GPIO\[0\]    -pinname L1  -fixed yes -iostd LVTTL -RES_PULL Down
+#set_io XPORT_GPIO\[1\]    -pinname M2  -fixed yes -iostd LVTTL -RES_PULL Down
+#set_io XPORT_GPIO\[2\]    -pinname M3  -fixed yes -iostd LVTTL -RES_PULL Down
+#set_io XPORT_RESET_N    -pinname D13 -fixed yes -iostd LVTTL -SLEW Low
+#
+##
+## Controller Comms
+##
+#
+#set_io CONTROLLER_I2C_SDA -pinname G1 -fixed yes -iostd LVTTL -SLEW Low -RES_PULL Up
+#set_io CONTROLLER_I2C_SCL -pinname F1 -fixed yes -iostd LVTTL -RES_PULL Up
+## set_io CONTROLLER_IRQ     -pinname G4 -fixed yes -iostd LVTTL -SLEW Low
+#set_io CONTROLLER_IRQ     -pinname G4 -fixed yes -iostd LVTTL -SLEW Low
+#set_io CONTROLLER_RESET   -pinname N2 -fixed yes -iostd LVTTL -SLEW Low 
+#
+##
+## System Configuration
+##
+#
+#set_io SYS_CONFIG\[0\] -pinname L2  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[1\] -pinname L3  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[2\] -pinname L4  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[3\] -pinname L5  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[4\] -pinname L6  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[5\] -pinname K1  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[6\] -pinname K4  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io SYS_CONFIG\[7\] -pinname K6  -fixed yes -iostd LVTTL -SLEW Low 
+#
+##
+## Chassis Interface Signals
+##
+#
+#set_io CHS_POWERDOWN -pinname K3  -fixed yes -iostd LVTTL -RES_PULL Down
+#set_io CHS_RESET_N   -pinname F15 -fixed yes -iostd LVTTL -RES_PULL Up
+#set_io CHS_LED\[0\]  -pinname D3  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io CHS_LED\[1\]  -pinname D4  -fixed yes -iostd LVTTL -SLEW Low 
+#set_io CHS_LED\[2\]  -pinname D6  -fixed yes -iostd LVTTL -SLEW Low 
+#
+##
+## Fan Control Signals
+##
+#
+#set_io FAN1_SENSE   -pinname N3  -fixed yes -iostd LVTTL 
+#set_io FAN1_CONTROL -pinname J11 -fixed yes -iostd LVTTL -SLEW Low 
+#set_io FAN2_SENSE   -pinname F16 -fixed yes -iostd LVTTL 
+#set_io FAN2_CONTROL -pinname D14 -fixed yes -iostd LVTTL -SLEW Low 
+#set_io FAN3_SENSE   -pinname G13 -fixed yes -iostd LVTTL 
+#set_io FAN3_CONTROL -pinname H12 -fixed yes -iostd LVTTL -SLEW Low 
+#
+##
+## Debug Serial Port
+##
+# 
+#set_io DEBUG_SERIAL_IN  -pinname D9 -schmitt_trigger On -fixed yes -iostd LVCMOS33
+#set_io DEBUG_SERIAL_OUT -pinname D8 -fixed yes -iostd LVCMOS33 -SLEW Low 
+#
+#set_io fet_disable\[0\] -pinname F2 -fixed yes -iostd LVCMOS33 -SLEW Low 
+#set_io fet_disable\[1\] -pinname G3 -fixed yes -iostd LVCMOS33 -SLEW Low 
