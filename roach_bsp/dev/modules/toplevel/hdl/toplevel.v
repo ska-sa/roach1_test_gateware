@@ -174,6 +174,8 @@ module toplevel(
   wire sys_reset;
   wire soft_reset;
 
+  wire clk_lock;
+
   /**************** Global Infrastructure ****************/
 
   wire idelay_ready;
@@ -193,47 +195,52 @@ module toplevel(
   );
 
 
-  /********************* Reset Block *********************/
+  /******************** Reset Block *********************/
 
   reset_block #(
     .DELAY(100),
-    .WIDTH(10)
+    .WIDTH(32'h100)
   ) reset_block_inst(
     .clk(sys_clk), .async_reset_i(1'b0),
-    .reset_i(soft_reset), .reset_o(sys_reset)
+    .reset_i(1'b0), .reset_o(sys_reset)
   );
 
   /************************* LEDs ************************/
 
-  reg [25:0] counter [3:0];
-  assign led_n = {counter[0][25], counter[1][25], counter[2][25], counter[3][25]};
+  wire epb_cs_n_int;
 
-  always @(posedge sys_clk) begin
-    if (sys_reset) begin
-      counter[0] <= 26'b0;
-    end else begin
-      counter[0] <= counter[0] + 1;
+  reg [27:0] counter [2:0];
+  assign led_n = {~sys_reset, counter[0][27], counter[1][27], counter[2][27]};
+
+
+  reg foo;
+  reg prev;
+
+  reg munge;
+
+  always @(posedge epb_clk) begin
+    
+    if (counter[1][27])
+      munge <= 1'b0;
+
+    prev <= epb_cs_n_int;
+    if (!munge) begin
+      if (epb_cs_n_int != prev && epb_cs_n_int) begin
+        munge <= 1'b1;
+      end
     end
   end
 
   always @(posedge sys_clk) begin
+    counter[0] <= counter[0] + 1;
+  end
+
+  always @(posedge epb_clk) begin
     counter[1] <= counter[1] + 1;
   end
 
-  always @(posedge dly_clk) begin
-    if (sys_reset) begin
-      counter[2] <= 26'b0;
-    end else begin
-      counter[2] <= counter[0] + 1;
-    end
-  end
-
   always @(posedge mgt_clk) begin
-    if (sys_reset) begin
-      counter[3] <= 26'b0;
-    end else begin
-      counter[3] <= counter[0] + 1;
-    end
+    counter[2] <= counter[2] + 1;
   end
 
   /**************** Serial Communications ****************/
@@ -254,7 +261,6 @@ module toplevel(
   );
 
   /**************** Wishbone Bus Control ****************/
-
 
   /*** Serial Port Master **/
   wire wbm_stb_o_0, wbm_cyc_o_0, wbm_we_o_0;
@@ -320,6 +326,11 @@ module toplevel(
     .epb_rdy(epb_rdy)
   );
 
+  reg turd;
+  assign epb_cs_n_int = turd;
+  always @(posedge epb_clk)
+    turd <= epb_cs_n_dly;
+
   /** WB Master Arbitration **/
 
   /* Intermediate wishbone signals */
@@ -342,7 +353,8 @@ module toplevel(
     .wbs_cyc_o(wbi_cyc_o), .wbs_stb_o(wbi_stb_o), .wbs_we_o(wbi_we_o), .wbs_sel_o(wbi_sel_o),
     .wbs_adr_o(wbi_adr_o), .wbs_dat_o(wbi_dat_o), .wbs_dat_i(wbi_dat_i),
     .wbs_ack_i(wbi_ack_i), .wbs_err_i(wbi_err_i),
-    .wbm_mask(2'b11), //both enabled
+   // .wbm_mask(2'b01), 
+    .wbm_mask(2'b01), 
     .wbm_id(wbm_id_nc)
   );
 
@@ -383,6 +395,12 @@ module toplevel(
   );
 
   /******************* System Module *****************/
+   
+  reg prev_oen;
+
+  always @(posedge epb_clk) begin
+    prev_oen <= epb_oe_n;
+  end
 
   sys_block #(
     .BOARD_ID(`BOARD_ID),
@@ -397,6 +415,8 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(0 + 1) - 1: 16*0]),
     .wb_ack_o(wb_ack_i[0]),
     .wb_toutsup_o()
+    ,.debug_clk(epb_clk), .debug_we(prev_oen != epb_oe_n && !epb_oe_n),
+    .debug({3'b0, epb_addr_gp_dly, epb_addr_dly, epb_data_i, 7'b0, epb_rdy, 1'b0, epb_be_n_dly, epb_blast_n, 1'b0, epb_r_w_n_dly, epb_cs_n_dly, epb_oe_n})
   );
 
   /************* XAUI Infrastructure ***************/
@@ -562,7 +582,7 @@ module toplevel(
 `ifdef ENABLE_XAUI_0
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
-    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_LOOPBACK(1'b0),
     .DEFAULT_TXEN(1'b1)
   ) xaui_pipe_0 (
     .reset(sys_reset), .mgt_clk(mgt_clk),
@@ -662,7 +682,7 @@ module toplevel(
 `ifdef ENABLE_XAUI_1
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
-    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_LOOPBACK(1'b0),
     .DEFAULT_TXEN(1'b1)
   ) xaui_pipe_1 (
     .reset(sys_reset), .mgt_clk(mgt_clk),
@@ -761,7 +781,7 @@ module toplevel(
 `ifdef ENABLE_XAUI_2
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
-    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_LOOPBACK(1'b0),
     .DEFAULT_TXEN(1'b1)
   ) xaui_pipe_2 (
     .reset(sys_reset), .mgt_clk(mgt_clk),
@@ -860,7 +880,7 @@ module toplevel(
 `ifdef ENABLE_XAUI_3
   xaui_pipe #(
     .DEFAULT_POWERDOWN(1'b0),
-    .DEFAULT_LOOPBACK(1'b1),
+    .DEFAULT_LOOPBACK(1'b0),
     .DEFAULT_TXEN(1'b1)
   ) xaui_pipe_3 (
     .reset(sys_reset), .mgt_clk(mgt_clk),
@@ -1120,9 +1140,15 @@ module toplevel(
   assign se_gpio_b_oen_n = 1'b1;
 
   assign se_gpio_a[0] = serial_out;
-  assign se_gpio_a[7:1] = 7'b0;
+  assign se_gpio_a[1] = 1'b0;
+  assign se_gpio_a[2] = 1'b0;
+  assign se_gpio_a[3] = 1'b0;
+  assign se_gpio_a[4] = epb_cs_n_int;
+  assign se_gpio_a[5] = 1'b0;
+  assign se_gpio_a[6] = 1'b0;
+  assign se_gpio_a[7] = 1'b0;
 
-  assign serial_in  = se_gpio_b[0];
+  assign serial_in    = se_gpio_b[0];
   assign se_gpio_b[7:1] = {7{1'bz}};
 
   /******** Differential **********/

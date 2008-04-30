@@ -5,7 +5,10 @@ module sys_block(
     wb_we_i, wb_cyc_i, wb_stb_i, wb_sel_i,
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o, wb_toutsup_o
+    , debug_clk, debug_we , debug
   );
+  input debug_clk, debug_we;
+  input [63:0] debug;
   parameter BOARD_ID  = 16'hdead;
   parameter REV_MAJOR = 16'haaaa;
   parameter REV_MINOR = 16'hbbbb;
@@ -24,26 +27,33 @@ module sys_block(
   assign wb_toutsup_o=1'b0;
 
   reg wb_ack_o;
-  reg  [2:0] wb_dat_o_sel;
+  reg  [3:0] wb_dat_o_sel;
   reg [15:0] scratch_pad;
+
+  wire [63:0] fifo_data;
 
   assign wb_dat_o = wb_dat_o_sel == `REG_BOARD_ID   ? BOARD_ID    :
                     wb_dat_o_sel == `REG_REV_MAJOR  ? REV_MAJOR   :
                     wb_dat_o_sel == `REG_REV_MINOR  ? REV_MINOR   :
                     wb_dat_o_sel == `REG_REV_RCS    ? REV_RCS     :
                     wb_dat_o_sel == `REG_SCRATCHPAD ? scratch_pad :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 1 ? fifo_data[63:48] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 2 ? fifo_data[47:32] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 3 ? fifo_data[31:16] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 4 ? fifo_data[15:0] :
                     16'b0;
-
+  reg fifo_rd_en;
   always @(posedge wb_clk_i) begin
+    fifo_rd_en <= 1'b0;
     if (wb_rst_i) begin
       wb_ack_o<=1'b0;
     end else begin
       wb_ack_o<=1'b0;
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o<=1'b1;
-        wb_dat_o_sel <= wb_adr_i[3:1];
+        wb_dat_o_sel <= wb_adr_i[4:1];
 
-        case (wb_adr_i[3:1])
+        case (wb_adr_i[4:1])
           `REG_BOARD_ID: begin
           end
           `REG_REV_MAJOR: begin
@@ -60,9 +70,36 @@ module sys_block(
                 scratch_pad[15:8] <= wb_dat_i[15:8];
             end
           end
+          `REG_SCRATCHPAD + 1: begin
+          end
+          `REG_SCRATCHPAD + 2: begin
+          end
+          `REG_SCRATCHPAD + 3: begin
+          end
+          `REG_SCRATCHPAD + 4: begin
+          end
+          `REG_SCRATCHPAD + 5: begin
+            fifo_rd_en <= 1'b1;
+          end
         endcase
       end
     end
   end
+
+  xaui_fifo xaui_fifo_fu(
+    .rst(wb_rst_i), 
+    .rd_clk(wb_clk_i),
+    .dout(fifo_data),
+    .rd_en(fifo_rd_en),
+    .wr_clk(debug_clk),
+    .din(debug),
+    .wr_en(debug_we),
+    .overflow(), .underflow(),
+    .almost_full(), .almost_empty(),
+    .full(), .empty()
+  );
+
+
+
 
 endmodule

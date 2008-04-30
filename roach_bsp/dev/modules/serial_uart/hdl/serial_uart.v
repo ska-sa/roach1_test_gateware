@@ -7,7 +7,7 @@ module serial_uart(
     as_dstrb_i, as_busy_o, as_dstrb_o
   );
   parameter BAUD        = 115200;
-  parameter CLOCK_RATE  = 40000000;
+  parameter CLOCK_RATE  = 10000000;
   /*
    * serial/serial side signals
    */
@@ -31,7 +31,8 @@ module serial_uart(
 `ifdef __ICARUS__
   localparam BITWIDTH_BITS = 32;
 `else
-  localparam BITWIDTH_BITS = `LOG2(SERIAL_BITWIDTH-1) + 1;
+  localparam BITWIDTH_BITS = 32;
+  //localparam BITWIDTH_BITS = `LOG2(SERIAL_BITWIDTH-1) + 1;
 `endif
 
 
@@ -127,11 +128,12 @@ module serial_uart(
   reg serial_out;
   assign as_busy_o = as_dstrb_i | (s_o_state == `S_O_STATE_SEND);
 
-
   always @(posedge clk) begin
     if (reset) begin
       s_o_state<=`S_O_STATE_WAIT;
       serial_out<=1'b1;
+      s_o_progress<=4'b0;
+      s_o_counter<=32'b0;
     end else begin
       case (s_o_state)
         `S_O_STATE_WAIT: begin

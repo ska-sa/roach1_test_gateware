@@ -25,14 +25,23 @@ module infrastructure(
   input  idelay_rst;
   output idelay_rdy;
 
-  IBUFG ibufg_epb(
+  wire epb_clk_int;
+
+  IBUF ibuf_epb(
     .I(epb_clk_buf),
-    .O(epb_clk)
+    .O(epb_clk_int)
+  );
+
+  BUFG bufg_epb(
+    .I(epb_clk_int), .O(epb_clk)
   );
 
   wire [2:0] foo;
 
-  IBUFGDS ibufgd_arr [2:0](
+  IBUFGDS #(
+    .IOSTANDARD("LVDS_25"),
+    .DIFF_TERM("TRUE")
+  ) ibufgd_arr [2:0](
     .I ({sys_clk_p, aux_clk1_p, aux_clk0_p}),
     .IB({sys_clk_n, aux_clk1_n, aux_clk0_n}),
     .O (foo)

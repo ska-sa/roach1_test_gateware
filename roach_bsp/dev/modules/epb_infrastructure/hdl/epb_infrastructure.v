@@ -40,12 +40,17 @@ module epb_infrastructure(
     .RST(1'b0)
   );
 
-  IDELAY #(
-    .IOBDELAY_TYPE("DEFAULT"),
-    .IOBDELAY_VALUE(0)
+  IODELAY #(
+    .IDELAY_TYPE("FIXED"),
+    .IDELAY_VALUE(0),
+    .ODELAY_VALUE(0)
   ) idelay_inst [32:0] (
-    .I({epb_cs_n_buf, epb_r_w_n_buf, epb_be_n_buf, epb_addr_buf, epb_addr_gp_buf}),
-    .O({epb_cs_n,     epb_r_w_n,     epb_be_n,     epb_addr,     epb_addr_gp}),
+    .DATAOUT({epb_cs_n,     epb_r_w_n,     epb_be_n,     epb_addr,     epb_addr_gp}),
+    .DATAIN(),
+    .IDATAIN({epb_cs_n_buf, epb_r_w_n_buf, epb_be_n_buf, epb_addr_buf, epb_addr_gp_buf}),
+    .ODATAIN(),
+    .T(1'b1),
+
     .C(1'b0),
     .CE(1'b0),
     .INC(1'b0),

@@ -52,15 +52,15 @@ NGDBUILD_FLAGS=-aul
 #MAP_FLAGS=-detail -ol high -w -global_opt on -register_duplication on -logic_opt on
 MAP_FLAGS=-detail -ol high -w
 PAR_FLAGS=-w -ol high
-BITGEN_FLAGS=-w -g StartUpClk:JTAGCLK -g Security:NONE -m
+BITGEN_FLAGS=-w -g DriveDone:No -g DonePin:Pullup -g StartUpClk:JTAGCLK -g Security:NONE -m
 CPLDFIT_FLAGS=
 TRCE_FLAGS=-e 1000
 HPREP6_FLAGS=
 #TAENGINE_FLAGS=-detail
 TAENGINE_FLAGS=
 
-PAR_ENV=
-MAP_ENV=
+PAR_ENV=XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=1
+MAP_ENV=XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=1
 
 ########### Impact Commands #############
 #
