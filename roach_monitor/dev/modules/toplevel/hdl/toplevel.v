@@ -31,11 +31,8 @@ module toplevel(
     /* Analogue Block Interfaces*/
     AG, AV, AC, AT, ATRET,
     /* Fixed Fusion Signals */
-    XTLCLK, PUB, VAREF,
-    fet_disable
+    XTLCLK, PUB, VAREF
   );
-  output [1:0] fet_disable;
-  assign fet_disable = 2'b00;
   output ATX_PS_ON_N;
   input  ATX_PWR_OK;
   output ATX_LOAD_RES_OFF;
@@ -100,7 +97,7 @@ module toplevel(
     .WIDTH(32'h2000_00)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(~pll_lock), .reset_i(1'b0), //.reset_i(chs_reset_n | (XPORT_GPIO == 3'b111)),
+    .async_reset_i(~pll_lock), .reset_i(XPORT_GPIO == 3'b000), //.reset_i(chs_reset_n | (XPORT_GPIO == 3'b111)),
     .reset_o(hard_reset)
   );
 
@@ -182,11 +179,13 @@ module toplevel(
 `endif
 
   /********* XPORT Interface ***********/
-  assign XPORT_RESET_N = ~hard_reset;
+  //assign XPORT_RESET_N = ~hard_reset;
 `ifdef ENABLE_XPORT_INTERFACE
   wire [7:0] xp_as_data_i;
   wire [7:0] xp_as_data_o;
   wire xp_as_dstrb_i, xp_as_busy_o, xp_as_dstrb_o;
+
+ // assign XPORT_SERIAL_OUT = XPORT_SERIAL_IN;
 
   /* XPORT UART */
   serial_uart #(

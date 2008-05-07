@@ -75,16 +75,22 @@ module adc_controller(
 
   reg [3:0] averaging;
 
-  reg [2:0] sample_averaging; // 0 - none, 1 - /2, 2 - /4, 3 - /8, >= 4 - /16
+  reg [2:0] sample_averaging_reg; // 0 - none, 1 - /2, 2 - /4, 3 - /8, >= 4 - /16
   reg [12 + 4 - 1:0] averaged_value;
 
-  wire [4:0] sample_cnt_target = 1 << sample_averaging;
+  wire [3:0] sample_cnt_target = sample_averaging_reg == 0 ? 4'd0  :
+                                 sample_averaging_reg == 1 ? 4'd1  :
+                                 sample_averaging_reg == 2 ? 4'd3  :
+                                 sample_averaging_reg == 3 ? 4'd7  :
+                                 sample_averaging_reg == 4 ? 4'd15 :
+                                                             4'd15;
 
-  assign adc_result = sample_averaging == 0 ? averaged_value[12 + 0 - 1: 0 + 0] :
-                      sample_averaging == 1 ? averaged_value[12 + 1 - 1: 0 + 1] :
-                      sample_averaging == 2 ? averaged_value[12 + 2 - 1: 0 + 2] :
-                      sample_averaging == 3 ? averaged_value[12 + 3 - 1: 0 + 3] :
-                                              averaged_value[12 + 4 - 1: 0 + 4];
+  assign adc_result = sample_averaging_reg == 0 ? averaged_value[12 + 0 - 1: 0 + 0] :
+                      sample_averaging_reg == 1 ? averaged_value[12 + 1 - 1: 0 + 1] :
+                      sample_averaging_reg == 2 ? averaged_value[12 + 2 - 1: 0 + 2] :
+                      sample_averaging_reg == 3 ? averaged_value[12 + 3 - 1: 0 + 3] :
+                      sample_averaging_reg == 4 ? averaged_value[12 + 4 - 1: 0 + 4] :
+                                                  averaged_value[12 + 4 - 1: 0 + 4];
 
   always @(posedge wb_clk_i) begin
     //strobes
@@ -141,12 +147,12 @@ module adc_controller(
             temp_stb <= 11'b0;
             averaged_value<= averaged_value + ADC_RESULT;
             state<=STATE_DONE;
-            if (averaging >= (sample_cnt_target - 1)) begin
+            if (averaging >= sample_cnt_target) begin
               adc_strb <= 1'b1;
             end
-            $display("foo: %d - %d", sample_cnt_target - 1, averaging);
 
 `ifdef DEBUG
+            $display("foo: %d - %d", sample_cnt_target - 1, averaging);
             $display("adc_c: got value %d, channel %d",ADC_RESULT,ADC_CHNUM);
 `endif
           end
@@ -156,7 +162,7 @@ module adc_controller(
             averaging <= 4'b0;
             ADC_CHNUM <= ADC_CHNUM + 1;
           end else begin
-            if (averaging < sample_cnt_target - 1) begin
+            if (averaging < sample_cnt_target) begin
               averaging <= averaging + 1;
             end else begin
               averaging <= 4'b0;
@@ -178,7 +184,7 @@ module adc_controller(
                     wb_dat_o_src == 3'd2 ? {6'b0, cmon_en} :
                     wb_dat_o_src == 3'd3 ? {5'b0, tmon_en} :
                     wb_dat_o_src == 3'd4 ? {15'b0, adc_en} :
-                    wb_dat_o_src == 3'd5 ? {13'b0, sample_averaging} :
+                    wb_dat_o_src == 3'd5 ? {13'b0, sample_averaging_reg} :
                     wb_dat_o_src == 3'd6 ? {9'b0, state, ADC_BUSY, ADC_SAMPLE, ADC_DATAVALID, ADC_CALIBRATE} :
                     16'd0;
 
@@ -190,7 +196,7 @@ module adc_controller(
       cmon_en <= {10{1'b1}};
       tmon_en <= {11{1'b1}};
       adc_en <= 1'b1;
-      sample_averaging <= DEFAULT_SAMPLE_AVERAGING;
+      sample_averaging_reg <= DEFAULT_SAMPLE_AVERAGING;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <= 1'b1;
@@ -249,7 +255,7 @@ module adc_controller(
           `REG_AVG_CONF: begin
             wb_dat_o_src <= 3'd5;
             if (wb_we_i) begin
-              sample_averaging <= wb_dat_i[2:0];
+              sample_averaging_reg <= wb_dat_i[2:0];
             end
           end
           `REG_ADC_STATUS: begin

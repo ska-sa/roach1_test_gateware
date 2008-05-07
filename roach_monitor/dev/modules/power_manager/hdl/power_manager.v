@@ -109,6 +109,8 @@ module power_manager(
 
   reg first;
 
+  assign ATX_LOAD_RES_OFF = power_state == STATE_NO_POWER || power_state == STATE_POWERED_UP;
+
   always @(posedge wb_clk_i) begin
     //strobes
     crash <= 1'b0;
@@ -235,15 +237,17 @@ module power_manager(
   /************** Power Button Ctrl ***************/
   reg [26:0] power_button_timer;
 
-  assign chs_powerdown_force = power_button_timer == {27{1'b1}};
+  assign chs_powerdown_force = power_button_timer == 27'h7_ff_ff_fe;
   assign chs_powerdown_strb = power_button_timer == 27'b1;
   
   always @(posedge wb_clk_i) begin
-    if (wb_rst_i | soft_reset) begin
+    if (wb_rst_i) begin
       power_button_timer <= 27'b0;
     end else begin
       if (chs_power_button) begin
-        power_button_timer <= ~chs_powerdown_force ? power_button_timer + 1 : power_button_timer;
+        if (power_button_timer < 27'h7_ff_ff_ff) begin
+          power_button_timer <= power_button_timer + 1;
+        end
       end else begin
         power_button_timer <= 27'b0;
       end
@@ -321,8 +325,6 @@ module power_manager(
   /************ WishBone Attachment **************/
 
   reg wb_ack_o;
-  reg atx_load_res_off_reg;
-  assign ATX_LOAD_RES_OFF = atx_load_res_off_reg;
 
   reg [2:0] wb_dat_sel;
 
@@ -330,7 +332,7 @@ module power_manager(
                     wb_dat_sel == 3'd1 ? {13'b0, unacked_crashes} :
                     wb_dat_sel == 3'd2 ? {13'b0, unacked_wd_overflows} :
                     wb_dat_sel == 3'd3 ? {15'b0, chs_powerdown_pending} :
-                    wb_dat_sel == 3'd4 ? {15'b0, atx_load_res_off_reg} :
+                    wb_dat_sel == 3'd4 ? {15'b0, ATX_LOAD_RES_OFF} :
                     wb_dat_sel == 3'd5 ? {11'b0, ATX_PWR_OK, MGT_AVCC_PG, MGT_AVTTX_PG, MGT_AVCCPLL_PG, AUX_3V3_PG} :
                     wb_dat_sel == 3'd6 ? {3'b0, watchdog_overflow_conf} :
                     16'b0;
@@ -344,12 +346,7 @@ module power_manager(
     wd_overflow_ack <= 1'b0;
     chs_powerdown_ack <= 1'b0;
 
-    if (soft_reset) begin
-      atx_load_res_off_reg <= 1'b0;
-    end
-
     if (wb_rst_i) begin
-      atx_load_res_off_reg <= 1'b0;
       watchdog_overflow_conf <= WATCHDOG_OVERFLOW_DEFAULT;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
@@ -395,7 +392,6 @@ module power_manager(
           `REG_ATXLOADRES_CTRL: begin
             wb_dat_sel <= 3'd4;
             if (wb_we_i) begin
-              atx_load_res_off_reg <= wb_dat_i[0];
             end
           end
           `REG_PS_POWERGDS: begin

@@ -166,6 +166,11 @@ module flashmem_controller(
   reg program_state; // action after program: wr == 1, rd == 0
   reg sync_only;
 
+  reg flash_write_trans_buf; //initiate a flash write transfer
+  reg flash_read_trans_buf; //initiate a flash read transfer
+  reg flash_stat_trans_buf; //initiate a flash status read transfer
+  reg flash_sync_trans_buf; //initiate a flash dirty page sync
+
   always @(posedge wb_clk_i) begin
     //Single cycle strobes
     wait_cycle <= 1'b0;
@@ -175,6 +180,13 @@ module flashmem_controller(
     FM_PAGESTATUS <= 1'b0;
     flash_trans_done <= 1'b0;
 
+    if (!FM_BUSY) begin
+      flash_write_trans_buf <= 1'b0;
+      flash_read_trans_buf  <= 1'b0;
+      flash_stat_trans_buf  <= 1'b0;
+      flash_sync_trans_buf  <= 1'b0;
+    end
+
     if (wb_rst_i) begin
       dirty_page<=1'b0;
       dirty_page_index<=10'b0;
@@ -183,54 +195,61 @@ module flashmem_controller(
     end else begin
       case (fm_state)
         FM_STATE_IDLE: begin
-          wait_cycle<=1'b1;
-          if (flash_stat_trans) begin
-            FM_REN <= 1'b1;
-            FM_PAGESTATUS <= 1'b1;
-            fm_state<=FM_STATE_READ;
-            status_read <= 1'b1;
-          end else if (flash_sync_trans) begin
-            sync_only <= 1'b1;
-            FM_PROGRAM <= 1'b1;
-            fm_state <= FM_STATE_PROGRAM;
-          end else if (flash_write_trans) begin
-            if (dirty_page && (dirty_page_index != page_index)) begin
-              program_state<=1'b1; // tell the FM state machine that this was a program before write
-              sync_only <= 1'b0;
+          if (FM_BUSY) begin
+            flash_write_trans_buf <= flash_write_trans_buf | flash_write_trans;
+            flash_read_trans_buf  <= flash_read_trans_buf  | flash_read_trans;
+            flash_stat_trans_buf  <= flash_stat_trans_buf  | flash_stat_trans;
+            flash_sync_trans_buf  <= flash_sync_trans_buf  | flash_sync_trans;
+          end else begin
+            wait_cycle<=1'b1;
+            if (flash_stat_trans | flash_stat_trans_buf) begin
+              FM_REN <= 1'b1;
+              FM_PAGESTATUS <= 1'b1;
+              fm_state<=FM_STATE_READ;
+              status_read <= 1'b1;
+            end else if (flash_sync_trans | flash_sync_trans_buf) begin
+              sync_only <= 1'b1;
               FM_PROGRAM <= 1'b1;
               fm_state <= FM_STATE_PROGRAM;
+            end else if (flash_write_trans | flash_write_trans_buf) begin
+              if (dirty_page && (dirty_page_index != page_index)) begin
+                program_state<=1'b1; // tell the FM state machine that this was a program before write
+                sync_only <= 1'b0;
+                FM_PROGRAM <= 1'b1;
+                fm_state <= FM_STATE_PROGRAM;
 
+                `ifdef DEBUG
+                $display("fc: performing write - data = %d, addr = %d", wb_dat_i, {1'b0,fm_addr});
+                $display("... buffer page mismatch - program necessary");
+                $display("... current buffer index = %d, new buffer index = %d", dirty_page_index, page_index);
+                `endif
+              end else begin
+                FM_WEN<=1'b1;
+                fm_state<=FM_STATE_WRITE;
 `ifdef DEBUG
-              $display("fc: performing write - data = %d, addr = %d", wb_dat_i, {1'b0,fm_addr});
-              $display("... buffer page mismatch - program necessary");
-              $display("... current buffer index = %d, new buffer index = %d", dirty_page_index, page_index);
+                $display("fc: performing write - data = %d, addr = %d",wb_dat_i,{1'b0,fm_addr});
 `endif
-            end else begin
-              FM_WEN<=1'b1;
-              fm_state<=FM_STATE_WRITE;
+              end
+            end else if (flash_read_trans | flash_read_trans_buf) begin
+              status_read <= 1'b0;
+              if (dirty_page && (dirty_page_index != page_index)) begin
+                program_state <= 1'b0; // tell the FM state machine that this was a program before read
+                sync_only <= 1'b0;
+                FM_PROGRAM <= 1'b1;
+                fm_state <= FM_STATE_PROGRAM;
 `ifdef DEBUG
-              $display("fc: performing write - data = %d, addr = %d",wb_dat_i,{1'b0,fm_addr});
+                $display("fc: performing read - addr = %d",{1'b0,fm_addr});
+                $display("... buffer page mismatch - program necessary");
+                $display("... current buffer index = %d, new buffer index = %d", dirty_page_index,page_index);
 `endif
-            end
-          end else if (flash_read_trans) begin
-            status_read <= 1'b0;
-            if (dirty_page && (dirty_page_index != page_index)) begin
-              program_state <= 1'b0; // tell the FM state machine that this was a program before read
-              sync_only <= 1'b0;
-              FM_PROGRAM <= 1'b1;
-              fm_state <= FM_STATE_PROGRAM;
+              end else begin
+                FM_REN<=1'b1;
+                fm_state<=FM_STATE_READ;
 `ifdef DEBUG
-              $display("fc: performing read - addr = %d",{1'b0,fm_addr});
-              $display("... buffer page mismatch - program necessary");
-              $display("... current buffer index = %d, new buffer index = %d", dirty_page_index,page_index);
+                $display("fc: performing read - addr = %d",{1'b0,fm_addr});
 `endif
-            end else begin
-               FM_REN<=1'b1;
-               fm_state<=FM_STATE_READ;
-`ifdef DEBUG
-               $display("fc: performing read - addr = %d",{1'b0,fm_addr});
-`endif
-            end
+             end
+           end
           end
         end
         FM_STATE_PROGRAM: begin

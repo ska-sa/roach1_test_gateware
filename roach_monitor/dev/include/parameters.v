@@ -63,9 +63,9 @@
   write disallow [1  bit]
 */
 
-`define MEM_RESTRICTION_0 {4'b0110, `MEM_ACM_H, `MEM_ACM_A, 1'b0, 1'b1}
-`define MEM_RESTRICTION_1 {4'b0110, `MEM_ACM_H, `MEM_ACM_A, 1'b0, 1'b1}
-`define MEM_RESTRICTION_2 {4'b0110, `MEM_ACM_H, `MEM_ACM_A, 1'b0, 1'b1}
+`define MEM_RESTRICTION_0 {4'b0110, `MEM_ACM_H, `MEM_ACM_A, 1'b0, 1'b0}
+`define MEM_RESTRICTION_1 {4'b0110, `MEM_ACM_H, `MEM_ACM_A, 1'b0, 1'b0}
+`define MEM_RESTRICTION_2 {4'b0110, `MEM_ACM_H, `MEM_ACM_A, 1'b0, 1'b0}
 
 
 `endif

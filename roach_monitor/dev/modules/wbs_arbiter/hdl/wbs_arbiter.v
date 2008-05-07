@@ -141,18 +141,17 @@ module wbs_arbiter(
 
   /*********************** WB Slave Arbitration **************************/
 
-  assign wbs_sel = wbm_adr_i[15:6] <= A0_HIGH[15:6]  && wbm_adr_i[15:6] >= A0_BASE[15:6]  ? (temp << 0)  : 
-                   wbm_adr_i[15:6] <= A1_HIGH[15:6]  && wbm_adr_i[15:6] >= A1_BASE[15:6]  ? (temp << 1)  : 
-                   wbm_adr_i[15:6] <= A2_HIGH[15:6]  && wbm_adr_i[15:6] >= A2_BASE[15:6]  ? (temp << 2)  : 
-                   wbm_adr_i[15:6] <= A3_HIGH[15:6]  && wbm_adr_i[15:6] >= A3_BASE[15:6]  ? (temp << 3)  : 
-                   wbm_adr_i[15:6] <= A4_HIGH[15:6]  && wbm_adr_i[15:6] >= A4_BASE[15:6]  ? (temp << 4)  : 
-                   wbm_adr_i[15:6] <= A5_HIGH[15:6]  && wbm_adr_i[15:6] >= A5_BASE[15:6]  ? (temp << 5)  : 
-                   wbm_adr_i[15:6] <= A6_HIGH[15:6]  && wbm_adr_i[15:6] >= A6_BASE[15:6]  ? (temp << 6)  : 
-                   wbm_adr_i[15:6] <= A7_HIGH[15:6]  && wbm_adr_i[15:6] >= A7_BASE[15:6]  ? (temp << 7)  : 
-                   wbm_adr_i[15:6] <= A8_HIGH[15:6]  && wbm_adr_i[15:6] >= A8_BASE[15:6]  ? (temp << 8)  : 
-                   wbm_adr_i[15:6] <= A9_HIGH[15:6]  && wbm_adr_i[15:6] >= A9_BASE[15:6]  ? (temp << 9)  : 
-                   wbm_adr_i[15:6] <= A10_HIGH[15:6] && wbm_adr_i[15:6] >= A10_BASE[15:6] ? (temp << 10) : 
-                   {NUM_SLAVES{1'b0}};
+  assign wbs_sel = { wbm_adr_i[15:6] <= A10_HIGH[15:6] && wbm_adr_i[15:6] >= A10_BASE[15:6],
+                     wbm_adr_i[15:6] <=  A9_HIGH[15:6] && wbm_adr_i[15:6] >=  A9_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A8_HIGH[15:6] && wbm_adr_i[15:6] >=  A8_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A7_HIGH[15:6] && wbm_adr_i[15:6] >=  A7_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A6_HIGH[15:6] && wbm_adr_i[15:6] >=  A6_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A5_HIGH[15:6] && wbm_adr_i[15:6] >=  A5_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A4_HIGH[15:6] && wbm_adr_i[15:6] >=  A4_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A3_HIGH[15:6] && wbm_adr_i[15:6] >=  A3_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A2_HIGH[15:6] && wbm_adr_i[15:6] >=  A2_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A1_HIGH[15:6] && wbm_adr_i[15:6] >=  A1_BASE[15:6], 
+                     wbm_adr_i[15:6] <=  A0_HIGH[15:6] && wbm_adr_i[15:6] >=  A0_BASE[15:6] }; 
 
   reg [15:0] wbm_adr_o_reg;
   assign wbs_adr_o = wbm_adr_o_reg;
