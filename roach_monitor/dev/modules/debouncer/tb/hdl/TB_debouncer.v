@@ -12,7 +12,6 @@ module TB_debouncer();
     .DELAY(`DEBOUNCE_TIMEOUT)
   ) debouncer [`SWITCHES - 1 : 0] (
     .clk(clk),
-    .reset(reset),
     .in_switch(swin),
     .out_switch(swout)
   );

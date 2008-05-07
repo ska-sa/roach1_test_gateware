@@ -109,7 +109,7 @@ module power_manager(
 
   reg first;
 
-  assign ATX_LOAD_RES_OFF = power_state == STATE_NO_POWER || power_state == STATE_POWERED_UP;
+  assign ATX_LOAD_RES_OFF = power_state == STATE_NO_POWER || power_state == STATE_POWERED_UP || wb_rst_i;
 
   always @(posedge wb_clk_i) begin
     //strobes
@@ -241,15 +241,19 @@ module power_manager(
   assign chs_powerdown_strb = power_button_timer == 27'b1;
   
   always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
+    if (wb_rst_i || chs_power_button == 1'b0) begin
       power_button_timer <= 27'b0;
     end else begin
-      if (chs_power_button) begin
+      if (power_state == STATE_NO_POWER) begin
+        if (power_button_timer == 27'b0) begin
+          power_button_timer <= power_button_timer + 1;
+        end else begin
+          power_button_timer <= 27'h7_ff_ff_ff;
+        end
+      end else begin
         if (power_button_timer < 27'h7_ff_ff_ff) begin
           power_button_timer <= power_button_timer + 1;
         end
-      end else begin
-        power_button_timer <= 27'b0;
       end
     end
   end
@@ -268,6 +272,9 @@ module power_manager(
 
       if (chs_powerdown_pending && chs_powerdown_ack && power_state == STATE_POWERED_UP) begin
         chs_powerdown <= 1'b1;
+        chs_powerdown_pending <= 1'b0;
+      end
+      if (power_state != STATE_POWERED_UP) begin
         chs_powerdown_pending <= 1'b0;
       end
     end

@@ -23,8 +23,8 @@ module toplevel(
     /*System Configuration*/
     SYS_CONFIG,
     /* Chassis Interface */
-    CHS_POWERDOWN, CHS_RESET_N,
-    CHS_LED,
+    CHS_POWERDOWN_N, CHS_RESET_N,
+    CHS_LED_N,
     /* Fan Control */
     FAN1_SENSE,   FAN2_SENSE,   FAN3_SENSE,
     FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
@@ -55,8 +55,8 @@ module toplevel(
 
   output [7:0] SYS_CONFIG;
 
-  input  CHS_POWERDOWN, CHS_RESET_N;
-  output [1:0] CHS_LED,
+  input  CHS_POWERDOWN_N, CHS_RESET_N;
+  output [1:0] CHS_LED_N,
 
   input  FAN1_SENSE, FAN2_SENSE, FAN3_SENSE;
   output FAN1_CONTROL, FAN2_CONTROL, FAN3_CONTROL,
@@ -87,17 +87,18 @@ module toplevel(
   debouncer #(
     .DELAY(32'h0020_0000)
   ) debouncer_inst[1:0] (  
-    .clk(gclk40), .reset(hard_reset),
-    .in_switch({CHS_POWERDOWN, CHS_RESET_N}), .out_switch({chs_powerdown, chs_reset_n})
+    .clk(gclk40),
+    .in_switch({!CHS_POWERDOWN_N, CHS_RESET_N}), .out_switch({chs_powerdown, chs_reset_n})
   );
 
   /* Reset Control */
   reset_block #(
     .DELAY(1000),
-    .WIDTH(32'h2000_00)
+    .WIDTH(32'h200_0000)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(~pll_lock), .reset_i(XPORT_GPIO == 3'b000), //.reset_i(chs_reset_n | (XPORT_GPIO == 3'b111)),
+    .async_reset_i(~pll_lock),
+    .reset_i(!chs_reset_n | (XPORT_GPIO == 3'b000)),
     .reset_o(hard_reset)
   );
 
@@ -580,7 +581,7 @@ module toplevel(
   always @(posedge gclk40) begin
     counter <= counter + 1;
   end
-  assign CHS_LED = {counter[25], hard_reset};
+  assign CHS_LED_N = ~{hard_reset, counter[25]};
 
   assign cold_start = ~sys_config_vector[0];
   assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
@@ -605,8 +606,7 @@ module toplevel(
     /* Informational Signals */
     .power_ok(power_ok), .no_power_cause(no_power_cause),
     /* Control Signals */
-  //  .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
-    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(1'b0),
+    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
     .soft_reset(soft_reset), .crash(dma_crash), .chs_powerdown_pending(chs_powerdown_pending),
     /* ATX Power Supply Control */
     .ATX_PS_ON_N(ATX_PS_ON_N), .ATX_PWR_OK(ATX_PWR_OK),

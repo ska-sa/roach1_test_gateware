@@ -1,29 +1,30 @@
 `timescale 1ns/10ps
 
 module debouncer(
-    clk, reset,
+    clk,
     in_switch, out_switch
   );
 
   parameter DELAY = 32'h08_00_00_00;
 
   input  clk;
-  input  reset;
   input  in_switch;
   output out_switch;
 
   reg [31:0] counter;
   reg out_switch;
+`ifdef SIMULATION
+  initial 
+    counter <= 0;
+`endif
 
   always @(posedge clk) begin
-    if (reset) begin
+    if (counter > DELAY) begin
       counter <= DELAY;
-    end else begin
-      if (counter) begin
-        counter <= counter - 32'b1;
-      end else if (out_switch != in_switch) begin
-        counter <= DELAY;
-      end
+    end else if (counter != 0) begin
+      counter <= counter - 32'b1;
+    end else if (out_switch != in_switch) begin
+      counter <= DELAY;
     end
   end
 
