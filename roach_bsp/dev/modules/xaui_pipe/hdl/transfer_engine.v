@@ -88,7 +88,10 @@ module transfer_engine(
       data_count<=64'b0;
 `endif
     end else begin
-      rx_fifo_wr_en<=1'b0;
+      if (xgmii_rxd != rx_fifo_wr_data)
+        rx_fifo_wr_en <= 1'b1;
+
+      rx_fifo_wr_data <= xgmii_rxd;
       
       link_down_strb<=1'b0;
       rx_strb<=1'b0;

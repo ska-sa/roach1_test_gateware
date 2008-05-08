@@ -30,7 +30,9 @@ module transceiver(
     //testing ports
     rxeqmix, rxeqpole,
     txpreemphasis, txdiffctrl
+    ,debug
   );
+  output [7:0] debug;
 
   parameter TX_POLARITY_HACK_0 = 1'b0;
   parameter TX_POLARITY_HACK_1 = 1'b0;
@@ -130,8 +132,8 @@ module transceiver(
   wire rxlossofsync_0;
   wire rxlossofsync_1_nc;
   wire rxlossofsync_0_nc;
-  assign syncok_1 = rxlossofsync_1;
-  assign syncok_0 = rxlossofsync_0;
+  assign syncok_1 = !rxlossofsync_1;
+  assign syncok_0 = !rxlossofsync_0;
 
 
   wire [1:0] rxnotintable_1;
@@ -145,6 +147,8 @@ module transceiver(
   assign rxlock_1 = pll_lock_det;
   assign rxlock_0 = pll_lock_det;
 
+
+  assign debug = {resetdone_1, resetdone_0, elecidle_reset_1, elecidle_reset_0, ~rxenelecidleresetb, tx_reset, rx_reset, reset};
   GTP_DUAL #(
     //---------------------- Tile and PLL Attributes ----------------------
     .CLK25_DIVIDER(10),
@@ -156,12 +160,12 @@ module transceiver(
     .PLL_TXDIVSEL_COMM_OUT(1),
     .TX_SYNC_FILTERB(1),
     //----------------- TX Buffering and Phase Alignment ------------------   
-    .TX_BUFFER_USE_0("FALSE"),
-    .TX_XCLK_SEL_0("TXUSR"),
-    .TXRX_INVERT_0(5'b00100),        
-    .TX_BUFFER_USE_1("FALSE"),
-    .TX_XCLK_SEL_1("TXUSR"),
-    .TXRX_INVERT_1(5'b00100),        
+    .TX_BUFFER_USE_0("TRUE"),
+    .TX_XCLK_SEL_0("TXOUT"),
+    .TXRX_INVERT_0(5'b00000),        
+    .TX_BUFFER_USE_1("TRUE"),
+    .TX_XCLK_SEL_1("TXOUT"),
+    .TXRX_INVERT_1(5'b00000),        
     //------------------- TX Serial Line Rate settings --------------------   
     .PLL_TXDIVSEL_OUT_0(1), .PLL_TXDIVSEL_OUT_1(1), 
     //------------------- TX Driver and OOB signalling --------------------  
@@ -374,7 +378,7 @@ module transceiver(
     .RXDATA0(rxdata_0), .RXDATA1(rxdata_1),
     .RXDATAWIDTH0(1'b1), .RXDATAWIDTH1(1'b1),
     .RXRECCLK0(), .RXRECCLK1(),
-    .RXRESET0(rx_reset | reset), .RXRESET1(rx_reset | reset),
+    .RXRESET0(1'b0), .RXRESET1(1'b0), //this is replaced with CDRRESET
     .RXUSRCLK0(mgt_clk_mult_2),
     .RXUSRCLK1(mgt_clk_mult_2),
     .RXUSRCLK20(mgt_clk),
@@ -383,7 +387,8 @@ module transceiver(
     .RXCDRRESET0(rx_reset | reset), .RXCDRRESET1(rx_reset | reset),
     .RXELECIDLE0(elecidle_0), .RXELECIDLE1(elecidle_1),
     .RXELECIDLERESET0(elecidle_reset_0 | reset), .RXELECIDLERESET1(elecidle_reset_1 | reset),
-    .RXENEQB0(1'b0), .RXENEQB1(1'b0),
+    //.RXENEQB0(1'b0), .RXENEQB1(1'b0), /*TODO: make this playable with */
+    .RXENEQB0(1'b1), .RXENEQB1(1'b1),
     .RXEQMIX0(rxeqmix), .RXEQMIX1(rxeqmix),
     .RXEQPOLE0(rxeqpole), .RXEQPOLE1(rxeqpole),
     .RXN0(rxn_0), .RXN1(rxn_1),

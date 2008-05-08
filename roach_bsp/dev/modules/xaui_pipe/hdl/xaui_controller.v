@@ -83,7 +83,7 @@ module xaui_controller(
 
   always @(posedge clk) begin
     if (reset) begin
-      mgt_tx_reset_stretch<=4'b1111;
+      mgt_tx_reset_stretch<=4'b1;
     end else begin
       if (mgt_tx_reset_stretch) begin
         mgt_tx_reset_stretch<=mgt_tx_reset_stretch - 1;
@@ -93,7 +93,7 @@ module xaui_controller(
 
   always @(posedge clk) begin
     if (reset || mgt_rxbufferr != 4'b0) begin
-      mgt_rx_reset_stretch<=4'b1111;
+      mgt_rx_reset_stretch<=4'b1;
     end else begin
       if (mgt_rx_reset_stretch) begin
         mgt_rx_reset_stretch<=mgt_rx_reset_stretch - 1;

@@ -25,7 +25,9 @@ module transceiver_bank(
     //testing ports
     rxeqmix, rxeqpole,
     txpreemphasis, txdiffctrl
+    ,debug
   );
+  output [7:0] debug;
   parameter TX_POLARITY_HACK = 4'd0;
   parameter RX_POLARITY_HACK = 4'd0;
   parameter DIFF_BOOST = "TRUE";
@@ -92,6 +94,7 @@ module transceiver_bank(
 
     .rxeqmix(rxeqmix), .rxeqpole(rxeqpole),
     .txpreemphasis(txpreemphasis), .txdiffctrl(txdiffctrl)
+    ,.debug(debug)
   );
 
   wire refclk_ret_nc;

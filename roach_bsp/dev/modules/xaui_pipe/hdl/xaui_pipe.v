@@ -19,11 +19,11 @@ module xaui_pipe(
     leds //rx, tx, linkup
     ,debug
   );
-  output [3:0] debug;
+  input  [7:0] debug;
+
   parameter DEFAULT_POWERDOWN = 0;
   parameter DEFAULT_LOOPBACK  = 0;
   parameter DEFAULT_TXEN      = 1;
-
 
   input  reset;
 
@@ -211,7 +211,7 @@ module xaui_pipe(
 
   transfer_engine transfer_engine_inst(
     .clk(mgt_clk), .reset(xaui_reset),
-    .xgmii_rxd(xgmii_rxd), .xgmii_rxc(xgmii_rxc),
+    .xgmii_rxd(mgt_rxdata), .xgmii_rxc(xgmii_rxc),
     .xgmii_txd(xgmii_txd), .xgmii_txc(xgmii_txc),
     .rx_fifo_wr_en(rx_fifo_wr_en), .rx_fifo_wr_data(rx_fifo_wr_data),
     .tx_fifo_rd_en(tx_fifo_rd_en), .tx_fifo_rd_data(tx_fifo_rd_data),
@@ -248,12 +248,13 @@ module xaui_pipe(
     .xaui_status(link_status),
     .mgt_rxeqmix(mgt_rxeqmix), .mgt_rxeqpole(mgt_rxeqpole),
     .mgt_txpreemphasis(mgt_txpreemphasis), .mgt_txdiffctrl(mgt_txdiffctrl)
+    
     `ifdef XAUI_ERROR_TEST
     , .error_count(error_count), .data_count(data_count)
     `else
-    , .error_count(64'd0), .data_count(64'd0)
+    , .error_count({4'b0, mgt_rxlock, 4'b0, mgt_syncok, debug, 40'd0}), .data_count(64'd0)
     `endif
-    , .debug(debug)
+    , .debug()
   );
 
   /************************** Clock Domain Crossing *********************/

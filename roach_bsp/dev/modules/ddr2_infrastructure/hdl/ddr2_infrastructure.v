@@ -15,17 +15,20 @@ module ddr2_infrastructure(
   wire mem_clk;
   wire mem_clk_lock;
 
-  localparam FX_MULT = CLK_FREQ == "200" ? 2 :
+  localparam FX_MULT = CLK_FREQ == "150" ? 3 :
+                       CLK_FREQ == "200" ? 2 :
                        CLK_FREQ == "266" ? 8 :
                        CLK_FREQ == "333" ? 10 :
                                            8;
 
-  localparam FX_DIV  = CLK_FREQ == "200" ? 1 :
+  localparam FX_DIV  = CLK_FREQ == "150" ? 2 :
+                       CLK_FREQ == "200" ? 1 :
                        CLK_FREQ == "266" ? 3 :
                        CLK_FREQ == "333" ? 3 :
                                            3;
 
-  localparam CLK_PERIOD = CLK_FREQ == "200" ? 5000 :
+  localparam CLK_PERIOD = CLK_FREQ == "150" ? 6666 :
+                          CLK_FREQ == "200" ? 5000 :
                           CLK_FREQ == "266" ? 3760 :
                           CLK_FREQ == "333" ? 3003 :
                                               3760;

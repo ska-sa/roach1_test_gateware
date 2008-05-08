@@ -754,6 +754,7 @@ NET "mgt_rx_bottom_0_n<1>" LOC = AP2;
 NET "mgt_rx_bottom_0_p<1>" LOC = AP3;
 NET "mgt_rx_bottom_0_n<0>" LOC = AM1;
 NET "mgt_rx_bottom_0_p<0>" LOC = AL1;
+
 NET "mgt_tx_bottom_0_n<1>" LOC = AN3;
 NET "mgt_tx_bottom_0_p<1>" LOC = AN4;
 NET "mgt_tx_bottom_0_n<0>" LOC = AL2;
@@ -763,6 +764,7 @@ NET "mgt_rx_bottom_0_n<3>" LOC = AP8;
 NET "mgt_rx_bottom_0_p<3>" LOC = AP9;
 NET "mgt_rx_bottom_0_n<2>" LOC = AP7;
 NET "mgt_rx_bottom_0_p<2>" LOC = AP6;
+
 NET "mgt_tx_bottom_0_n<3>" LOC = AN9;
 NET "mgt_tx_bottom_0_p<3>" LOC = AN10;
 NET "mgt_tx_bottom_0_n<2>" LOC = AN6;

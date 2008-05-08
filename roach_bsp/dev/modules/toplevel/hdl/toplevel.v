@@ -209,27 +209,12 @@ module toplevel(
 
   wire epb_cs_n_int;
 
-  reg [27:0] counter [2:0];
-  assign led_n = {~sys_reset, counter[0][27], counter[1][27], counter[2][27]};
-
-
   reg foo;
-  reg prev;
 
-  reg munge;
+  reg [27:0] counter [2:0];
+  assign led_n = {foo, counter[0][27], counter[1][27], counter[2][27]};
 
-  always @(posedge epb_clk) begin
-    
-    if (counter[1][27])
-      munge <= 1'b0;
 
-    prev <= epb_cs_n_int;
-    if (!munge) begin
-      if (epb_cs_n_int != prev && epb_cs_n_int) begin
-        munge <= 1'b1;
-      end
-    end
-  end
 
   always @(posedge sys_clk) begin
     counter[0] <= counter[0] + 1;
@@ -360,7 +345,7 @@ module toplevel(
 
   localparam NUM_SLAVES = 14;
 
-  localparam SLAVE_ADDR = {32'hffff_f000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
+  localparam SLAVE_ADDR = {32'h8000_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
                            32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000, //slaves 9:6
                            32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000, //slaves 5:2
                            32'h0001_0000, 32'h0000_0000};                              //slaves 1:0
@@ -396,10 +381,22 @@ module toplevel(
 
   /******************* System Module *****************/
    
-  reg prev_oen;
+  reg prev;
+
+  reg munge;
 
   always @(posedge epb_clk) begin
-    prev_oen <= epb_oe_n;
+    
+    if (counter[1][27])
+      munge <= 1'b0;
+
+    prev <= epb_cs_n_int;
+    if (!munge) begin
+      if (prev != epb_oe_n && !epb_oe_n) begin
+        munge <= 1'b1;
+        foo <= !foo;
+      end
+    end
   end
 
   sys_block #(
@@ -415,7 +412,7 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(0 + 1) - 1: 16*0]),
     .wb_ack_o(wb_ack_i[0]),
     .wb_toutsup_o()
-    ,.debug_clk(epb_clk), .debug_we(prev_oen != epb_oe_n && !epb_oe_n),
+    ,.debug_clk(epb_clk), .debug_we(prev != epb_oe_n && !epb_oe_n),
     .debug({3'b0, epb_addr_gp_dly, epb_addr_dly, epb_data_i, 7'b0, epb_rdy, 1'b0, epb_be_n_dly, epb_blast_n, 1'b0, epb_r_w_n_dly, epb_cs_n_dly, epb_oe_n})
   );
 
@@ -504,6 +501,7 @@ module toplevel(
     .mgt_codevalid_0(mgt_codevalid[0]), .mgt_rxbufferr_0(mgt_rxbufferr[0]),
     .mgt_rxeqmix_0(mgt_rxeqmix[0]), .mgt_rxeqpole_0(mgt_rxeqpole[0]),
     .mgt_txpreemphasis_0(mgt_txpreemphasis[0]), .mgt_txdiffctrl_0(mgt_txdiffctrl[0])
+    ,.debug(debug)
   );
 
   /**** Ten Gigabit Ethernet Fabric Interfaces ****/
@@ -604,6 +602,7 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
     .wb_ack_o(wb_ack_i[1]),
     .leds() //rx, tx, linkup
+    ,.debug(debug)
   );
 `endif
 
@@ -963,7 +962,8 @@ module toplevel(
   wire ddr_phy_ready;
   wire ddr_usr_clk;
   
-  localparam DDR_PERIOD = `DDR2_CLK_FREQ == "200" ? 5000 :
+  localparam DDR_PERIOD = `DDR2_CLK_FREQ == "150" ? 6666 :
+                          `DDR2_CLK_FREQ == "200" ? 5000 :
                           `DDR2_CLK_FREQ == "333" ? 3003 :
                           `DDR2_CLK_FREQ == "266" ? 3759 :
                                                     3759;

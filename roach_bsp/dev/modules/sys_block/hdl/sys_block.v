@@ -32,6 +32,8 @@ module sys_block(
 
   wire [63:0] fifo_data;
 
+  wire [3:0] fifo_status;
+
   assign wb_dat_o = wb_dat_o_sel == `REG_BOARD_ID   ? BOARD_ID    :
                     wb_dat_o_sel == `REG_REV_MAJOR  ? REV_MAJOR   :
                     wb_dat_o_sel == `REG_REV_MINOR  ? REV_MINOR   :
@@ -41,6 +43,7 @@ module sys_block(
                     wb_dat_o_sel == `REG_SCRATCHPAD + 2 ? fifo_data[47:32] :
                     wb_dat_o_sel == `REG_SCRATCHPAD + 3 ? fifo_data[31:16] :
                     wb_dat_o_sel == `REG_SCRATCHPAD + 4 ? fifo_data[15:0] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 5 ? {12'b0, fifo_status} :
                     16'b0;
   reg fifo_rd_en;
   always @(posedge wb_clk_i) begin
@@ -95,8 +98,8 @@ module sys_block(
     .din(debug),
     .wr_en(debug_we),
     .overflow(), .underflow(),
-    .almost_full(), .almost_empty(),
-    .full(), .empty()
+    .almost_full(fifo_status[0]), .almost_empty(fifo_status[2]),
+    .full(fifo_status[1]), .empty(fifo_status[3])
   );
 
 

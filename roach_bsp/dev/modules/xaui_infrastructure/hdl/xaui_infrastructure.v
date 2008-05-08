@@ -47,7 +47,9 @@ module xaui_infrastructure(
     mgt_loopback_0, mgt_powerdown_0,
     mgt_rxlock_0, mgt_syncok_0, mgt_codevalid_0, mgt_rxbufferr_0,
     mgt_rxeqmix_0, mgt_rxeqpole_0, mgt_txpreemphasis_0, mgt_txdiffctrl_0
+    ,debug
   );
+  output [7:0] debug;
   parameter DIFF_BOOST = "TRUE";
 
   input  reset;
@@ -150,8 +152,8 @@ module xaui_infrastructure(
   /********* Polarity Correction Hacks for RX and TX **********/
 
   localparam RX_POLARITY_HACK_3 = { 1'b0, //lane 3
-                                   1'b1, //lane 2
-                                   1'b0, //lane 1
+                                   1'b0, //lane 2
+                                   1'b1, //lane 1
                                    1'b1  //lane 0
                                  };
   localparam RX_POLARITY_HACK_2 = { 1'b0, //lane 3
@@ -225,7 +227,7 @@ module xaui_infrastructure(
     .LOCKED(mgt_clk_lock),
     .CLKFB(mgt_clk),
     .CLKIN(refclk_t_ret),
-    .RST(reset)
+    .RST((!mgt_rxlock_0[0]) || (!mgt_rxlock_3[0]) || reset)
   );
 
   BUFG bufg_mgt(
@@ -306,6 +308,7 @@ module xaui_infrastructure(
     .loopback(mgt_loopback_0), .powerdown(mgt_powerdown_0),
     .rxeqmix(mgt_rxeqmix_0), .rxeqpole(mgt_rxeqpole_0),
     .txpreemphasis(mgt_txpreemphasis_0), .txdiffctrl(mgt_txdiffctrl_0)
+    ,.debug(debug)
   );
 
   /*********************** XAUI Bank 1 *****************************/

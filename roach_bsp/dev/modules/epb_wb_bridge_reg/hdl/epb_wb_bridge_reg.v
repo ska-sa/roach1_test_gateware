@@ -70,7 +70,8 @@ module epb_wb_bridge_reg(
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
       resp_ack_reg <= 1'b0;
-      epb_rdy <= 1'b0;
+//      epb_rdy <= 1'b0;
+      epb_rdy <= 1'b1;
     end else begin
       if (cmnd_got_unstable) begin
         epb_rdy <= 1'b0;
