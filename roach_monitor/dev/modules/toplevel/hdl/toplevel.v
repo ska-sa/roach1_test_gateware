@@ -581,7 +581,13 @@ module toplevel(
   always @(posedge gclk40) begin
     counter <= counter + 1;
   end
-  assign CHS_LED_N = ~{hard_reset, counter[25]};
+  wire bad_power_down = no_power_cause == 2'b01 || no_power_cause == 2'b10;
+  wire power_led  = power_ok ? 1'b1 :
+                    bad_power_down ? counter[24] :
+                    1'b0;
+  wire action_led = power_ok ? CONTROLLER_IRQ : counter[26];
+
+  assign CHS_LED_N = ~{action_led, power_led};
 
   assign cold_start = ~sys_config_vector[0];
   assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
@@ -629,7 +635,7 @@ module toplevel(
   irq_controller #(
     .NUM_SOURCES(4)
   ) irq_controller_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset | soft_reset),
     .wb_cyc_i(wbs_cyc_o[7]), .wb_stb_i(wbs_stb_o[7]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(7 + 1) - 1:16*7]),
     .wb_ack_o(wbs_ack_i[7]),

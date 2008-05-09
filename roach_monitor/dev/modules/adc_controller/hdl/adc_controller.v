@@ -150,7 +150,6 @@ module adc_controller(
             if (averaging >= sample_cnt_target) begin
               adc_strb <= 1'b1;
             end
-
 `ifdef DEBUG
             $display("foo: %d - %d", sample_cnt_target - 1, averaging);
             $display("adc_c: got value %d, channel %d",ADC_RESULT,ADC_CHNUM);
@@ -267,3 +266,4 @@ module adc_controller(
   end
 
 endmodule
+
