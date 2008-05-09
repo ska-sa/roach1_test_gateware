@@ -1,0 +1,9 @@
+MEMLAYOUT_SCRIPT=generate_header.v
+FLASHROM_MEM=flashrom.mem
+FROM_SCRIPT=generate_flashrom.v
+UFC_SCRIPT=create_from_ufc
+
+FLASHMEM_EFC=prototype.efc
+
+VCC=iverilog
+VSIM=vvp

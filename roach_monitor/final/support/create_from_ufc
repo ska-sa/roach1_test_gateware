@@ -1,0 +1,9 @@
+#!/bin/bash
+echo -n '<?xml version="1.0" encoding="UTF-8" standalone="no" ?><UFCC xmlns="http://actel.com/sweng/afi">'
+J=0;
+for o in $(cat $1); do
+  i=$(echo $o | sed -e 's/\m//g');
+  echo -n "<Region name=\"R$J\"><content><static_data><fixed><value>$i</value><type>HEX</type></fixed></static_data></content><region_start_word>$J</region_start_word><number_of_word>1</number_of_word><simulation_value><value>$i</value><type>HEX</type></simulation_value></Region>"
+  J=$[J + 1]
+done
+echo -n '<Program_Pages/></UFCC>'
