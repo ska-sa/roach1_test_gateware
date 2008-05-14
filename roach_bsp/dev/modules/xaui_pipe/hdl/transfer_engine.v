@@ -76,25 +76,20 @@ module transfer_engine(
 `endif
 
   always @(posedge clk) begin
+    // strobes
+    rx_fifo_wr_en<=1'b0;
+    link_down_strb<=1'b0;
+    rx_strb<=1'b0;
+
     if (reset) begin
       rx_state<=`RX_STATE_IDLE;
-      rx_fifo_wr_en<=1'b0;
 
-      link_down_strb<=1'b0;
-      rx_strb<=1'b0;
 `ifdef XAUI_ERROR_TEST
       ignore<=2'b0;
       error_count<=64'b0;
       data_count<=64'b0;
 `endif
     end else begin
-      if (xgmii_rxd != rx_fifo_wr_data)
-        rx_fifo_wr_en <= 1'b1;
-
-      rx_fifo_wr_data <= xgmii_rxd;
-      
-      link_down_strb<=1'b0;
-      rx_strb<=1'b0;
 
       case (xgmii_rxd)
         64'h0100009c_0100009c: link_down_strb<=1'b1;
@@ -170,10 +165,6 @@ module transfer_engine(
                 rx_fifo_wr_data<={xgmii_rxd[31:0], leftovers};
 `endif
               end
-//              if (~first) begin
-//              end else begin
-//                first<=1'b0;
-//              end
             end
           end
         end

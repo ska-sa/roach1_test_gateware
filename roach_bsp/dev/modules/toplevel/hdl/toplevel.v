@@ -441,7 +441,8 @@ module toplevel(
   wire  [2:0] mgt_txdiffctrl    [3:0];
 
   xaui_infrastructure #(
-    .DIFF_BOOST(`MGT_DIFF_BOOST)
+    .DIFF_BOOST("FALSE")
+    //.DIFF_BOOST(`MGT_DIFF_BOOST)
   ) xaui_infrastructure_inst (
     .reset(sys_reset),
     .mgt_refclk_t_n(mgt_ref_clk_top_n), .mgt_refclk_t_p(mgt_ref_clk_top_p), 
@@ -1078,6 +1079,117 @@ module toplevel(
 
   /***************** QDR0 ************************/
 
+`ifdef ENABLE_QDR_INFRASTRUCTURE
+  wire qdr_clk_0, qdr_clk_180, qdr_clk_270;
+  wire qdr_pll_lock;
+  qdr_infrastructure #(
+    .CLK_FREQ(`QDR_CLK_FREQ)
+  ) qdr_infrastructure_inst (
+    .clk_in(sys_clk), .reset(sys_reset),
+    .qdr_clk_0(qdr_clk_0), .qdr_clk_180(qdr_clk_180), .qdr_clk_270(qdr_clk_270),
+    .pll_lock(qdr_pll_lock)
+  );
+`endif
+
+`ifdef ENABLE_QDR0
+  wire qdr0_cal_done;
+  wire qdr0_usr_reset;
+
+  wire qdr0_usr_ad_w_n;
+  wire qdr0_usr_d_w_n;
+  wire qdr0_usr_r_n;
+  wire qdr0_usr_wr_full;
+  wire qdr0_usr_rd_full;
+  wire qdr0_usr_qr_valid;
+  wire [17:0] qdr0_usr_dwl;
+  wire [17:0] qdr0_usr_dwh;
+  wire [17:0] qdr0_usr_qrl;
+  wire [17:0] qdr0_usr_qrh;
+  wire  [1:0] qdr0_usr_bwl_n;
+  wire  [1:0] qdr0_usr_bwh_n;
+  wire [21:0] qdr0_usr_ad_wr;
+  wire [21:0] qdr0_usr_ad_rd;
+
+
+  qdr_controller qdr_controller_0(
+    .reset(sys_reset | qdr0_usr_reset),
+    .clk0(qdr_clk_0), .clk180(qdr_clk_180), .clk270(qdr_clk_270),
+    .pll_lock(qdr_pll_lock),
+    .idelay_rdy(idelay_ready),
+
+    .qdr_d(qdr0_d),
+    .qdr_q(qdr0_q),
+    .qdr_sa(qdr0_sa),
+    .qdr_w_n(qdr0_w_n),
+    .qdr_r_n(qdr0_r_n),
+    .qdr_dll_off_n(qdr0_dll_off_n),
+    .qdr_bw_n(qdr0_bw_n),
+    .qdr_cq(qdr0_cq_p),
+    .qdr_cq_n(qdr0_cq_n),
+    .qdr_k(qdr0_k_p),
+    .qdr_k_n(qdr0_k_n),
+
+    .cal_done(qdr0_cal_done),
+
+    .user_ad_w_n(qdr0_usr_ad_w_n), .user_d_w_n(qdr0_usr_d_w_n),
+    .user_r_n(qdr0_usr_r_n),
+    .user_wr_full(qdr0_usr_wr_full),
+    .user_rd_full(qdr0_usr_rd_full),
+    .user_qr_valid(qdr0_usr_qr_valid),
+    .user_dwl(qdr0_usr_dwl),
+    .user_dwh(qdr0_usr_dwh),
+    .user_qrl(qdr0_usr_qrl),
+    .user_qrh(qdr0_usr_qrh),
+    .user_bwl_n(qdr0_usr_bwl_n),
+    .user_bwh_n(qdr0_usr_bwh_n),
+    .user_ad_wr(qdr0_usr_ad_wr),
+    .user_ad_rd(qdr0_usr_ad_rd)
+  );
+  
+  wire qdr0_usr_d_w;
+  wire qdr0_usr_ad_w;
+  wire qdr0_usr_r;
+  assign qdr0_usr_d_w_n  = !qdr0_usr_d_w;
+  assign qdr0_usr_ad_w_n = !qdr0_usr_ad_w;
+  assign qdr0_usr_r_n    = !qdr0_usr_r;
+
+  qdr_cpu_interface qdr_cpu_interface_inst_0(
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    //memory wb slave IF
+    .reg_wb_we_i(wb_we_o), .reg_wb_cyc_i(wb_cyc_o[6]), .reg_wb_stb_i(wb_stb_o[6]),
+    .reg_wb_sel_i(wb_sel_o),
+    .reg_wb_adr_i(wb_adr_o), .reg_wb_dat_i(wb_dat_o),
+    .reg_wb_dat_o(wb_dat_i[16*(6 + 1) - 1: 16*6]),
+    .reg_wb_ack_o(wb_ack_i[6]),
+    //memory wb slave IF
+    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[12]), .mem_wb_stb_i(wb_stb_o[12]),
+    .mem_wb_sel_i(wb_sel_o),
+    .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
+    .mem_wb_dat_o(wb_dat_i[16*(12 + 1) - 1: 16*12]),
+    .mem_wb_ack_o(wb_ack_i[12]),
+    .mem_wb_burst(1'b0),
+    //qdr interface
+
+    .qdr_clk_i(qdr_clk_0),
+    .qdr_rst_o(qdr0_usr_reset),
+    .qdr_phy_rdy(qdr0_cal_done),
+
+    .qdr_wr_full(qdr0_usr_wr_full), 
+    .qdr_rd_full(qdr0_usr_rd_full),
+
+    .qdr_wr_addr(qdr0_usr_ad_wr),
+    .qdr_wr_data({qdr0_usr_dwh, qdr0_usr_dwl}),
+    .qdr_wr_be({qdr0_usr_bwh_n, qdr0_usr_bwl_n}),
+    .qdr_wr_data_en(qdr0_usr_d_w),
+    .qdr_wr_addr_en(qdr0_usr_ad_w),
+
+    .qdr_rd_addr(qdr0_usr_ad_rd),
+    .qdr_rd_data({qdr0_usr_qrh, qdr0_usr_qrl}),
+    .qdr_rd_valid(qdr0_usr_qr_valid),
+    .qdr_rd_en(qdr0_usr_r)
+  );
+
+`else
   assign qdr0_d  = {18{1'b0}};
   assign qdr0_sa = {22{1'b0}};
   assign qdr0_w_n = 1'b1;
@@ -1089,8 +1201,109 @@ module toplevel(
 
   assign wb_dat_i[16*(6 + 1) - 1: 16*6] = 16'b0;
   assign wb_ack_i[6] = 1'b0;
+  assign wb_dat_i[16*(11 + 1) - 1: 16*11] = 16'b0;
+  assign wb_ack_i[11] = 1'b0;
+`endif
 
   /***************** QDR1 ************************/
+`ifdef ENABLE_QDR1
+  wire qdr1_cal_done;
+  wire qdr1_usr_reset;
+
+  wire qdr1_usr_ad_w_n;
+  wire qdr1_usr_d_w_n;
+  wire qdr1_usr_r_n;
+  wire qdr1_usr_wr_full;
+  wire qdr1_usr_rd_full;
+  wire qdr1_usr_qr_valid;
+  wire [17:0] qdr1_usr_dwl;
+  wire [17:0] qdr1_usr_dwh;
+  wire [17:0] qdr1_usr_qrl;
+  wire [17:0] qdr1_usr_qrh;
+  wire  [1:0] qdr1_usr_bwl_n;
+  wire  [1:0] qdr1_usr_bwh_n;
+  wire [21:0] qdr1_usr_ad_wr;
+  wire [21:0] qdr1_usr_ad_rd;
+
+  qdr_controller qdr_controller_1(
+    .reset(sys_reset | qdr1_usr_reset),
+    .clk0(qdr_clk_0), .clk180(qdr_clk_180), .clk270(qdr_clk_270),
+    .pll_lock(qdr_pll_lock),
+    .idelay_rdy(idelay_ready),
+
+    .qdr_d(qdr1_d),
+    .qdr_q(qdr1_q),
+    .qdr_sa(qdr1_sa),
+    .qdr_w_n(qdr1_w_n),
+    .qdr_r_n(qdr1_r_n),
+    .qdr_dll_off_n(qdr1_dll_off_n),
+    .qdr_bw_n(qdr1_bw_n),
+    .qdr_cq(qdr1_cq_p),
+    .qdr_cq_n(qdr1_cq_n),
+    .qdr_k(qdr1_k_p),
+    .qdr_k_n(qdr1_k_n),
+
+    .cal_done(qdr1_cal_done),
+
+    .user_ad_w_n(qdr1_usr_ad_w_n), .user_d_w_n(qdr1_usr_d_w_n),
+    .user_r_n(qdr1_usr_r_n),
+    .user_wr_full(qdr1_usr_wr_full),
+    .user_rd_full(qdr1_usr_rd_full),
+    .user_qr_valid(qdr1_usr_qr_valid),
+    .user_dwl(qdr1_usr_dwl),
+    .user_dwh(qdr1_usr_dwh),
+    .user_qrl(qdr1_usr_qrl),
+    .user_qrh(qdr1_usr_qrh),
+    .user_bwl_n(qdr1_usr_bwl_n),
+    .user_bwh_n(qdr1_usr_bwh_n),
+    .user_ad_wr(qdr1_usr_ad_wr),
+    .user_ad_rd(qdr1_usr_ad_rd)
+  );
+
+  wire qdr1_usr_d_w;
+  wire qdr1_usr_ad_w;
+  wire qdr1_usr_r;
+  assign qdr1_usr_d_w_n  = !qdr1_usr_d_w;
+  assign qdr1_usr_ad_w_n = !qdr1_usr_ad_w;
+  assign qdr1_usr_r_n    = !qdr1_usr_r;
+
+  qdr_cpu_interface qdr_cpu_interface_inst_1(
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    //memory wb slave IF
+    .reg_wb_we_i(wb_we_o), .reg_wb_cyc_i(wb_cyc_o[7]), .reg_wb_stb_i(wb_stb_o[7]),
+    .reg_wb_sel_i(wb_sel_o),
+    .reg_wb_adr_i(wb_adr_o), .reg_wb_dat_i(wb_dat_o),
+    .reg_wb_dat_o(wb_dat_i[16*(7 + 1) - 1: 16*7]),
+    .reg_wb_ack_o(wb_ack_i[7]),
+    //memory wb slave IF
+    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[11]), .mem_wb_stb_i(wb_stb_o[11]),
+    .mem_wb_sel_i(wb_sel_o),
+    .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
+    .mem_wb_dat_o(wb_dat_i[16*(11 + 1) - 1: 16*11]),
+    .mem_wb_ack_o(wb_ack_i[11]),
+    .mem_wb_burst(1'b0),
+    //qdr interface
+
+    .qdr_clk_i(qdr_clk_0),
+    .qdr_rst_o(qdr1_usr_reset),
+    .qdr_phy_rdy(qdr1_cal_done),
+
+    .qdr_wr_full(qdr1_usr_wr_full), 
+    .qdr_rd_full(qdr1_usr_rd_full),
+
+    .qdr_wr_addr(qdr1_usr_ad_wr),
+    .qdr_wr_data({qdr1_usr_dwh, qdr1_usr_dwl}),
+    .qdr_wr_be({qdr1_usr_bwh_n, qdr1_usr_bwl_n}),
+    .qdr_wr_data_en(qdr1_usr_d_w),
+    .qdr_wr_addr_en(qdr1_usr_ad_w),
+
+    .qdr_rd_addr(qdr1_usr_ad_rd),
+    .qdr_rd_data({qdr1_usr_qrh, qdr1_usr_qrl}),
+    .qdr_rd_valid(qdr1_usr_qr_valid),
+    .qdr_rd_en(qdr1_usr_r)
+  );
+
+`else
 
   assign qdr1_d  = {18{1'b0}};
   assign qdr1_sa = {22{1'b0}};
@@ -1103,10 +1316,14 @@ module toplevel(
 
   assign wb_dat_i[16*(7 + 1) - 1: 16*7] = 16'b0;
   assign wb_ack_i[7] = 1'b0;
+  assign wb_dat_i[16*(12 + 1) - 1: 16*12] = 16'b0;
+  assign wb_ack_i[12] = 1'b0;
+`endif
 
   /********** Boot Memory ************/
   
   /* 4KB data memory */
+
   bram_controller #(
     .RAM_SIZE_K(4)
   ) bram_controller_bootrom (

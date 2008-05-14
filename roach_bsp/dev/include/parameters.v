@@ -2,7 +2,7 @@
 `define PARAMETERS_V
 `define SERIAL_UART_BAUD  115200
 `define MASTER_CLOCK_RATE 100_000_000
-`define MGT_DIFF_BOOST    "TRUE"
+`define MGT_DIFF_BOOST    "FALSE"
 
 
 /************** XAUI/TENGBE Defines ***************/
@@ -23,14 +23,14 @@
 //`define ENABLE_XAUI_3
 //
 
-`define ENABLE_DDR2
+//`define ENABLE_DDR2
+
+`define ENABLE_QDR0
+`define ENABLE_QDR1
+`define ENABLE_QDR_INFRASTRUCTURE
 
 
 `define DDR2_CLK_FREQ "200"
-
-
-
-
-
+`define QDR_CLK_FREQ  "250"
 
 `endif

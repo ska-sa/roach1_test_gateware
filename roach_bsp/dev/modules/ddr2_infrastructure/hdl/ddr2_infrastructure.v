@@ -9,7 +9,7 @@ module ddr2_infrastructure(
   input  reset, clk_in;
   output ddr_clk_0, ddr_clk_90, ddr_clk_div;
   output ddr_rst_0, ddr_rst_90, ddr_rst_div;
-  input usr_rst, usr_clk;
+  input  usr_rst, usr_clk;
 
   /************ Generate DDR2 Clock ****************/
   wire mem_clk;

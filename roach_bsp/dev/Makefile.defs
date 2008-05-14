@@ -60,7 +60,34 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/ddr2_cpu_interface/hdl/mem_rd_cache.v \
     ./modules/ddr2_cpu_interface/hdl/mem_wr_cache.v \
     ./modules/ddr2_cpu_interface/hdl/reg_wb_attach.v \
-    ./modules/ddr2_infrastructure/hdl/ddr2_infrastructure.v
+    ./modules/ddr2_infrastructure/hdl/ddr2_infrastructure.v \
+    ./modules/qdr_controller/hdl/top_ctrl_sm.v \
+    ./modules/qdr_controller/hdl/top_wrdata_bw_fifo.v \
+    ./modules/qdr_controller/hdl/phy_en.v \
+    ./modules/qdr_controller/hdl/phy_dly_cal_sm.v \
+    ./modules/qdr_controller/hdl/phy_q_io.v \
+    ./modules/qdr_controller/hdl/qdr2_top.v \
+    ./modules/qdr_controller/hdl/phy_clk_io.v \
+    ./modules/qdr_controller/hdl/top_wrdata_fifo.v \
+    ./modules/qdr_controller/hdl/top_phy.v \
+    ./modules/qdr_controller/hdl/top_wr_addr_interface.v \
+    ./modules/qdr_controller/hdl/phy_bw_io.v \
+    ./modules/qdr_controller/hdl/phy_cq_io.v \
+    ./modules/qdr_controller/hdl/top_rd_addr_interface.v \
+    ./modules/qdr_controller/hdl/phy_addr_io.v \
+    ./modules/qdr_controller/hdl/phy_init_sm.v \
+    ./modules/qdr_controller/hdl/top_user_interface.v \
+    ./modules/qdr_controller/hdl/top_wr_interface.v \
+    ./modules/qdr_controller/hdl/top_wr_data_interface.v \
+    ./modules/qdr_controller/hdl/phy_read.v \
+    ./modules/qdr_controller/hdl/phy_v5_q_io.v \
+    ./modules/qdr_controller/hdl/phy_d_io.v \
+    ./modules/qdr_controller/hdl/qdr_controller.v \
+    ./modules/qdr_controller/hdl/phy_write.v \
+    ./modules/qdr_controller/hdl/top_rd_interface.v \
+    ./modules/qdr_infrastructure/hdl/qdr_infrastructure.v \
+    ./modules/qdr_cpu_interface/hdl/qdr_cpu_interface.v \
+    ./modules/qdr_cpu_interface/hdl/reg_wb_attach.v 
 
 
 NETLIST_DIRS=./modules/xaui_pipe/netlist\

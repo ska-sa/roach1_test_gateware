@@ -152,44 +152,44 @@ module xaui_infrastructure(
   /********* Polarity Correction Hacks for RX and TX **********/
 
   localparam RX_POLARITY_HACK_3 = { 1'b0, //lane 3
-                                   1'b0, //lane 2
-                                   1'b1, //lane 1
-                                   1'b1  //lane 0
+                                    1'b1, //lane 2
+                                    1'b0, //lane 1
+                                    1'b1  //lane 0
                                  };
   localparam RX_POLARITY_HACK_2 = { 1'b0, //lane 3
-                                   1'b1, //lane 2
-                                   1'b0, //lane 1
-                                   1'b1  //lane 0
+                                    1'b1, //lane 2
+                                    1'b0, //lane 1
+                                    1'b1  //lane 0
                                  };
   localparam RX_POLARITY_HACK_1 = { 1'b0, //lane 3
-                                   1'b1, //lane 2
-                                   1'b0, //lane 1
-                                   1'b1  //lane 0
+                                    1'b1, //lane 2
+                                    1'b0, //lane 1
+                                    1'b1  //lane 0
                                  };
   localparam RX_POLARITY_HACK_0 = { 1'b0, //lane 3
-                                   1'b1, //lane 2
-                                   1'b0, //lane 1
-                                   1'b1  //lane 0
+                                    1'b1, //lane 2
+                                    1'b0, //lane 1
+                                    1'b1  //lane 0
                                  };
   localparam TX_POLARITY_HACK_3 = { 1'b1, //lane 3
-                                   1'b0, //lane 2
-                                   1'b1, //lane 1
-                                   1'b0  //lane 0
+                                    1'b0, //lane 2
+                                    1'b1, //lane 1
+                                    1'b0  //lane 0
                                  };
   localparam TX_POLARITY_HACK_2 = { 1'b1, //lane 3
-                                   1'b0, //lane 2
-                                   1'b1, //lane 1
-                                   1'b0  //lane 0
+                                    1'b0, //lane 2
+                                    1'b1, //lane 1
+                                    1'b0  //lane 0
                                  };
   localparam TX_POLARITY_HACK_1 = { 1'b1, //lane 3
-                                   1'b0, //lane 2
-                                   1'b1, //lane 1
-                                   1'b0  //lane 0
+                                    1'b0, //lane 2
+                                    1'b1, //lane 1
+                                    1'b0  //lane 0
                                  };
   localparam TX_POLARITY_HACK_0 = { 1'b1, //lane 3
-                                   1'b0, //lane 2
-                                   1'b1, //lane 1
-                                   1'b0  //lane 0
+                                    1'b0, //lane 2
+                                    1'b1, //lane 1
+                                    1'b0  //lane 0
                                  };
                             
 

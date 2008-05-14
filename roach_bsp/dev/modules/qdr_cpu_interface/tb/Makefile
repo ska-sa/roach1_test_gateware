@@ -12,7 +12,7 @@ GEN_DIR=./gen
 
 INCLUDE=-I$(SRC_DIR)
 
-SRC=$(SRC_DIR)/$(MODULE).v
+SRC=$(SRC_DIR)/$(MODULE).v $(SRC_DIR)/reg_wb_attach.v
 TB_SRC=$(TB_DIR)/TB_$(MODULE).v
 OBJ=$(GEN_DIR)/$(MODULE).o
 TB_OBJ=$(GEN_DIR)/TB_$(MODULE).o

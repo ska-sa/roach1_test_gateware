@@ -211,7 +211,7 @@ module xaui_pipe(
 
   transfer_engine transfer_engine_inst(
     .clk(mgt_clk), .reset(xaui_reset),
-    .xgmii_rxd(mgt_rxdata), .xgmii_rxc(xgmii_rxc),
+    .xgmii_rxd(xgmii_rxd), .xgmii_rxc(xgmii_rxc),
     .xgmii_txd(xgmii_txd), .xgmii_txc(xgmii_txc),
     .rx_fifo_wr_en(rx_fifo_wr_en), .rx_fifo_wr_data(rx_fifo_wr_data),
     .tx_fifo_rd_en(tx_fifo_rd_en), .tx_fifo_rd_data(tx_fifo_rd_data),
@@ -225,6 +225,19 @@ module xaui_pipe(
   );
 
   /**************************** Wishbone Attachment *********************************/
+
+  reg [15:0] link_down_count;
+
+  reg prev;
+
+  always @(posedge mgt_clk) begin
+    prev <= link_status[6];
+    if (link_status[6] != prev && !link_status[6]) begin
+      link_down_count <= link_down_count + 1;
+    end
+  end
+
+  /* HACK */
 
   xaui_wb_attach #(
     .DEFAULT_POWERDOWN(DEFAULT_POWERDOWN),
@@ -252,7 +265,7 @@ module xaui_pipe(
     `ifdef XAUI_ERROR_TEST
     , .error_count(error_count), .data_count(data_count)
     `else
-    , .error_count({4'b0, mgt_rxlock, 4'b0, mgt_syncok, debug, 40'd0}), .data_count(64'd0)
+    , .error_count({link_down_count, 8'h1234, 40'd0}), .data_count(64'd0)
     `endif
     , .debug()
   );

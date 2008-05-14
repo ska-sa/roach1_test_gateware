@@ -118,7 +118,7 @@ module xaui_wb_attach(
       mgt_rxeqmix       <= 2'b0;
       mgt_rxeqpole      <= 4'b0;
       mgt_txpreemphasis <= 3'b0;
-      mgt_txdiffctrl    <= 3'b0;
+      mgt_txdiffctrl    <= 3'b100;
     end else begin
 
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
