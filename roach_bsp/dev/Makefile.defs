@@ -87,11 +87,15 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/qdr_controller/hdl/top_rd_interface.v \
     ./modules/qdr_infrastructure/hdl/qdr_infrastructure.v \
     ./modules/qdr_cpu_interface/hdl/qdr_cpu_interface.v \
-    ./modules/qdr_cpu_interface/hdl/reg_wb_attach.v 
+    ./modules/qdr_cpu_interface/hdl/reg_wb_attach.v \
+    ./modules/iadc_controller/hdl/iadc_controller.v \
+    ./modules/iadc_controller/hdl/fifo_72.v \
+    ./modules/iadc_infrastructure/hdl/iadc_infrastructure.v
 
 
 NETLIST_DIRS=./modules/xaui_pipe/netlist\
-             ./modules/ten_gig_eth/netlist
+             ./modules/ten_gig_eth/netlist\
+             ./modules/iadc_controller/netlist
 
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel

@@ -207,12 +207,15 @@ module toplevel(
 
   /************************* LEDs ************************/
 
+  wire [3:0] debug_foo;
+
   wire epb_cs_n_int;
 
   reg foo;
 
   reg [27:0] counter [2:0];
-  assign led_n = {foo, counter[0][27], counter[1][27], counter[2][27]};
+  //assign led_n = {foo, counter[0][27], counter[1][27], counter[2][27]};
+  assign led_n = ~debug_foo;
 
 
 
@@ -309,6 +312,7 @@ module toplevel(
     .epb_addr(epb_addr_dly), .epb_addr_gp(epb_addr_gp_dly),
     .epb_data_i(epb_data_i), .epb_data_o(epb_data_o),
     .epb_rdy(epb_rdy)
+    ,.debug(debug_foo)
   );
 
   reg turd;
@@ -1337,11 +1341,111 @@ module toplevel(
 
   /****************** ZDOKs **********************/
 
+`ifdef ENABLE_IADC_0
+  /****** ADC external signals ******/
+  wire adc0_clk_n, adc0_clk_p;
+  wire adc0_sync_n, adc0_sync_p;
+  wire adc0_outofrange_i_n, adc0_outofrange_i_p, adc0_outofrange_q_n, adc0_outofrange_q_p;
+  wire [7:0] adc0_data_i_even_n;
+  wire [7:0] adc0_data_i_even_p;
+  wire [7:0] adc0_data_i_odd_n;
+  wire [7:0] adc0_data_i_odd_p;
+  wire [7:0] adc0_data_q_even_n;
+  wire [7:0] adc0_data_q_even_p;
+  wire [7:0] adc0_data_q_odd_n;
+  wire [7:0] adc0_data_q_odd_p;
+  wire adc0_ddrb_n, adc0_ddrb_p;
+  wire adc0_ctrl_clk, adc0_ctrl_data, adc0_ctrl_strobe_n, adc0_mode;
+
+  assign adc0_clk_n = zdok0_clk0_n;
+  assign adc0_clk_p = zdok0_clk0_p;
+  assign adc0_outofrange_i_n = zdok0_dp_n[0];
+  assign adc0_outofrange_i_p = zdok0_dp_p[0];
+  assign adc0_outofrange_q_n = zdok0_dp_n[1];
+  assign adc0_outofrange_q_p = zdok0_dp_p[1];
+  assign zdok0_dp_n[2]       = adc0_ddrb_n;
+  assign zdok0_dp_p[2]       = adc0_ddrb_p;
+  assign adc0_data_i_even_n  = zdok0_dp_n[10:3];
+  assign adc0_data_i_even_p  = zdok0_dp_p[10:3];
+  assign adc0_data_i_odd_n   = zdok0_dp_n[18:11];
+  assign adc0_data_i_odd_p   = zdok0_dp_p[18:11];
+  assign adc0_data_q_even_n  = zdok0_dp_n[26:19];
+  assign adc0_data_q_even_p  = zdok0_dp_p[26:19];
+  assign adc0_data_q_odd_n   = zdok0_dp_n[34:27];
+  assign adc0_data_q_odd_p   = zdok0_dp_p[34:27];
+  assign zdok0_dp_n[35]      = adc0_ctrl_clk;
+  assign zdok0_dp_p[35]      = adc0_ctrl_data;
+  assign zdok0_dp_n[36]      = adc0_ctrl_strobe_n;
+  assign zdok0_dp_p[36]      = adc0_mode;
+  assign adc0_sync_n         = zdok0_dp_n[37];
+  assign adc0_sync_p         = zdok0_dp_p[37];
+
+  /****** ADC internal signals ******/
+  wire adc0_clk_0, adc0_clk_90;
+  wire adc0_sync;
+  wire  [3:0] adc0_outofrange;
+  wire [63:0] adc0_data;
+  wire adc0_ddrb;
+
+  iadc_infrastructure iadc_infrastructure_inst_0(
+    .reset(sys_reset),
+    .clk_lock(adc0_clk_lock),
+    .adc_clk_n(adc0_clk_n),
+    .adc_clk_p(adc0_clk_p),
+    .adc_sync_n(adc0_sync_n),
+    .adc_sync_p(adc0_sync_p),
+    .adc_outofrange_i_n(adc0_outofrange_i_n),
+    .adc_outofrange_i_p(adc0_outofrange_i_p),
+    .adc_outofrange_q_n(adc0_outofrange_q_n),
+    .adc_outofrange_q_p(adc0_outofrange_q_p),
+    .adc_data_i_even_n(adc0_data_i_even_n),
+    .adc_data_i_even_p(adc0_data_i_even_p),
+    .adc_data_i_odd_n(adc0_data_i_odd_n),
+    .adc_data_i_odd_p(adc0_data_i_odd_p),
+    .adc_data_q_even_n(adc0_data_q_even_n),
+    .adc_data_q_even_p(adc0_data_q_even_p),
+    .adc_data_q_odd_n(adc0_data_q_odd_n),
+    .adc_data_q_odd_p(adc0_data_q_odd_p),
+    .adc_ddrb_n(adc0_ddrb_n),
+    .adc_ddrb_p(adc0_ddrb_p),
+    .adc_clk_0(adc0_clk_0),
+    .adc_clk_90(adc0_clk_90),
+    .adc_sync(adc0_sync),
+    .adc_outofrange(adc0_outofrange),
+    .adc_data(adc0_data),
+    .adc_ddrb(adc0_ddrb)
+  );
+
+  iadc_controller iadc_controller_inst_0(
+    /* Wishbone Interface */
+    .wb_clk_i(sys_clk),
+    .wb_cyc_i(wb_cyc_o[9]), .wb_stb_i(wb_stb_o[9]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(9 + 1) - 1: 16*9]),
+    .wb_ack_o(wb_ack_i[9]),
+    /* ADC inputs */
+    .adc_clk_0(adc0_clk_0), .adc_clk_90(adc0_clk_90),
+    .adc_data(adc0_data),
+    .adc_sync(adc0_sync),
+    .adc_outofrange(adc0_outofrange),
+
+    /* ADC config bits */
+    .adc_ctrl_clk(adc0_ctrl_clk),
+    .adc_ctrl_data(adc0_ctrl_data),
+    .adc_ctrl_strobe_n(adc0_ctrl_strobe_n),
+    .adc_mode(adc0_mode),
+    .adc_ddrb(adc0_ddrb)
+  );
+
+`else
   assign zdok0_dp_n = {38{1'bz}};
   assign zdok0_dp_p = {38{1'bz}};
-
   assign wb_dat_i[16*(9 + 1) - 1: 16*9] = 16'b0;
   assign wb_ack_i[9] = 1'b0;
+`endif
+
+
 
   assign zdok1_dp_n = {38{1'bz}};
   assign zdok1_dp_p = {38{1'bz}};

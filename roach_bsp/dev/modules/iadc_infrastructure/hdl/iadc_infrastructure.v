@@ -69,7 +69,7 @@ module iadc_infrastructure(
   /* diff input buffer */
   wire adc_clk_int;
   IBUFGDS #(
-    .IOSTANDARD("LVDS"),
+    .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
   ) ibufgds_clk (
     .I(adc_clk_p), .IB(adc_clk_n),
@@ -84,8 +84,8 @@ module iadc_infrastructure(
   wire pll_fb_bufg;
   wire pll_fb;
   BUFG bufg_pll_fb(
-    .I(pll_fb_bufg),
-    .O(pll_fb)
+    .I(pll_fb),
+    .O(pll_fb_bufg)
   );
 
   PLL_BASE #(
@@ -130,7 +130,7 @@ module iadc_infrastructure(
   /************ Sync Port *************/
 
   IBUFDS #(
-    .IOSTANDARD("LVDS"),
+    .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
   ) ibufds_sync (
     .I(adc_sync_p), .IB(adc_sync_n),
@@ -141,7 +141,7 @@ module iadc_infrastructure(
 
   wire [1:0] adc_outofrange_int;
   IBUFDS #(
-    .IOSTANDARD("LVDS"),
+    .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
   ) ibufds_outofrange [1:0] (
     .I({adc_outofrange_i_p, adc_outofrange_q_p}), .IB({adc_outofrange_i_n, adc_outofrange_q_n}),
@@ -151,16 +151,18 @@ module iadc_infrastructure(
   wire [1:0] adc_outofrange_0;
   wire [1:0] adc_outofrange_1;
 
-  IDDR #(
+  IDDR_2CLK #(
     .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"),
     .INIT_Q1(1'b0),
     .INIT_Q2(1'b0),
     .SRTYPE(1'b1)
   ) iddr_outofrange[1:0](
-    .D(adc_outofrange_int), .DDLY(adc_outofrange_int), //this is weird -- which do I use? how do I specify which to use?
+    .D(adc_outofrange_int),
     .S(1'b0), .R(1'b0),
     .Q1(adc_outofrange_0), .Q2(adc_outofrange_1),
-    .C(adc_clk), .CE(1'b1)
+    .C(adc_clk),
+    .CB(!adc_clk),
+    .CE(1'b1)
   );
 
   assign adc_outofrange = {adc_outofrange_1, adc_outofrange_0}; //this is most probably wrong - but hey... TODO:check
@@ -174,7 +176,7 @@ module iadc_infrastructure(
   wire [7:0] adc_data_q_odd;
 
   IBUFDS #(
-    .IOSTANDARD("LVDS"),
+    .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
   ) ibufds_data [31:0] (
     .I ({adc_data_i_even_p, adc_data_i_odd_p, adc_data_q_even_p, adc_data_q_odd_p}),
@@ -191,19 +193,19 @@ module iadc_infrastructure(
   wire [7:0] adc_data_q_odd_R;
   wire [7:0] adc_data_q_odd_F;
 
-  IDDR #(
+  IDDR_2CLK #(
     .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"),
     .INIT_Q1(1'b0),
     .INIT_Q2(1'b0),
     .SRTYPE(1'b1)
-  ) iddr_outofrange[31:0](
-    //this is weird -- which do I use? how do I specify which to use?
-    .D   ({adc_data_i_even, adc_data_i_odd, adc_data_q_even, adc_data_q_odd}),
-    .DDLY({adc_data_i_even, adc_data_i_odd, adc_data_q_even, adc_data_q_odd}),
+  ) iddr_data[31:0](
+    .D({adc_data_i_even, adc_data_i_odd, adc_data_q_even, adc_data_q_odd}),
     .S(1'b0), .R(1'b0),
     .Q1({adc_data_i_even_R, adc_data_i_odd_R, adc_data_q_even_R, adc_data_q_odd_R}),
     .Q2({adc_data_i_even_F, adc_data_i_odd_F, adc_data_q_even_F, adc_data_q_odd_F}),
-    .C(adc_clk), .CE(1'b1)
+    .C(adc_clk),
+    .CB(!adc_clk),
+    .CE(1'b1)
   );
 
   assign adc_data = {adc_data_q_even_R, adc_data_q_odd_R, adc_data_q_even_F, adc_data_q_odd_F, 
@@ -212,7 +214,7 @@ module iadc_infrastructure(
   /************** Reset Output Buffer ****************/ 
 
   OBUFDS #(
-    .IOSTANDARD("LVDS")
+    .IOSTANDARD("LVDS_25")
   ) ibufgds_data (
     .I (adc_ddrb),
     .O (adc_ddrb_p),
