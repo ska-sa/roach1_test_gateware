@@ -26,7 +26,7 @@ $(MSG_FILE): $(TB_OBJ)
 	@!(cat $@ | grep FAILED && rm -rf $^)
 	@(cat $@ | grep PASSED)
 
-$(TB_OBJ): $(TB_SRC) $(SRC)
+$(TB_OBJ): $(TB_SRC)
 	$(VCC) $(INCLUDE) $(FLAGS) $(DEFINES) -o $@ $^
 
 clean:
