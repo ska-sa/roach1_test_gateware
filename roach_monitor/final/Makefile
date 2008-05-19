@@ -12,7 +12,7 @@ sim: $(SRC)
 	@make -C $(MODULES_DIR) sim
 
 build:
-	@svn st | grep -q "^[^?]" || echo "error: svn not up-to-date" && false
+	@svn st | grep -q "^[^?]" && echo "error: svn not up-to-date" && false
 	echo "happiness"
 
 build_parameters: 
