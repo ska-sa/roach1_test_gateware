@@ -61,7 +61,7 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./modules/wbs_arbiter/hdl/timeout.v \
     ./modules/wbs_arbiter/hdl/wbs_arbiter.v \
     ./include/parameters.v \
-    ./include/mem_layout.v \
+    ./include/memlayout.v \
     ./include/build_parameters.v
 
 
