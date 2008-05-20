@@ -1,7 +1,7 @@
 MODULE_ID=roach_monitor
 REV_MAJOR=2
 REV_MINOR=0
-REV_RCS:=`svn info|grep Revision |cut -d ' ' -f 2`
+REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
 PROJECT=$(MODULE_ID)_$(REV_MAJOR)
 
 # Directory Defines
