@@ -5,7 +5,7 @@ module ddr2_infrastructure(
     ddr_rst_0, ddr_rst_90, ddr_rst_div,
     usr_rst, usr_clk
   );
-  parameter CLK_FREQ = "266";
+  parameter CLK_FREQ = 266;
   input  reset, clk_in;
   output ddr_clk_0, ddr_clk_90, ddr_clk_div;
   output ddr_rst_0, ddr_rst_90, ddr_rst_div;
@@ -15,23 +15,23 @@ module ddr2_infrastructure(
   wire mem_clk;
   wire mem_clk_lock;
 
-  localparam FX_MULT = CLK_FREQ == "150" ? 3 :
-                       CLK_FREQ == "200" ? 2 :
-                       CLK_FREQ == "266" ? 8 :
-                       CLK_FREQ == "333" ? 10 :
-                                           8;
+  localparam FX_MULT = CLK_FREQ == 150 ? 3 :
+                       CLK_FREQ == 200 ? 2 :
+                       CLK_FREQ == 266 ? 8 :
+                       CLK_FREQ == 333 ? 10 :
+                                         8;
 
-  localparam FX_DIV  = CLK_FREQ == "150" ? 2 :
-                       CLK_FREQ == "200" ? 1 :
-                       CLK_FREQ == "266" ? 3 :
-                       CLK_FREQ == "333" ? 3 :
-                                           3;
+  localparam FX_DIV  = CLK_FREQ == 150 ? 2 :
+                       CLK_FREQ == 200 ? 1 :
+                       CLK_FREQ == 266 ? 3 :
+                       CLK_FREQ == 333 ? 3 :
+                                         3;
 
-  localparam CLK_PERIOD = CLK_FREQ == "150" ? 6666 :
-                          CLK_FREQ == "200" ? 5000 :
-                          CLK_FREQ == "266" ? 3760 :
-                          CLK_FREQ == "333" ? 3003 :
-                                              3760;
+  localparam CLK_PERIOD = CLK_FREQ == 150 ? 6666 :
+                          CLK_FREQ == 200 ? 5000 :
+                          CLK_FREQ == 266 ? 3760 :
+                          CLK_FREQ == 333 ? 3003 :
+                                            3760;
 
 
   wire fb_clk;

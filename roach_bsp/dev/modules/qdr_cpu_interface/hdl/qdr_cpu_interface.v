@@ -28,7 +28,9 @@ module qdr_cpu_interface(
     qdr_rd_data,
     qdr_rd_valid,
     qdr_rd_en
+    ,debug
   );
+  input  [3:0] debug;
   /* Bus interface signals */
   input  wb_clk_i;
   input  wb_rst_i;
@@ -81,6 +83,7 @@ module qdr_cpu_interface(
     .wb_ack_o(reg_wb_ack_o),
     .phy_ready(qdr_phy_rdy),
     .qdr_reset(qdr_reset_int)
+    ,.debug(debug)
   );
 
   /* stretch the reset pulse out */
@@ -207,34 +210,47 @@ module qdr_cpu_interface(
           end
           7'd8: begin
             if (mem_wb_we_i) begin
-              wr_buffer[BURST_WIDTH*DATA_BITS - 1:16*3] <= mem_wb_dat_i[(BURST_WIDTH*DATA_BITS)%16 - 1:0];
+              wr_buffer[16*(1+3) - 1:16*3] <= mem_wb_dat_i;
             end else begin
-              mem_wb_dat_o <= {{16-(BURST_WIDTH*DATA_BITS)%16{1'b0}}, wr_buffer[BURST_WIDTH*DATA_BITS - 1:16*3]};
+              mem_wb_dat_o <= wr_buffer[16*(1+3) - 1:16*3];
+            end
+          end
+          7'd9: begin
+            if (mem_wb_we_i) begin
+              wr_buffer[BURST_WIDTH*DATA_BITS - 1:16*4] <= mem_wb_dat_i[(BURST_WIDTH*DATA_BITS)%16 - 1:0];
+            end else begin
+              mem_wb_dat_o <= {{16-(BURST_WIDTH*DATA_BITS)%16{1'b0}}, wr_buffer[BURST_WIDTH*DATA_BITS - 1:16*4]};
             end
           end
           /* Rd Data */
-          7'd9: begin
+          7'd10: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+0) - 1:16*0];
             end
           end
-          7'd10: begin
+          7'd11: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+1) - 1:16*1];
             end
           end
-          7'd11: begin
+          7'd12: begin
             if (mem_wb_we_i) begin
             end else begin
               mem_wb_dat_o <= rd_buffer[16*(1+2) - 1:16*2];
             end
           end
-          7'd12: begin
+          7'd13: begin
             if (mem_wb_we_i) begin
             end else begin
-              mem_wb_dat_o <= {{16-(BURST_WIDTH*DATA_BITS)%16{1'b0}}, rd_buffer[BURST_WIDTH*DATA_BITS - 1:16*3]};
+              mem_wb_dat_o <= rd_buffer[16*(1+3) - 1:16*3];
+            end
+          end
+          7'd14: begin
+            if (mem_wb_we_i) begin
+            end else begin
+              mem_wb_dat_o <= {{16-(BURST_WIDTH*DATA_BITS)%16{1'b0}}, rd_buffer[BURST_WIDTH*DATA_BITS - 1:16*4]};
             end
           end
           /* */

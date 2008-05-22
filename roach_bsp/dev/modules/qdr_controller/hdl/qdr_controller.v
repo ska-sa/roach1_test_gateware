@@ -1,16 +1,12 @@
 module qdr_controller #(
-    parameter ADDR_WIDTH              = 21,       // # of memory component addr bits
-    parameter BURST_LENGTH            = 2,       // Burst Length type of memory component
+    parameter ADDR_WIDTH              = 21,      // # of memory component addr bits
+    parameter BURST_LENGTH            = 4,       // Burst Length type of memory component
     parameter BW_WIDTH                = 2,       // # of Byte Write Control bits
-    parameter CLK_FREQ                = 200,       // Core/Memory clock frequency (in MHz)
+    parameter CLK_FREQ                = 200,     // Core/Memory clock frequency (in MHz)
     parameter CLK_WIDTH               = 1,       // # of clock outputs
     parameter CQ_WIDTH                = 1,       // # of CQ bits 
-    parameter DATA_WIDTH              = 18,       // Design Data Width 
-    parameter MEMORY_WIDTH            = 18,       // # of memory component's data width
-    parameter SIM_ONLY                = 0,       // = 1 to skip SRAM power up delay
-    parameter DEBUG_EN                = 0,       // Enable debug signals/controls. When this parameter is changed from 0 to 1,
-    // make sure to uncomment the coregen commands in ise_flow.bat or create_ise.bat files in par folder.
-    parameter RST_ACT_LOW             = 0        // =1 for active low reset, =0 for active high
+    parameter DATA_WIDTH              = 18,      // Design Data Width 
+    parameter MEMORY_WIDTH            = 18       // # of memory component's data width
   ) (
     input                              reset,
     input                              idelay_rdy,
@@ -47,6 +43,7 @@ module qdr_controller #(
     input  [BW_WIDTH-1:0]              user_bwh_n,
     input  [ADDR_WIDTH-1:0]            user_ad_wr,
     input  [ADDR_WIDTH-1:0]            user_ad_rd
+    ,output [3:0] debug
   );
 
   localparam STROBE_WIDTH = 1;
@@ -74,7 +71,7 @@ module qdr_controller #(
     .CQ_WIDTH               (CQ_WIDTH),
     .DATA_WIDTH             (DATA_WIDTH),
     .MEMORY_WIDTH           (MEMORY_WIDTH),
-    .SIM_ONLY               (SIM_ONLY),
+    .SIM_ONLY               (1'b0),
     .STROBE_WIDTH           (STROBE_WIDTH)
   ) u_qdr2_top (
     .qdr_d                  (qdr_d),
@@ -161,5 +158,7 @@ module qdr_controller #(
       reset_reg_270 <= reset_reg_270 << 1;
     end
   end
+
+  assign debug = {1'b0, user_rst_0, user_rst_180, user_rst_270};
 
 endmodule

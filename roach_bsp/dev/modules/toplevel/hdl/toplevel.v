@@ -248,6 +248,16 @@ module toplevel(
     .as_dstrb_i(as_dstrb_i), .as_busy_o(as_busy_o), .as_dstrb_o(as_dstrb_o)
   );
 
+  reg fucked;
+
+  always @(posedge sys_clk) begin
+    if (as_dstrb_o) begin
+      fucked <= !fucked;
+    end
+  end
+
+  //fuck
+
   /**************** Wishbone Bus Control ****************/
 
   /*** Serial Port Master **/
@@ -415,9 +425,7 @@ module toplevel(
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
     .wb_dat_o(wb_dat_i[16*(0 + 1) - 1: 16*0]),
     .wb_ack_o(wb_ack_i[0]),
-    .wb_toutsup_o()
-    ,.debug_clk(epb_clk), .debug_we(prev != epb_oe_n && !epb_oe_n),
-    .debug({3'b0, epb_addr_gp_dly, epb_addr_dly, epb_data_i, 7'b0, epb_rdy, 1'b0, epb_be_n_dly, epb_blast_n, 1'b0, epb_r_w_n_dly, epb_cs_n_dly, epb_oe_n})
+    .aux_clk({aux_clk_1, aux_clk_0})
   );
 
   /************* XAUI Infrastructure ***************/
@@ -967,11 +975,11 @@ module toplevel(
   wire ddr_phy_ready;
   wire ddr_usr_clk;
   
-  localparam DDR_PERIOD = `DDR2_CLK_FREQ == "150" ? 6666 :
-                          `DDR2_CLK_FREQ == "200" ? 5000 :
-                          `DDR2_CLK_FREQ == "333" ? 3003 :
-                          `DDR2_CLK_FREQ == "266" ? 3759 :
-                                                    3759;
+  localparam DDR_PERIOD = `DDR2_CLK_FREQ == 150 ? 6666 :
+                          `DDR2_CLK_FREQ == 200 ? 5000 :
+                          `DDR2_CLK_FREQ == 333 ? 3003 :
+                          `DDR2_CLK_FREQ == 266 ? 3759 :
+                                                  3759;
   ddr2_controller #(
     .CLK_PERIOD(DDR_PERIOD)
   ) ddr2_controller_inst (
@@ -1115,7 +1123,10 @@ module toplevel(
   wire [21:0] qdr0_usr_ad_rd;
 
 
-  qdr_controller qdr_controller_0(
+  wire [3:0] foo_debug;
+  qdr_controller #(
+    .CLK_FREQ(`QDR_CLK_FREQ)
+  ) qdr_controller_0 (
     .reset(sys_reset | qdr0_usr_reset),
     .clk0(qdr_clk_0), .clk180(qdr_clk_180), .clk270(qdr_clk_270),
     .pll_lock(qdr_pll_lock),
@@ -1148,6 +1159,7 @@ module toplevel(
     .user_bwh_n(qdr0_usr_bwh_n),
     .user_ad_wr(qdr0_usr_ad_wr),
     .user_ad_rd(qdr0_usr_ad_rd)
+    ,.debug(foo_debug)
   );
   
   wire qdr0_usr_d_w;
@@ -1191,6 +1203,7 @@ module toplevel(
     .qdr_rd_data({qdr0_usr_qrh, qdr0_usr_qrl}),
     .qdr_rd_valid(qdr0_usr_qr_valid),
     .qdr_rd_en(qdr0_usr_r)
+    ,.debug(foo_debug)
   );
 
 `else
@@ -1205,8 +1218,8 @@ module toplevel(
 
   assign wb_dat_i[16*(6 + 1) - 1: 16*6] = 16'b0;
   assign wb_ack_i[6] = 1'b0;
-  assign wb_dat_i[16*(11 + 1) - 1: 16*11] = 16'b0;
-  assign wb_ack_i[11] = 1'b0;
+  assign wb_dat_i[16*(12 + 1) - 1: 16*12] = 16'b0;
+  assign wb_ack_i[12] = 1'b0;
 `endif
 
   /***************** QDR1 ************************/
@@ -1229,7 +1242,9 @@ module toplevel(
   wire [21:0] qdr1_usr_ad_wr;
   wire [21:0] qdr1_usr_ad_rd;
 
-  qdr_controller qdr_controller_1(
+  qdr_controller #(
+    .CLK_FREQ(`QDR_CLK_FREQ)
+  ) qdr_controller_1(
     .reset(sys_reset | qdr1_usr_reset),
     .clk0(qdr_clk_0), .clk180(qdr_clk_180), .clk270(qdr_clk_270),
     .pll_lock(qdr_pll_lock),
@@ -1320,8 +1335,8 @@ module toplevel(
 
   assign wb_dat_i[16*(7 + 1) - 1: 16*7] = 16'b0;
   assign wb_ack_i[7] = 1'b0;
-  assign wb_dat_i[16*(12 + 1) - 1: 16*12] = 16'b0;
-  assign wb_ack_i[12] = 1'b0;
+  assign wb_dat_i[16*(11 + 1) - 1: 16*11] = 16'b0;
+  assign wb_ack_i[11] = 1'b0;
 `endif
 
   /********** Boot Memory ************/
@@ -1457,20 +1472,20 @@ module toplevel(
   /******************* GPIO ***********************/
 
   /******** Single Ended **********/
-  assign se_gpio_a_oen_n = 1'b0;
-  assign se_gpio_b_oen_n = 1'b1;
+  assign se_gpio_a_oen_n = 1'b1;
+  assign se_gpio_b_oen_n = 1'b0;
 
-  assign se_gpio_a[0] = serial_out;
-  assign se_gpio_a[1] = 1'b0;
-  assign se_gpio_a[2] = 1'b0;
-  assign se_gpio_a[3] = 1'b0;
-  assign se_gpio_a[4] = epb_cs_n_int;
-  assign se_gpio_a[5] = 1'b0;
-  assign se_gpio_a[6] = 1'b0;
-  assign se_gpio_a[7] = 1'b0;
+  assign se_gpio_b[0] = serial_out;
+  assign se_gpio_b[1] = 1'b0;
+  assign se_gpio_b[2] = 1'b0;
+  assign se_gpio_b[3] = 1'b0;
+  assign se_gpio_b[4] = 1'b0;
+  assign se_gpio_b[5] = 1'b0;
+  assign se_gpio_b[6] = 1'b0;
+  assign se_gpio_b[7] = 1'b0;
 
-  assign serial_in    = se_gpio_b[0];
-  assign se_gpio_b[7:1] = {7{1'bz}};
+  assign serial_in    = se_gpio_a[0];
+  assign se_gpio_a[7:1] = {7{1'bz}};
 
   /******** Differential **********/
   assign diff_gpio_a_n = {19{1'bz}};

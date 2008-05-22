@@ -7,8 +7,10 @@ module qdr_reg_wb_attach(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     phy_ready,
-    qdr_reset
+    qdr_reset,
+    debug
   );
+  input [3:0] debug;
   input  wb_clk_i;
   input  wb_rst_i;
   input  wb_we_i;
@@ -27,8 +29,10 @@ module qdr_reg_wb_attach(
 
   reg wb_ack_o;
   reg [2:0] wb_dat_o_src;
-  assign wb_dat_o = wb_dat_o_src == `REG_QDR_PHY_READY ? {15'b0, phy_ready} :
+  //assign wb_dat_o = wb_dat_o_src == `REG_QDR_PHY_READY ? {15'b0, phy_ready} :
+  assign wb_dat_o = wb_dat_o_src == `REG_QDR_PHY_READY ? {8'hee, 7'b0, phy_ready} :
                     wb_dat_o_src == `REG_QDR_RESET     ? 16'b0              :
+                    wb_dat_o_src == `REG_QDR_RESET +1  ? {12'b0,debug}          :
                     16'd0;
 
   always @(posedge wb_clk_i) begin

@@ -8,7 +8,7 @@ PROJECT=roach_bsp
 # module ID -> 16 bit hex
 BOARD_ID=57005 
 REV_MAJOR=0
-REV_MINOR=0
+REV_MINOR=1
 # Pin Constraints
 PCFILE=constraints/$(PROJECT).ucf
 # Enter your source files here space seperated

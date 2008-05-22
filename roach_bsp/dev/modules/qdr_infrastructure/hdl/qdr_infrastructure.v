@@ -10,28 +10,28 @@ module qdr_infrastructure(
   /********** Clock Generation ***********/
 
   wire mem_clk, mem_clk_lock;
-  parameter CLK_FREQ = "266";
+  parameter CLK_FREQ = 266;
 
-  localparam FX_MULT = CLK_FREQ == "150" ? 3 :
-                       CLK_FREQ == "200" ? 2 :
-                       CLK_FREQ == "250" ? 5 :
-                       CLK_FREQ == "266" ? 8 :
-                       CLK_FREQ == "333" ? 10 :
-                                           8;
+  localparam FX_MULT = CLK_FREQ == 150 ? 3 :
+                       CLK_FREQ == 200 ? 2 :
+                       CLK_FREQ == 250 ? 5 :
+                       CLK_FREQ == 266 ? 8 :
+                       CLK_FREQ == 333 ? 10 :
+                                         8;
 
-  localparam FX_DIV  = CLK_FREQ == "150" ? 2 :
-                       CLK_FREQ == "200" ? 1 :
-                       CLK_FREQ == "250" ? 2 :
-                       CLK_FREQ == "266" ? 3 :
-                       CLK_FREQ == "333" ? 3 :
-                                           3;
+  localparam FX_DIV  = CLK_FREQ == 150 ? 2 :
+                       CLK_FREQ == 200 ? 1 :
+                       CLK_FREQ == 250 ? 2 :
+                       CLK_FREQ == 266 ? 3 :
+                       CLK_FREQ == 333 ? 3 :
+                                         3;
 
-  localparam CLK_PERIOD = CLK_FREQ == "150" ? 6666 :
-                          CLK_FREQ == "200" ? 5000 :
-                          CLK_FREQ == "250" ? 4000 :
-                          CLK_FREQ == "266" ? 3760 :
-                          CLK_FREQ == "333" ? 3003 :
-                                              3760;
+  localparam CLK_PERIOD = CLK_FREQ == 150 ? 6666 :
+                          CLK_FREQ == 200 ? 5000 :
+                          CLK_FREQ == 250 ? 4000 :
+                          CLK_FREQ == 266 ? 3760 :
+                          CLK_FREQ == 333 ? 3003 :
+                                            3760;
 
   wire fb_clk;
 
