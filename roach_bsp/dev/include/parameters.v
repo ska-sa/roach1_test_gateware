@@ -25,12 +25,12 @@
 
 //`define ENABLE_DDR2
 
-`define ENABLE_QDR0
-`define ENABLE_QDR1
-`define ENABLE_QDR_INFRASTRUCTURE
+//`define ENABLE_QDR0
+//`define ENABLE_QDR1
+//`define ENABLE_QDR_INFRASTRUCTURE
 
-//`define ENABLE_IADC_0
-//`define ENABLE_IADC_1
+`define ENABLE_IADC_0
+`define ENABLE_IADC_1
 
 
 `define DDR2_CLK_FREQ 200

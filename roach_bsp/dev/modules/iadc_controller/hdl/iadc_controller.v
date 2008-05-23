@@ -88,6 +88,7 @@ module iadc_controller(
     wb_ack_o        <= 1'b0;
     adc_twi_tx_strb <= 1'b0;
     fifo_rd_strb    <= 1'b0;
+    adc_ddrb        <= 1'b0;
 
     if (wb_rst_i) begin
       adc_twi_data <= 16'b0;
@@ -104,7 +105,7 @@ module iadc_controller(
           case (wb_adr_i[4:1]) 
             `REG_IADC_RESET: begin
               if (wb_sel_i[0])
-                adc_ddrb <= wb_dat_i[0];
+                adc_ddrb <= 1'b1; //strobe reset
             end
             `REG_IADC_MODE: begin
               if (wb_sel_i[0])
@@ -245,7 +246,7 @@ module iadc_controller(
     prev_fifo_enable <= fifo_enable;
   end
 
-  assign fifo_reset = fifo_enable != prev_fifo_enable && !fifo_enable;
+  assign fifo_reset = fifo_enable != prev_fifo_enable && fifo_enable;
 
   /**** Fifo Instantiation ****/
 

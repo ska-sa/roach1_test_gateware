@@ -30,7 +30,15 @@ module iadc_infrastructure(
     adc_sync,
     adc_outofrange,
     adc_data,
-    adc_ddrb
+    adc_ddrb,
+    adc_ctrl_clk_buf,
+    adc_ctrl_data_buf,
+    adc_ctrl_strobe_n_buf,
+    adc_mode_buf,
+    adc_ctrl_clk,
+    adc_ctrl_data,
+    adc_ctrl_strobe_n,
+    adc_mode
   );
   parameter ADC_CLK_PERIOD = 10; //period in ns
 
@@ -63,6 +71,16 @@ module iadc_infrastructure(
   output  [3:0] adc_outofrange;
   output [63:0] adc_data;
   input  adc_ddrb;
+
+  /* Ctrl IOB ports */
+  output adc_ctrl_clk_buf;
+  output adc_ctrl_data_buf;
+  output adc_ctrl_strobe_n_buf;
+  output adc_mode_buf;
+  input  adc_ctrl_clk;
+  input  adc_ctrl_data;
+  input  adc_ctrl_strobe_n;
+  input  adc_mode;
 
   /********** ADC Clock ***********/
 
@@ -151,7 +169,7 @@ module iadc_infrastructure(
   wire [1:0] adc_outofrange_0;
   wire [1:0] adc_outofrange_1;
 
-  IDDR_2CLK #(
+  IDDR #(
     .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"),
     .INIT_Q1(1'b0),
     .INIT_Q2(1'b0),
@@ -160,8 +178,7 @@ module iadc_infrastructure(
     .D(adc_outofrange_int),
     .S(1'b0), .R(1'b0),
     .Q1(adc_outofrange_0), .Q2(adc_outofrange_1),
-    .C(adc_clk),
-    .CB(!adc_clk),
+    .C(adc_clk_0),
     .CE(1'b1)
   );
 
@@ -193,7 +210,7 @@ module iadc_infrastructure(
   wire [7:0] adc_data_q_odd_R;
   wire [7:0] adc_data_q_odd_F;
 
-  IDDR_2CLK #(
+  IDDR #(
     .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"),
     .INIT_Q1(1'b0),
     .INIT_Q2(1'b0),
@@ -203,8 +220,7 @@ module iadc_infrastructure(
     .S(1'b0), .R(1'b0),
     .Q1({adc_data_i_even_R, adc_data_i_odd_R, adc_data_q_even_R, adc_data_q_odd_R}),
     .Q2({adc_data_i_even_F, adc_data_i_odd_F, adc_data_q_even_F, adc_data_q_odd_F}),
-    .C(adc_clk),
-    .CB(!adc_clk),
+    .C(adc_clk_0),
     .CE(1'b1)
   );
 
@@ -221,5 +237,14 @@ module iadc_infrastructure(
     .OB(adc_ddrb_n)
   );
 
+  /****************** CTRL IOBs *********************/
+
+  OBUF #(
+    .IOSTANDARD("LVCMOS25"),
+    .SLEW("SLOW")
+  ) obuf_ctrl[3:0] (
+    .I({adc_ctrl_clk,     adc_ctrl_data,     adc_ctrl_strobe_n,     adc_mode}),
+    .O({adc_ctrl_clk_buf, adc_ctrl_data_buf, adc_ctrl_strobe_n_buf, adc_mode_buf})
+  );
 
 endmodule

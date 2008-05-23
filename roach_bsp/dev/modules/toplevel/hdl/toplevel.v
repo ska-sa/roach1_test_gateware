@@ -205,32 +205,6 @@ module toplevel(
     .reset_i(1'b0), .reset_o(sys_reset)
   );
 
-  /************************* LEDs ************************/
-
-  wire [3:0] debug_foo;
-
-  wire epb_cs_n_int;
-
-  reg foo;
-
-  reg [27:0] counter [2:0];
-  //assign led_n = {foo, counter[0][27], counter[1][27], counter[2][27]};
-  assign led_n = ~debug_foo;
-
-
-
-  always @(posedge sys_clk) begin
-    counter[0] <= counter[0] + 1;
-  end
-
-  always @(posedge epb_clk) begin
-    counter[1] <= counter[1] + 1;
-  end
-
-  always @(posedge mgt_clk) begin
-    counter[2] <= counter[2] + 1;
-  end
-
   /**************** Serial Communications ****************/
   wire serial_in, serial_out;
 
@@ -322,13 +296,7 @@ module toplevel(
     .epb_addr(epb_addr_dly), .epb_addr_gp(epb_addr_gp_dly),
     .epb_data_i(epb_data_i), .epb_data_o(epb_data_o),
     .epb_rdy(epb_rdy)
-    ,.debug(debug_foo)
   );
-
-  reg turd;
-  assign epb_cs_n_int = turd;
-  always @(posedge epb_clk)
-    turd <= epb_cs_n_dly;
 
   /** WB Master Arbitration **/
 
@@ -395,24 +363,6 @@ module toplevel(
 
   /******************* System Module *****************/
    
-  reg prev;
-
-  reg munge;
-
-  always @(posedge epb_clk) begin
-    
-    if (counter[1][27])
-      munge <= 1'b0;
-
-    prev <= epb_cs_n_int;
-    if (!munge) begin
-      if (prev != epb_oe_n && !epb_oe_n) begin
-        munge <= 1'b1;
-        foo <= !foo;
-      end
-    end
-  end
-
   sys_block #(
     .BOARD_ID(`BOARD_ID),
     .REV_MAJOR(`REV_MAJOR),
@@ -1372,28 +1322,43 @@ module toplevel(
   wire adc0_ddrb_n, adc0_ddrb_p;
   wire adc0_ctrl_clk, adc0_ctrl_data, adc0_ctrl_strobe_n, adc0_mode;
 
-  assign adc0_clk_n = zdok0_clk0_n;
-  assign adc0_clk_p = zdok0_clk0_p;
-  assign adc0_outofrange_i_n = zdok0_dp_n[0];
-  assign adc0_outofrange_i_p = zdok0_dp_p[0];
-  assign adc0_outofrange_q_n = zdok0_dp_n[1];
-  assign adc0_outofrange_q_p = zdok0_dp_p[1];
-  assign zdok0_dp_n[2]       = adc0_ddrb_n;
-  assign zdok0_dp_p[2]       = adc0_ddrb_p;
-  assign adc0_data_i_even_n  = zdok0_dp_n[10:3];
-  assign adc0_data_i_even_p  = zdok0_dp_p[10:3];
-  assign adc0_data_i_odd_n   = zdok0_dp_n[18:11];
-  assign adc0_data_i_odd_p   = zdok0_dp_p[18:11];
-  assign adc0_data_q_even_n  = zdok0_dp_n[26:19];
-  assign adc0_data_q_even_p  = zdok0_dp_p[26:19];
-  assign adc0_data_q_odd_n   = zdok0_dp_n[34:27];
-  assign adc0_data_q_odd_p   = zdok0_dp_p[34:27];
-  assign zdok0_dp_n[35]      = adc0_ctrl_clk;
-  assign zdok0_dp_p[35]      = adc0_ctrl_data;
-  assign zdok0_dp_n[36]      = adc0_ctrl_strobe_n;
-  assign zdok0_dp_p[36]      = adc0_mode;
+  /* Assign ZDOK signals */
+  assign adc0_clk_n = zdok0_clk1_n;
+  assign adc0_clk_p = zdok0_clk1_p;
+ // zdok0_clk0_n and zdok0_clk0_p unassigned
+
+  assign zdok0_dp_n[8]       = adc0_ctrl_clk;
+  assign zdok0_dp_n[9]       = adc0_ctrl_data;
+  assign zdok0_dp_p[9]       = adc0_ctrl_strobe_n;
+  assign zdok0_dp_p[8]       = adc0_mode;
+  assign adc0_outofrange_i_n = zdok0_dp_n[28];
+  assign adc0_outofrange_i_p = zdok0_dp_p[28];
+  assign adc0_outofrange_q_n = zdok0_dp_n[18];
+  assign adc0_outofrange_q_p = zdok0_dp_p[18];
+  assign zdok0_dp_n[19]      = adc0_ddrb_n;
+  assign zdok0_dp_p[19]      = adc0_ddrb_p;
   assign adc0_sync_n         = zdok0_dp_n[37];
   assign adc0_sync_p         = zdok0_dp_p[37];
+
+  assign adc0_data_i_even_n  = {zdok0_dp_n[36], zdok0_dp_n[34], zdok0_dp_n[32], zdok0_dp_n[30],
+                                zdok0_dp_n[27], zdok0_dp_n[25], zdok0_dp_n[23], zdok0_dp_n[21]};
+  assign adc0_data_i_even_p  = {zdok0_dp_p[36], zdok0_dp_p[34], zdok0_dp_p[32], zdok0_dp_p[30],
+                                zdok0_dp_p[27], zdok0_dp_p[25], zdok0_dp_p[23], zdok0_dp_p[21]};
+
+  assign adc0_data_i_odd_n   = {zdok0_dp_n[35], zdok0_dp_n[33], zdok0_dp_n[31], zdok0_dp_n[29],
+                                zdok0_dp_n[26], zdok0_dp_n[24], zdok0_dp_n[22], zdok0_dp_n[20]};
+  assign adc0_data_i_odd_p   = {zdok0_dp_p[35], zdok0_dp_p[33], zdok0_dp_p[31], zdok0_dp_p[29],
+                                zdok0_dp_p[26], zdok0_dp_p[24], zdok0_dp_p[22], zdok0_dp_p[20]};
+
+  assign adc0_data_q_even_n  = {zdok0_dp_n[10], zdok0_dp_n[12], zdok0_dp_n[14], zdok0_dp_n[16],
+                                zdok0_dp_n[0],  zdok0_dp_n[2],  zdok0_dp_n[4],  zdok0_dp_n[6]};
+  assign adc0_data_q_even_p  = {zdok0_dp_p[10], zdok0_dp_p[12], zdok0_dp_p[14], zdok0_dp_p[16],
+                                zdok0_dp_p[0],  zdok0_dp_p[2],  zdok0_dp_p[4],  zdok0_dp_p[6]};
+
+  assign adc0_data_q_odd_n   = {zdok0_dp_n[11], zdok0_dp_n[13], zdok0_dp_n[15], zdok0_dp_n[17],
+                                zdok0_dp_n[1],  zdok0_dp_n[3],  zdok0_dp_n[5],  zdok0_dp_n[7]};
+  assign adc0_data_q_odd_p   = {zdok0_dp_p[11], zdok0_dp_p[13], zdok0_dp_p[15], zdok0_dp_p[17],
+                                zdok0_dp_p[1],  zdok0_dp_p[3],  zdok0_dp_p[5],  zdok0_dp_p[7]};
 
   /****** ADC internal signals ******/
   wire adc0_clk_0, adc0_clk_90;
@@ -1401,6 +1366,8 @@ module toplevel(
   wire  [3:0] adc0_outofrange;
   wire [63:0] adc0_data;
   wire adc0_ddrb;
+
+  wire adc0_ctrl_clk_int, adc0_ctrl_data_int, adc0_ctrl_strobe_n_int, adc0_mode_int;
 
   iadc_infrastructure iadc_infrastructure_inst_0(
     .reset(sys_reset),
@@ -1428,7 +1395,15 @@ module toplevel(
     .adc_sync(adc0_sync),
     .adc_outofrange(adc0_outofrange),
     .adc_data(adc0_data),
-    .adc_ddrb(adc0_ddrb)
+    .adc_ddrb(adc0_ddrb),
+    .adc_ctrl_clk_buf(adc0_ctrl_clk),
+    .adc_ctrl_data_buf(adc0_ctrl_data),
+    .adc_ctrl_strobe_n_buf(adc0_ctrl_strobe_n),
+    .adc_mode_buf(adc0_mode),
+    .adc_ctrl_clk(adc0_ctrl_clk_int),
+    .adc_ctrl_data(adc0_ctrl_data_int),
+    .adc_ctrl_strobe_n(adc0_ctrl_strobe_n_int),
+    .adc_mode(adc0_mode_int)
   );
 
   iadc_controller iadc_controller_inst_0(
@@ -1446,10 +1421,10 @@ module toplevel(
     .adc_outofrange(adc0_outofrange),
 
     /* ADC config bits */
-    .adc_ctrl_clk(adc0_ctrl_clk),
-    .adc_ctrl_data(adc0_ctrl_data),
-    .adc_ctrl_strobe_n(adc0_ctrl_strobe_n),
-    .adc_mode(adc0_mode),
+    .adc_ctrl_clk(adc0_ctrl_clk_int),
+    .adc_ctrl_data(adc0_ctrl_data_int),
+    .adc_ctrl_strobe_n(adc0_ctrl_strobe_n_int),
+    .adc_mode(adc0_mode_int),
     .adc_ddrb(adc0_ddrb)
   );
 
@@ -1461,12 +1436,137 @@ module toplevel(
 `endif
 
 
+`ifdef ENABLE_IADC_1
+  /****** ADC external signals ******/
+  wire adc1_clk_n, adc1_clk_p;
+  wire adc1_sync_n, adc1_sync_p;
+  wire adc1_outofrange_i_n, adc1_outofrange_i_p, adc1_outofrange_q_n, adc1_outofrange_q_p;
+  wire [7:0] adc1_data_i_even_n;
+  wire [7:0] adc1_data_i_even_p;
+  wire [7:0] adc1_data_i_odd_n;
+  wire [7:0] adc1_data_i_odd_p;
+  wire [7:0] adc1_data_q_even_n;
+  wire [7:0] adc1_data_q_even_p;
+  wire [7:0] adc1_data_q_odd_n;
+  wire [7:0] adc1_data_q_odd_p;
+  wire adc1_ddrb_n, adc1_ddrb_p;
+  wire adc1_ctrl_clk, adc1_ctrl_data, adc1_ctrl_strobe_n, adc1_mode;
+
+  /* Assign ZDOK signals */
+  assign adc1_clk_n = zdok1_clk1_n;
+  assign adc1_clk_p = zdok1_clk1_p;
+ // zdok1_clk0_n and zdok1_clk0_p unassigned
+
+  assign zdok1_dp_n[8]       = adc1_ctrl_clk;
+  assign zdok1_dp_n[9]       = adc1_ctrl_data;
+  assign zdok1_dp_p[9]       = adc1_ctrl_strobe_n;
+  assign zdok1_dp_p[8]       = adc1_mode;
+  assign adc1_outofrange_i_n = zdok1_dp_n[28];
+  assign adc1_outofrange_i_p = zdok1_dp_p[28];
+  assign adc1_outofrange_q_n = zdok1_dp_n[18];
+  assign adc1_outofrange_q_p = zdok1_dp_p[18];
+  assign zdok1_dp_n[19]      = adc1_ddrb_n;
+  assign zdok1_dp_p[19]      = adc1_ddrb_p;
+  assign adc1_sync_n         = zdok1_dp_n[37];
+  assign adc1_sync_p         = zdok1_dp_p[37];
+
+  assign adc1_data_i_even_n  = {zdok1_dp_n[36], zdok1_dp_n[34], zdok1_dp_n[32], zdok1_dp_n[30],
+                                zdok1_dp_n[27], zdok1_dp_n[25], zdok1_dp_n[23], zdok1_dp_n[21]};
+  assign adc1_data_i_even_p  = {zdok1_dp_p[36], zdok1_dp_p[34], zdok1_dp_p[32], zdok1_dp_p[30],
+                                zdok1_dp_p[27], zdok1_dp_p[25], zdok1_dp_p[23], zdok1_dp_p[21]};
+
+  assign adc1_data_i_odd_n   = {zdok1_dp_n[35], zdok1_dp_n[33], zdok1_dp_n[31], zdok1_dp_n[29],
+                                zdok1_dp_n[26], zdok1_dp_n[24], zdok1_dp_n[22], zdok1_dp_n[20]};
+  assign adc1_data_i_odd_p   = {zdok1_dp_p[35], zdok1_dp_p[33], zdok1_dp_p[31], zdok1_dp_p[29],
+                                zdok1_dp_p[26], zdok1_dp_p[24], zdok1_dp_p[22], zdok1_dp_p[20]};
+
+  assign adc1_data_q_even_n  = {zdok1_dp_n[10], zdok1_dp_n[12], zdok1_dp_n[14], zdok1_dp_n[16],
+                                zdok1_dp_n[0],  zdok1_dp_n[2],  zdok1_dp_n[4],  zdok1_dp_n[6]};
+  assign adc1_data_q_even_p  = {zdok1_dp_p[10], zdok1_dp_p[12], zdok1_dp_p[14], zdok1_dp_p[16],
+                                zdok1_dp_p[0],  zdok1_dp_p[2],  zdok1_dp_p[4],  zdok1_dp_p[6]};
+
+  assign adc1_data_q_odd_n   = {zdok1_dp_n[11], zdok1_dp_n[13], zdok1_dp_n[15], zdok1_dp_n[17],
+                                zdok1_dp_n[1],  zdok1_dp_n[3],  zdok1_dp_n[5],  zdok1_dp_n[7]};
+  assign adc1_data_q_odd_p   = {zdok1_dp_p[11], zdok1_dp_p[13], zdok1_dp_p[15], zdok1_dp_p[17],
+                                zdok1_dp_p[1],  zdok1_dp_p[3],  zdok1_dp_p[5],  zdok1_dp_p[7]};
+
+  /****** ADC internal signals ******/
+  wire adc1_clk_0, adc1_clk_90;
+  wire adc1_sync;
+  wire  [3:0] adc1_outofrange;
+  wire [63:0] adc1_data;
+  wire adc1_ddrb;
+
+  wire adc1_ctrl_clk_int, adc1_ctrl_data_int, adc1_ctrl_strobe_n_int, adc1_mode_int;
+
+  iadc_infrastructure iadc_infrastructure_inst_1(
+    .reset(sys_reset),
+    .clk_lock(adc1_clk_lock),
+    .adc_clk_n(adc1_clk_n),
+    .adc_clk_p(adc1_clk_p),
+    .adc_sync_n(adc1_sync_n),
+    .adc_sync_p(adc1_sync_p),
+    .adc_outofrange_i_n(adc1_outofrange_i_n),
+    .adc_outofrange_i_p(adc1_outofrange_i_p),
+    .adc_outofrange_q_n(adc1_outofrange_q_n),
+    .adc_outofrange_q_p(adc1_outofrange_q_p),
+    .adc_data_i_even_n(adc1_data_i_even_n),
+    .adc_data_i_even_p(adc1_data_i_even_p),
+    .adc_data_i_odd_n(adc1_data_i_odd_n),
+    .adc_data_i_odd_p(adc1_data_i_odd_p),
+    .adc_data_q_even_n(adc1_data_q_even_n),
+    .adc_data_q_even_p(adc1_data_q_even_p),
+    .adc_data_q_odd_n(adc1_data_q_odd_n),
+    .adc_data_q_odd_p(adc1_data_q_odd_p),
+    .adc_ddrb_n(adc1_ddrb_n),
+    .adc_ddrb_p(adc1_ddrb_p),
+    .adc_clk_0(adc1_clk_0),
+    .adc_clk_90(adc1_clk_90),
+    .adc_sync(adc1_sync),
+    .adc_outofrange(adc1_outofrange),
+    .adc_data(adc1_data),
+    .adc_ddrb(adc1_ddrb),
+    .adc_ctrl_clk_buf(adc1_ctrl_clk),
+    .adc_ctrl_data_buf(adc1_ctrl_data),
+    .adc_ctrl_strobe_n_buf(adc1_ctrl_strobe_n),
+    .adc_mode_buf(adc1_mode),
+    .adc_ctrl_clk(adc1_ctrl_clk_int),
+    .adc_ctrl_data(adc1_ctrl_data_int),
+    .adc_ctrl_strobe_n(adc1_ctrl_strobe_n_int),
+    .adc_mode(adc1_mode_int)
+  );
+
+  iadc_controller iadc_controller_inst_1(
+    /* Wishbone Interface */
+    .wb_clk_i(sys_clk),
+    .wb_cyc_i(wb_cyc_o[10]), .wb_stb_i(wb_stb_o[10]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(10 + 1) - 1: 16*10]),
+    .wb_ack_o(wb_ack_i[10]),
+    /* ADC inputs */
+    .adc_clk_0(adc1_clk_0), .adc_clk_90(adc1_clk_90),
+    .adc_data(adc1_data),
+    .adc_sync(adc1_sync),
+    .adc_outofrange(adc1_outofrange),
+
+    /* ADC config bits */
+    .adc_ctrl_clk(adc1_ctrl_clk_int),
+    .adc_ctrl_data(adc1_ctrl_data_int),
+    .adc_ctrl_strobe_n(adc1_ctrl_strobe_n_int),
+    .adc_mode(adc1_mode_int),
+    .adc_ddrb(adc1_ddrb)
+  );
+
+`else
 
   assign zdok1_dp_n = {38{1'bz}};
   assign zdok1_dp_p = {38{1'bz}};
 
   assign wb_dat_i[16*(10 + 1) - 1: 16*10] = 16'b0;
   assign wb_ack_i[10] = 1'b0;
+
+`endif
 
 
   /******************* GPIO ***********************/
@@ -1496,6 +1596,38 @@ module toplevel(
   assign diff_gpio_b_p = {19{1'bz}};
   assign diff_gpio_b_clk_n = 1'bz;
   assign diff_gpio_b_clk_p = 1'bz;
+  /************************* LEDs ************************/
+
+  wire [3:0] debug_foo;
+
+  wire epb_cs_n_int;
+
+  reg foo;
+
+  reg [27:0] counter [2:0];
+  assign led_n = {foo, counter[0][27], counter[1][27], counter[2][27]};
+
+  always @(posedge sys_clk) begin
+    counter[0] <= counter[0] + 1;
+  end
+
+  always @(posedge adc0_clk_0) begin
+    counter[1] <= counter[1] + 1;
+  end
+
+  always @(posedge adc1_clk_0) begin
+    counter[2] <= counter[2] + 1;
+  end
+
+  reg prev_sync;
+
+  always @(posedge adc1_clk_0) begin
+    prev_sync <= adc1_sync;
+    if (prev_sync != adc1_sync && adc1_sync) begin
+      foo <= ~foo;
+    end
+  end
+
 
 
 endmodule
