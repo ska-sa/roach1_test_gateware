@@ -7,6 +7,7 @@ module epb_wb_bridge_reg(
     wb_ack_i, wb_err_i,
 
     epb_clk,
+    epb_data_oen,
     epb_cs_n, epb_r_w_n, epb_be_n, 
     epb_addr, epb_addr_gp,
     epb_data_i, epb_data_o,
@@ -24,6 +25,7 @@ module epb_wb_bridge_reg(
   input  wb_ack_i, wb_err_i;
 
   input  epb_clk;
+  output epb_data_oen;
   input  epb_cs_n, epb_r_w_n;
   input   [1:0] epb_be_n;
   input  [22:0] epb_addr;
@@ -73,19 +75,25 @@ module epb_wb_bridge_reg(
 
   reg epb_rdy;
 
-  always @(posedge wb_clk_i) begin
+  reg epb_data_oen;
+
+  always @(posedge epb_clk) begin
     if (wb_rst_i) begin
       resp_ack_reg <= 1'b0;
       epb_rdy <= 1'b0; /* TODO: add tristate to this */
+      epb_data_oen <= 1'b0;
     end else begin
       if (cmnd_got_unstable) begin
         epb_rdy <= 1'b0;
+        epb_data_oen <= 1'b1;
       end
       if (resp_got) begin
         if (~resp_ack_reg) begin
           epb_rdy <= 1'b1;
+          debug[3]<=~debug[3];
         end
         resp_ack_reg <= 1'b1;
+        epb_data_oen <= 1'b0;
       end else begin
         resp_ack_reg <= 1'b0;
       end
@@ -128,7 +136,6 @@ module epb_wb_bridge_reg(
       if (cmnd_got) begin
         if (~cmnd_ack_reg) begin //on first
           wb_cyc_o <= 1'b1;
-          debug[3]<=~debug[3];
         end
         cmnd_ack_reg <= 1'b1;
       end else begin

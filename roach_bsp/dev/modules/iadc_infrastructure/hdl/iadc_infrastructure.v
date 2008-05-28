@@ -118,7 +118,7 @@ module iadc_infrastructure(
 
     .CLKOUT1_DIVIDE(1),
     .CLKOUT1_DUTY_CYCLE(0.5),
-    .CLKOUT1_PHASE(90),
+    .CLKOUT1_PHASE(90.0),
 
     .COMPENSATION("SYSTEM_SYNCHRONOUS"),
     .DIVCLK_DIVIDE(1),
@@ -126,8 +126,8 @@ module iadc_infrastructure(
     .RESET_ON_LOSS_OF_LOCK("FALSE")
   ) PLL_BASE_inst (
    .CLKFBOUT(pll_fb),
-   .CLKOUT0(adc_clk_0_int),
-   .CLKOUT1(adc_clk_90_int),
+   .CLKOUT0(adc_clk_90_int),
+   .CLKOUT1(adc_clk_0_int),
    .CLKOUT2(),
    .CLKOUT3(),
    .CLKOUT4(),

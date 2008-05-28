@@ -12,6 +12,7 @@
 `define TGE_0_DEFAULT_FABRIC_PORT    16'hff_ff
 `define TGE_0_FABRIC_RUN_ON_STARTUP  1
 
+//`define EPB_FIXED_TIMING
 
 //`define ENABLE_TEN_GB_ETH_0
 //`define ENABLE_XAUI_0
@@ -29,8 +30,8 @@
 //`define ENABLE_QDR1
 //`define ENABLE_QDR_INFRASTRUCTURE
 
-`define ENABLE_IADC_0
-`define ENABLE_IADC_1
+//`define ENABLE_IADC_0
+//`define ENABLE_IADC_1
 
 
 `define DDR2_CLK_FREQ 200

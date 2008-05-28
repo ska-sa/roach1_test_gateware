@@ -1,3 +1,4 @@
+`include "log2.v"
 module bram_controller( 
     wb_clk_i, wb_rst_i,
     wb_we_i, wb_cyc_i, wb_stb_i, wb_sel_i,
@@ -35,7 +36,7 @@ module bram_controller(
   /************ WishBone attach ************/
 
   reg wb_ack_o;
-  wire wb_trans =wb_cyc_i & wb_stb_i & ~wb_ack_o;
+  wire wb_trans = wb_cyc_i & wb_stb_i & ~wb_ack_o;
 
   always @(posedge wb_clk_i) begin
     wb_ack_o <= 1'b0;
@@ -55,19 +56,26 @@ module bram_controller(
   wire [32*NUM_BLOCKRAMS - 1:0] bram_data_o;
 
   wire [10:0] bram_addr_i;
-  wire [2*NUM_BLOCKRAMS - 1:0] bram_wen_i;
+  wire [4*NUM_BLOCKRAMS - 1:0] bram_wen_i;
 
   /* Simple Assignments */
   assign bram_addr_i = wb_adr_i[11:1];
   assign bram_data_i = {16'b0, wb_dat_i_int};
 
-  /* these should be log2 sized */
-  wire  [NUM_BLOCKRAMS - 1:0] ram_sel;
-  assign ram_sel = wb_adr_i[12 + NUM_BLOCKRAMS - 1:12];
+  localparam NUM_BLOCKRAMS_LOG2 = `LOG2(NUM_BLOCKRAMS);
+  wire  [NUM_BLOCKRAMS_LOG2:0] ram_sel;
+  assign ram_sel = wb_adr_i[12 + NUM_BLOCKRAMS_LOG2:12];
+
+  /*
+  initial begin
+    $display("FUCK YOU! #=%d log2=%d", NUM_BLOCKRAMS, NUM_BLOCKRAMS_LOG2); 
+  end
+  */
+
 
   function [15:0] d_o_sel;
     input [NUM_BLOCKRAMS - 1:0]    sel;
-    input [16*NUM_BLOCKRAMS - 1:0] bram_data_o;
+    input [32*NUM_BLOCKRAMS - 1:0] bram_data_o;
     integer i;
     begin
       d_o_sel = 16'b0;
@@ -93,7 +101,7 @@ module bram_controller(
   genvar gen_j;
   generate
     for (gen_j = 0; gen_j < NUM_BLOCKRAMS; gen_j = gen_j + 1) begin: G1
-      assign bram_wen_i[2*(gen_j + 1) - 1: 2*gen_j] = ram_sel == gen_j ? {2{wb_we_i & wb_trans}} & wb_sel_i : 2'b00;
+      assign bram_wen_i[4*(gen_j + 1) - 1: 4*gen_j] = ram_sel == gen_j ? {2{wb_we_i & wb_trans}} & wb_sel_i : 4'b0;
     end
   endgenerate
 
@@ -119,7 +127,7 @@ module bram_controller(
     .ENA(1'b1), .ENB(1'b0),
     .REGCEA(1'b0), .REGCEB(1'b0),
     .SSRA(wb_rst_i), .SSRB(1'b0),
-    .WEA({2{bram_wen_i}}), .WEB(4'b0),
+    .WEA({bram_wen_i}), .WEB(4'b0),
     .CASCADEOUTLATA(),
     .CASCADEOUTLATB(),
     .CASCADEOUTREGA(),

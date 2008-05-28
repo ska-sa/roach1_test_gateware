@@ -43,6 +43,7 @@ module TB_wbm_arbiter();
   initial begin
     reset<=1'b1;
     clk_counter<=32'b0;
+    $dumpvars();
     #50
     reset<=1'b0;
 `ifdef DEBUG

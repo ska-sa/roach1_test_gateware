@@ -1,9 +1,9 @@
-`define SIMLENGTH 100000
+`define SIMLENGTH 1000000
 `define CLK_PERIOD 2
 
 //1024*2 operation, 2 bytes per operation === 4K
 
-`define OP_COUNT 1024*2
+`define OP_COUNT 1024*16
 module TB_bram_controller();
   reg reset;
   wire clk;

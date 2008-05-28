@@ -222,15 +222,6 @@ module toplevel(
     .as_dstrb_i(as_dstrb_i), .as_busy_o(as_busy_o), .as_dstrb_o(as_dstrb_o)
   );
 
-  reg fucked;
-
-  always @(posedge sys_clk) begin
-    if (as_dstrb_o) begin
-      fucked <= !fucked;
-    end
-  end
-
-  //fuck
 
   /**************** Wishbone Bus Control ****************/
 
@@ -264,10 +255,13 @@ module toplevel(
   wire [15:0] epb_data_i;
   wire [15:0] epb_data_o;
 
+  wire epb_data_oen;
+
   epb_infrastructure epb_infrastructure_inst(
     .epb_data_buf(epb_data),
-    .epb_data_oe_n_i(epb_oe_n),
     .epb_data_out_i(epb_data_o), .epb_data_in_o(epb_data_i),
+    .epb_data_oe_n_i(epb_data_oen ? epb_oe_n_dly : 1'b1),
+    .epb_oe_n_buf(epb_oe_n), .epb_oe_n(epb_oe_n_dly),
     .epb_cs_n_buf(epb_cs_n), .epb_cs_n(epb_cs_n_dly),
     .epb_r_w_n_buf(epb_r_w_n), .epb_r_w_n(epb_r_w_n_dly), 
     .epb_be_n_buf(epb_be_n), .epb_be_n(epb_be_n_dly),
@@ -282,6 +276,79 @@ module toplevel(
   wire [15:0] wbm_dat_i_1;
   wire wbm_ack_i_1, wbm_err_i_1;
 
+  reg foo_led;
+`ifdef EPB_FIXED_TIMING
+
+  reg prev_epb_cs_n;
+
+  reg [1:0] trans_counter; // 4 cycle transaction
+
+  wire trans_first = !epb_cs_n_dly & prev_epb_cs_n != epb_cs_n_dly; //first cycle of transaction
+  wire trans_busy  = trans_first | trans_counter != 2'b0;
+
+  assign epb_data_oen = trans_busy;
+
+
+  always @(posedge epb_clk) begin
+    prev_epb_cs_n <= epb_cs_n_dly;
+    trans_counter <= trans_counter << 1;
+
+    if (sys_reset) begin
+      foo_led <= 1'b0;
+    end else begin
+      if (trans_first) begin
+        foo_led <= ~foo_led;
+        trans_counter <= 2'b11;
+      end
+    end
+  end
+
+
+  bram_controller #(
+    .RAM_SIZE_K(512)
+  ) bram_controller_bootrom_foo (
+    .wb_clk_i(epb_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(trans_first), .wb_stb_i(trans_first),
+    .wb_we_i(!epb_r_w_n_dly), .wb_sel_i(!epb_be_n_dly),
+    .wb_adr_i({epb_addr_gp_dly, epb_addr_dly}), .wb_dat_i(epb_data_i),
+    .wb_dat_o(epb_data_o),
+    .wb_ack_o()
+  );
+/*
+  reg [15:0] my_reg [1:0];
+  assign epb_data_o = epb_addr_dly[0:0] == 1'b0 ? my_reg[0] :
+                      epb_addr_dly[0:0] == 1'b1 ? my_reg[1] :
+                                                  my_reg[1] ;
+
+
+  always @(posedge epb_clk) begin
+    if (sys_reset) begin
+      my_reg[0] <= 16'hdead;
+      my_reg[1] <= 16'hbeef;
+    end else begin
+      if (trans_first & !epb_r_w_n_dly) begin
+        case (epb_addr_dly[0:0])
+          1'b0: begin
+            if (!epb_be_n_dly[0])
+              my_reg[0][7:0]  <= epb_data_i[7:0];
+            if (!epb_be_n_dly[1])
+              my_reg[0][15:8] <= epb_data_i[15:8];
+          end
+          1'b1: begin
+            my_reg[1][7:0]  <= epb_data_i[7:0];
+            my_reg[1][15:8] <= epb_data_i[15:8];
+          end
+        endcase
+      end
+    end
+  end
+  */
+  assign epb_rdy = 1'b1;
+
+
+`else
+
+  wire [3:0] moo_debug;
 
   epb_wb_bridge_reg epb_wb_bridge_reg_inst(
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
@@ -291,13 +358,16 @@ module toplevel(
     .wb_ack_i(wbm_ack_i_1), .wb_err_i(wbm_err_i_1),
 
     .epb_clk(epb_clk),
+    .epb_data_oen(epb_data_oen),
     .epb_cs_n(epb_cs_n_dly), .epb_r_w_n(epb_r_w_n_dly),
     .epb_be_n(epb_be_n_dly), 
     .epb_addr(epb_addr_dly), .epb_addr_gp(epb_addr_gp_dly),
     .epb_data_i(epb_data_i), .epb_data_o(epb_data_o),
     .epb_rdy(epb_rdy)
+    ,.debug(moo_debug)
   );
 
+`endif
   /** WB Master Arbitration **/
 
   /* Intermediate wishbone signals */
@@ -321,7 +391,7 @@ module toplevel(
     .wbs_adr_o(wbi_adr_o), .wbs_dat_o(wbi_dat_o), .wbs_dat_i(wbi_dat_i),
     .wbs_ack_i(wbi_ack_i), .wbs_err_i(wbi_err_i),
    // .wbm_mask(2'b01), 
-    .wbm_mask(2'b01), 
+    .wbm_mask(2'b11), 
     .wbm_id(wbm_id_nc)
   );
 
@@ -1409,6 +1479,7 @@ module toplevel(
   iadc_controller iadc_controller_inst_0(
     /* Wishbone Interface */
     .wb_clk_i(sys_clk),
+    .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[9]), .wb_stb_i(wb_stb_o[9]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -1539,6 +1610,7 @@ module toplevel(
   iadc_controller iadc_controller_inst_1(
     /* Wishbone Interface */
     .wb_clk_i(sys_clk),
+    .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[10]), .wb_stb_i(wb_stb_o[10]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -1600,17 +1672,16 @@ module toplevel(
 
   wire [3:0] debug_foo;
 
-  wire epb_cs_n_int;
-
   reg foo;
 
   reg [27:0] counter [2:0];
-  assign led_n = {foo, counter[0][27], counter[1][27], counter[2][27]};
+  assign led_n = moo_debug;
+  //assign led_n = {foo_led, counter[0][27], counter[1][27], counter[2][27]};
 
   always @(posedge sys_clk) begin
     counter[0] <= counter[0] + 1;
   end
-
+/*
   always @(posedge adc0_clk_0) begin
     counter[1] <= counter[1] + 1;
   end
@@ -1618,7 +1689,6 @@ module toplevel(
   always @(posedge adc1_clk_0) begin
     counter[2] <= counter[2] + 1;
   end
-
   reg prev_sync;
 
   always @(posedge adc1_clk_0) begin
@@ -1627,6 +1697,7 @@ module toplevel(
       foo <= ~foo;
     end
   end
+*/
 
 
 

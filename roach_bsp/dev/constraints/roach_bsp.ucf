@@ -14,6 +14,12 @@ TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
 Net epb_clk TNM_NET = epb_clk;
 TIMESPEC TS_epb_clk = PERIOD epb_clk 88 MHz;
 
+#Net adc0_clk_0 TNM_NET = adc0_clk_0;
+#TIMESPEC TS_adc0_clk_0 = PERIOD adc0_clk_0 150 MHz;
+
+#Net adc1_clk_0 TNM_NET = adc1_clk_0;
+#TIMESPEC TS_adc1_clk_0 = PERIOD adc1_clk_0 150 MHz;
+
 
 ###################ROACH constraints
 

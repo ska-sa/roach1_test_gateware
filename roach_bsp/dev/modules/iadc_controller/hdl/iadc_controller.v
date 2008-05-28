@@ -123,7 +123,7 @@ module iadc_controller(
             end
             `REG_IADC_TWI_TX: begin
               if (wb_sel_i[0]) begin
-                adc_twi_tx_strb <= wb_dat_i[0]; //bit[0] high to enable strobe
+                adc_twi_tx_strb <= 1'b1;
 `ifdef DEBUG
                 $display("iadc_controller: got adc_ctrl_tx command");
 `endif
@@ -176,7 +176,7 @@ module iadc_controller(
         clk_counter <= clk_counter + 1;
       end
 
-      if (adc_twi_tx_strb) begin //old transfers get pre
+      if (adc_twi_tx_strb && xfer_progress == 5'b0) begin //old transfers get pre
         xfer_progress  <= 5'b1;
         shift_register <= {adc_twi_addr, adc_twi_data};
       end
