@@ -27,7 +27,7 @@ NET "reset_debug_n"    IOSTANDARD = LVCMOS33 | LOC = "14";
 
 #output resets
 NET "ppc_reset_n"      IOSTANDARD = LVCMOS33 | LOC = "15";
-NET "por_force_n"      IOSTANDARD = LVCMOS33 | LOC = "103";
+NET "por_force_n"      IOSTANDARD = LVCMOS33 | LOC = "103" | PULLUP;
 
 NET "ppc_ddr2_reset_n" IOSTANDARD = LVCMOS33 | LOC = "139";
 NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
@@ -54,7 +54,7 @@ NET "v5c_din"       IOSTANDARD = LVCMOS33 | LOC = "40";
 NET "v5c_dout_busy" IOSTANDARD = LVCMOS33 | LOC = "41";
 NET "v5c_cs_n"      IOSTANDARD = LVCMOS33 | LOC = "52";
 NET "v5c_prog_n"    IOSTANDARD = LVCMOS33 | LOC = "10";
-NET "v5c_done"      IOSTANDARD = LVCMOS33 | LOC = "11";
+NET "v5c_done"      IOSTANDARD = LVCMOS33 | LOC = "11" | PULLUP;
 NET "v5c_init_n"    IOSTANDARD = LVCMOS33 | LOC = "131";
 
 NET "v5c_mode<2>"   IOSTANDARD = LVCMOS33 | LOC = "105";
@@ -125,7 +125,7 @@ NET "config_dip<0>" IOSTANDARD = LVCMOS33 | LOC = "92";
 NET "boot_conf<2>"  IOSTANDARD = LVCMOS33 | LOC = "126";
 NET "boot_conf<1>"  IOSTANDARD = LVCMOS33 | LOC = "128";
 NET "boot_conf<0>"  IOSTANDARD = LVCMOS33 | LOC = "129";
-NET "boot_conf_oen" IOSTANDARD = LVCMOS33 | LOC = "71";
+NET "boot_conf_en"  IOSTANDARD = LVCMOS33 | LOC = "71";
 
 NET "eeprom_0_wp"   IOSTANDARD = LVCMOS33 | LOC = "46";
 NET "eeprom_1_wp"   IOSTANDARD = LVCMOS33 | LOC = "48";

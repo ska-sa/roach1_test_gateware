@@ -21,7 +21,7 @@ module toplevel(
     /* system configuration inputs */
     sys_config, user_dip, config_dip,
     /* system configuration outputs */
-    boot_conf, boot_conf_oen,
+    boot_conf, boot_conf_en,
     eeprom_0_wp, eeprom_1_wp,
     /* system status outputs */
     sys_led, user_led,
@@ -34,7 +34,8 @@ module toplevel(
   output clk_master_sel, clk_aux_en;
 
   input  reset_por_n, reset_mon, reset_debug_n;
-  output ppc_reset_n, por_force_n, ppc_ddr2_reset_n, geth_reset_n;
+  output ppc_reset_n, ppc_ddr2_reset_n, geth_reset_n;
+  inout  por_force_n;
 
   output mmc_clk;
   inout  mmc_cmd;
@@ -56,14 +57,14 @@ module toplevel(
 
   output ppc_tmr_clk;
   input  ppc_syserr;
-  inout  ppc_gpio;
+  input  ppc_gpio;
 
   input  [7:0] sys_config;
   input  [3:0] user_dip;
   input  [3:0] config_dip;
   
   output [2:0] boot_conf;
-  output boot_conf_oen;
+  output boot_conf_en;
   output eeprom_0_wp, eeprom_1_wp;
 
   output [1:0] sys_led;
@@ -86,6 +87,24 @@ module toplevel(
 
   wire [1:0] user_led_misc;
 
+  reg [25:0] counter [1:0];
+
+  always @(posedge clk_master) begin
+    if (!reset_por_n) begin
+      counter[0] <= 26'b0;
+    end else begin
+      counter[0] <= counter[0] + 1;
+    end
+  end
+
+  always @(posedge clk_aux) begin
+    if (reset_mon) begin
+      counter[1] <= 26'b0;
+    end else begin
+      counter[1] <= counter[1] + 1;
+    end
+  end
+
   /************** Fixed Assignments **************/
 
   assign clk_master_sel = 1'b1;
@@ -94,35 +113,60 @@ module toplevel(
 
   assign ppc_tmr_clk = clk_aux;
 
-  assign sys_led = {ppc_syserr, reset_por_n};
+  wire por_force_n_int;
+  assign sys_led = {reset_por_n, ppc_gpio};
 
-  assign ppc_reset_n = reset_debug_n | reset_por_n;
-  assign ppc_ddr2_reset_n = reset_debug_n;
-  assign geth_reset_n = (gig_eth_reset_n & reset_debug_n);
-  assign ppc_gpio = flash_busy_n;
+  assign ppc_reset_n = reset_debug_n & reset_por_n;
+  assign ppc_ddr2_reset_n = reset_debug_n & reset_por_n;
+  assign geth_reset_n = (gig_eth_reset_n & reset_debug_n & reset_por_n);
+ // assign ppc_gpio = flash_busy_n;
 
   /************** System Configuration Decode **************/
 
-  assign boot_conf    = user_dip[2:0];
+  assign boot_conf   = 3'b001;//user_dip[2:0];
+  assign boot_conf_en = 1'b1;
   assign eeprom_0_wp = user_dip[3];
   assign eeprom_1_wp = user_dip[3];
-  assign flash_wp_n  = user_dip[3];
+  assign flash_wp_n  = 1'b1;// user_dip[3];
 
   assign serial_boot_enable = config_dip[0];
   assign serial_boot_sel    = config_dip[2:1];
 
-  assign user_led = config_dip[2] ? user_led_misc : {~reset_por_n | ~epb_reset_n, v5c_done}; 
-
+  //assign user_led = config_dip[2] ? user_led_misc : {~reset_por_n | ~epb_reset_n, v5c_done}; 
+  assign user_led = {counter[0][25], counter[1][25]};
 
   /************** PPC External Perihperal Bus **************/
   wire [7:0] epb_data_i;
   wire [7:0] epb_data_o;
 
+  reg go;
+  reg [7:0] foo_reg;
   epb_infrastructure epb_infrastructure_inst(
     .epb_data(epb_data),
-    .epb_data_i(epb_data_o), .epb_data_o(epb_data_i),
-    .epb_oen(~epb_oen_n)
+    .epb_data_i(foo_reg), .epb_data_o(epb_data_i),
+    .epb_oen(go ? ~epb_oen_n : 1'b0)
+    //.epb_oen(~epb_oen_n)
   );
+
+  reg prev_cs_n;
+
+  always @(posedge epb_clk) begin
+    prev_cs_n <= epb_cs_n;
+    if (!reset_por_n) begin
+      go <= 1'b0;
+      foo_reg <= 8'b0101_1111;
+    end begin
+      if (go) begin
+        if (epb_cs_n) begin
+          go <= 1'b0;
+        end
+      end else if (!epb_cs_n & prev_cs_n != epb_cs_n) begin
+        go <= 1'b1;
+        foo_reg <= {3'b0, epb_addr};
+      end
+    end
+  end
+  
 
   wire lb_clk, lb_rst;
   wire lb_we_o;
@@ -134,12 +178,12 @@ module toplevel(
   wire [7:0] lb_dat_i_2;
 
   assign lb_clk = epb_clk;
-  assign lb_rst = ~reset_por_n | ~epb_reset_n;
+  assign lb_rst = ~reset_por_n;
 
   assign lb_we_o = ~epb_we_n;
-  assign lb_stb_o_0 = ~epb_be_n & ~epb_cs_n & lb_adr_o[4:3] == 2'b00;
-  assign lb_stb_o_1 = ~epb_be_n & ~epb_cs_n & lb_adr_o[4:3] == 2'b01;
-  assign lb_stb_o_2 = ~epb_be_n & ~epb_cs_n & lb_adr_o[4:3] == 2'b10;
+  assign lb_stb_o_0 = ~epb_cs_n & lb_adr_o[4:3] == 2'b00;
+  assign lb_stb_o_1 = ~epb_cs_n & lb_adr_o[4:3] == 2'b01;
+  assign lb_stb_o_2 = ~epb_cs_n & lb_adr_o[4:3] == 2'b10;
 
   assign lb_adr_o = epb_addr[2:0];
   assign lb_dat_o = epb_data_i;
@@ -196,16 +240,15 @@ module toplevel(
 
   /************** V5 Config Interfaces ******************/
 
+
+`ifdef SM_ENABLE
+
   wire v5c_init_n_o;
   wire v5c_init_n_oen;
   wire v5c_init_n_i;
 
   wire v5c_cclk_o_int;
   wire v5c_cclk_oen;
-
-  assign v5c_cclk_oen = prog_serial;
-  assign v5c_cclk_en_n = ~v5c_cclk_oen;
-
 
   v5c_infrastructure v5c_infrastructure_inst (
     .v5c_init_n(v5c_init_n),
@@ -224,8 +267,11 @@ module toplevel(
   wire v5c_init_n_o_1;
   wire v5c_init_n_oen_1;
 
+  assign v5c_cclk_oen = prog_serial;
+  assign v5c_cclk_en_n = ~v5c_cclk_oen;
+
   assign v5c_mode       = prog_serial ? v5c_mode_0     : v5c_mode_1;
-  assign v5c_prog_n     = !reset_por_n ? 1'b0 : prog_serial ? v5c_prog_n_0   : v5c_prog_n_1;  
+  assign v5c_prog_n     = prog_serial ? v5c_prog_n_0   : v5c_prog_n_1;  
   assign v5c_init_n_o   = prog_serial ? v5c_init_n_o_0 : v5c_init_n_o_1;  
   assign v5c_init_n_oen = prog_serial ? 1'b1           : v5c_init_n_oen_1;  
 
@@ -253,17 +299,36 @@ module toplevel(
 
     .sm_busy(prog_serial)
   );
+`else
+  assign v5c_mode = 3'b000;
+  assign v5c_prog_n = 1'b1;
+  assign v5c_init_n = 1'b1;
+  assign v5c_cs_n = 1'b1;
+  assign v5c_rdwr_n = v5c_done;
+  assign v5c_din = 1'b0;
+
+  OBUFT foo(
+    .T(1'b1), .I(1'b0), .O(v5c_cclk_o)
+  );
+
+  assign v5c_cclk_en_n = 1'b0;
+
+`endif
 
   /********************** Misc IO ***********************/
+
+  OBUFT por_force(
+    .T(por_force_n_int), .I(1'b0), .O(por_force_n)
+  );
 
   misc misc_inst(
     .lb_clk(lb_clk), .lb_rst(lb_rst),
     .lb_we_i(lb_we_o), .lb_stb_i(lb_stb_o_2),
     .lb_adr_i(lb_adr_o[2:0]), .lb_dat_i(lb_dat_o), .lb_dat_o(lb_dat_i_2),
     
-    .por_force_n(por_force_n), .reset_mon(reset_mon), .gig_eth_reset_n(gig_eth_reset_n),
+    .por_force_n(por_force_n_int), .reset_mon(reset_mon), .gig_eth_reset_n(gig_eth_reset_n),
     .sys_config(sys_config), .user_dip(user_dip), .config_dip(config_dip),
-    .boot_conf_oen(boot_conf_oen),
+    .boot_conf_oen(),
     .user_led(user_led_misc),
 
     .eeprom_0_wp(eeprom_0_wp), .eeprom_1_wp(eeprom_1_wp), .flash_wp_n(flash_wp_n), .flash_busy_n(flash_busy_n),
