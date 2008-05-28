@@ -51,8 +51,8 @@ module ddr2_test_harness(
 	  localparam TEST_IDLE      = 3'd000;
 	  localparam WR_TEST_PATT_0 = 3'd001;
 	  localparam WR_TEST_PATT_1 = 3'd010;
-	  localparam TEST_WAIT      = 3'd011
-	  localparam TEST_RD_PATT = 2'd11;
+	  localparam TEST_WAIT      = 3'd011;
+	  // localparam TEST_RD_PATT = 2'd11;
   
       // Address Counter
 	  reg [30:2] ddr_addr;
@@ -68,7 +68,7 @@ module ddr2_test_harness(
           test_state <= WR_TEST_PATT_0;
         end
         WR_TEST_PATT_0 : begin
-          if () begin
+          if (1'b1) begin
             write_state <= TEST_WAIT;
           end else begin
             write_state <= WR_TEST_PATT_1; 
@@ -77,16 +77,16 @@ module ddr2_test_harness(
         WR_TEST_PATT_1 : begin
           write_state <= WR_TEST_PATT_0; 
         end
-      end case
+      endcase
     end   
   end
 
 
-  assign ddr_rd_we_n_o = write_state == WR_TEST_PATT_0 ? 1'b0 : 1'b1;
-  assign ddr_mask_o    = {MASK_WIDTH*2}1'b1;
+  assign ddr_rd_we_n_o = (write_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
+  assign ddr_mask_o    = {MASK_WIDTH*2{1'b1}};
 
-  output ddr_af_we_o   = write_state == WR_TEST_PATT_0 ? 1'b0 : 1'b1;
-  output ddr_df_we_o   = write_state == (WR_TEST_PATT_0 || WR_TEST_PATT_1) ? 1'b0 : 1'b1;
+  assign ddr_af_we_o   = (write_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
+  assign ddr_df_we_o   = (write_state == (WR_TEST_PATT_0 || WR_TEST_PATT_1)) ? 1'b0 : 1'b1;
   
   // Adress Generator
   
@@ -99,7 +99,7 @@ module ddr2_test_harness(
   assign ddr_addr_o = {ddr_addr,2'b0};
   
   // Data Generator
-  output [DATA_WIDTH*2 - 1:0] ddr_data_o;  //write data      -- latched on ddr_df_we_o
+  assign ddr_data_o = {DATA_WIDTH*2{1'b1}};  //write data      -- latched on ddr_df_we_o
   
  
 endmodule
