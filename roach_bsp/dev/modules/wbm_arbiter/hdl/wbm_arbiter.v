@@ -29,7 +29,7 @@ module wbm_arbiter(
   input  [NUM_MASTERS - 1:0] wbm_cyc_i;
   input  [NUM_MASTERS - 1:0] wbm_stb_i;
   input  [NUM_MASTERS - 1:0] wbm_we_i;
-  input  [NUM_MASTERS - 1:0] wbm_sel_i;
+  input  [ 2*NUM_MASTERS - 1:0] wbm_sel_i;
   input  [32*NUM_MASTERS - 1:0] wbm_adr_i;
   input  [16*NUM_MASTERS - 1:0] wbm_dat_i;
   output [15:0] wbm_dat_o;
@@ -116,7 +116,7 @@ module wbm_arbiter(
 `endif
       end
 
-      if (~wb_busy) begin
+      if (~wb_busy || (wbs_ack_i | wbs_err_i)) begin
         if (pending) begin
           wbs_cyc_o <= 1'b1;
           wb_busy <= 1'b1;

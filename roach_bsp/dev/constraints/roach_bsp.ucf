@@ -101,8 +101,8 @@ NET "epb_addr_gp<4>" LOC = L14; # DMA_ACK_3
 NET "epb_addr_gp<5>" LOC = J12; # EOT_TC_3
 
 NET "epb_cs_n"     LOC = K13;
-NET "epb_be_n<0>"  LOC = AF18;
-NET "epb_be_n<1>"  LOC = AF14;
+NET "epb_be_n<1>"  LOC = AF18;
+NET "epb_be_n<0>"  LOC = AF14;
 NET "epb_r_w_n"    LOC = AF20;
 NET "epb_oe_n"     LOC = AF21;
 NET "epb_blast_n"  LOC = H23;

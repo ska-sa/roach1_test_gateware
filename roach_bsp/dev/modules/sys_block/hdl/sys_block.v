@@ -6,7 +6,9 @@ module sys_block(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     aux_clk
+    ,debug
   );
+  input [63:0] debug;
   parameter BOARD_ID  = 16'hdead;
   parameter REV_MAJOR = 16'haaaa;
   parameter REV_MINOR = 16'hbbbb;
@@ -47,6 +49,11 @@ module sys_block(
                     wb_dat_o_sel == `REG_SCRATCHPAD ? scratch_pad :
                     wb_dat_o_sel == `REG_SCRATCHPAD + 1 ? sync_0 :
                     wb_dat_o_sel == `REG_SCRATCHPAD + 2 ? sync_1 :
+
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 3 ? debug[63:48] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 4 ? debug[47:32] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 5 ? debug[31:16] :
+                    wb_dat_o_sel == `REG_SCRATCHPAD + 6 ? debug[15:0]  :
                     16'b0;
 
   always @(posedge wb_clk_i) begin

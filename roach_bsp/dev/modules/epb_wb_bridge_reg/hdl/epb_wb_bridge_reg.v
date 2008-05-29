@@ -47,7 +47,9 @@ module epb_wb_bridge_reg(
   reg cmnd_got_reg;
   reg prev_cs_n; 
 
-  assign cmnd_got_unstable = prev_cs_n != epb_cs_n && !epb_cs_n | cmnd_got_reg; 
+  wire epb_trans = (prev_cs_n != epb_cs_n && !epb_cs_n);
+
+  assign cmnd_got_unstable = epb_trans | cmnd_got_reg; 
 
 
   /* Command Generation */
@@ -56,10 +58,10 @@ module epb_wb_bridge_reg(
     if (wb_rst_i) begin
       cmnd_got_reg <= 1'b0;
     end else begin
-      if (prev_cs_n != epb_cs_n && !epb_cs_n) begin
+      if (epb_trans) begin
         cmnd_got_reg <= 1'b1;
-        debug[1:0] <= debug[1:0] + 1;
-        debug[2] <= epb_r_w_n;
+        debug[0] <= !debug[0];
+        debug[1] <= epb_r_w_n;
       end
 
       if (cmnd_ack) begin
@@ -73,24 +75,26 @@ module epb_wb_bridge_reg(
   reg resp_ack_reg;
   assign resp_ack_unstable = resp_ack_reg | resp_got;
 
-  reg epb_rdy;
+
+  reg epb_rdy_int;
+  assign epb_rdy = cmnd_got_unstable ? 1'b0 : epb_rdy_int;
 
   reg epb_data_oen;
 
   always @(posedge epb_clk) begin
+    //strobes 
+    epb_rdy_int <= 1'b0; /* TODO: add tristate to this */
     if (wb_rst_i) begin
       resp_ack_reg <= 1'b0;
-      epb_rdy <= 1'b0; /* TODO: add tristate to this */
       epb_data_oen <= 1'b0;
     end else begin
       if (cmnd_got_unstable) begin
-        epb_rdy <= 1'b0;
+        epb_rdy_int <= 1'b0;
         epb_data_oen <= 1'b1;
       end
       if (resp_got) begin
         if (~resp_ack_reg) begin
-          epb_rdy <= 1'b1;
-          debug[3]<=~debug[3];
+          epb_rdy_int <= 1'b1;
         end
         resp_ack_reg <= 1'b1;
         epb_data_oen <= 1'b0;
@@ -104,20 +108,23 @@ module epb_wb_bridge_reg(
   reg [15:0] wb_dat_i_reg;
   assign epb_data_o = wb_dat_i_reg;
   assign wb_dat_o   = epb_data_i;
-  assign wb_adr_o   = {2'b0, epb_addr_gp, epb_addr, 1'b0};
+  assign wb_adr_o   = {5'b0, epb_addr_gp[2:0], epb_addr, 1'b0};
+  //assign wb_adr_o   = {2'b0, epb_addr_gp, epb_addr, 1'b0};
   assign wb_sel_o   = ~epb_be_n;
   assign wb_we_o    = ~epb_r_w_n;
 
   /* Register Data */
+  /*
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
       wb_dat_i_reg <= 16'b0;
     end else begin
-      if (wb_ack_i) begin
+      if (wb_ack_i || wb_err_i) begin
         wb_dat_i_reg <= wb_dat_i;
       end
     end
   end
+  */
 
   /* Command collection */
 
@@ -151,9 +158,17 @@ module epb_wb_bridge_reg(
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
       resp_got_reg <= 1'b0;
+      wb_dat_i_reg <= 16'b0;
     end else begin
       if (wb_ack_i || wb_err_i) begin
         resp_got_reg <= 1'b1;
+        wb_dat_i_reg <= wb_dat_i;
+      end
+      if (wb_ack_i) begin
+        debug[2] <= ~debug[2];
+      end
+      if (wb_err_i) begin
+        debug[3] <= ~debug[3];
       end
       if (resp_ack) begin
         resp_got_reg <= 1'b0;

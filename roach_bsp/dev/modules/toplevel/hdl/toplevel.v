@@ -230,7 +230,7 @@ module toplevel(
   wire  [1:0] wbm_sel_o_0;
   wire [31:0] wbm_adr_o_0;
   wire [15:0] wbm_dat_o_0;
-  wire [15:0] wbm_dat_i_0;
+  wire [15:0] wbm_dat_i;
   wire wbm_ack_i_0, wbm_err_i_0;
 
   as_wb_bridge as_wb_bridge_inst (
@@ -239,7 +239,7 @@ module toplevel(
     .as_dstrb_o(as_dstrb_i), .as_busy_i(as_busy_o), .as_dstrb_i(as_dstrb_o),
     .wb_stb_o(wbm_stb_o_0), .wb_cyc_o(wbm_cyc_o_0),
     .wb_we_o(wbm_we_o_0), .wb_sel_o(wbm_sel_o_0),
-    .wb_adr_o(wbm_adr_o_0), .wb_dat_o(wbm_dat_o_0), .wb_dat_i(wbm_dat_i_0),
+    .wb_adr_o(wbm_adr_o_0), .wb_dat_o(wbm_dat_o_0), .wb_dat_i(wbm_dat_i),
     .wb_ack_i(wbm_ack_i_0), .wb_err_i(wbm_err_i_0),
     .soft_reset(soft_reset)
   );
@@ -273,7 +273,6 @@ module toplevel(
   wire  [1:0] wbm_sel_o_1;
   wire [31:0] wbm_adr_o_1;
   wire [15:0] wbm_dat_o_1;
-  wire [15:0] wbm_dat_i_1;
   wire wbm_ack_i_1, wbm_err_i_1;
 
   reg foo_led;
@@ -350,12 +349,17 @@ module toplevel(
 
   wire [3:0] moo_debug;
 
+  reg fu;
+  reg [15:0] moo;
+
   epb_wb_bridge_reg epb_wb_bridge_reg_inst(
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wb_stb_o(wbm_stb_o_1), .wb_cyc_o(wbm_cyc_o_1),
     .wb_we_o(wbm_we_o_1), .wb_sel_o(wbm_sel_o_1),
-    .wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(wbm_dat_i_1),
+    .wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(wbm_dat_i),
+    //.wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(moo),
     .wb_ack_i(wbm_ack_i_1), .wb_err_i(wbm_err_i_1),
+    //.wb_ack_i(fu), .wb_err_i(1'b0),
 
     .epb_clk(epb_clk),
     .epb_data_oen(epb_data_oen),
@@ -366,6 +370,43 @@ module toplevel(
     .epb_rdy(epb_rdy)
     ,.debug(moo_debug)
   );
+
+  reg [15:0] test_data;
+  reg [31:0] test_addr;
+  reg test_we;
+  reg [1:0] test_sel;
+  reg [12:0] test_counter;
+
+  reg foo_wait;
+
+
+  always @(posedge sys_clk) begin
+    foo_wait <= 1'b0;
+    fu <= 1'b0;
+    if (sys_reset) begin
+      test_data <= 16'b0;
+      test_addr <= 32'b0;
+      test_we   <= 1'b0;
+      test_sel  <= 2'b0;
+      test_counter <= 13'b0;
+    end else begin
+      if (wbm_stb_o_1 & wbm_cyc_o_1 & !foo_wait) begin
+        test_sel <= wbm_sel_o_1;
+        test_we  <= wbm_we_o_1;
+        test_addr <= wbm_adr_o_1;
+        test_data <= wbm_dat_o_1;
+        test_counter <= test_counter + 1;
+        foo_wait <= 1'b1;
+        fu <= 1'b1;
+        if (wbm_we_o_1) begin
+          if (wbm_sel_o_1[0])
+            moo[7:0] <= wbm_dat_o_1[7:0];
+          if (wbm_sel_o_1[1])
+            moo[15:8] <= wbm_dat_o_1[15:8];
+        end
+      end
+    end
+  end
 
 `endif
   /** WB Master Arbitration **/
@@ -385,7 +426,7 @@ module toplevel(
   ) wbm_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o_1, wbm_we_o_0}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
-    .wbm_adr_i({wbm_adr_o_1, wbm_adr_o_0}), .wbm_dat_i({wbm_dat_o_1, wbm_dat_o_0}), .wbm_dat_o({wbm_dat_i_1, wbm_dat_i_0}),
+    .wbm_adr_i({wbm_adr_o_1, wbm_adr_o_0}), .wbm_dat_i({wbm_dat_o_1, wbm_dat_o_0}), .wbm_dat_o(wbm_dat_i),
     .wbm_ack_o({wbm_ack_i_1, wbm_ack_i_0}), .wbm_err_o({wbm_err_i_1, wbm_err_i_0}),
     .wbs_cyc_o(wbi_cyc_o), .wbs_stb_o(wbi_stb_o), .wbs_we_o(wbi_we_o), .wbs_sel_o(wbi_sel_o),
     .wbs_adr_o(wbi_adr_o), .wbs_dat_o(wbi_dat_o), .wbs_dat_i(wbi_dat_i),
@@ -420,7 +461,7 @@ module toplevel(
     .NUM_SLAVES(NUM_SLAVES),
     .SLAVE_ADDR(SLAVE_ADDR),
     .SLAVE_HIGH(SLAVE_HIGH),
-    .TIMEOUT(1000)
+    .TIMEOUT(1000) //10us @ 100MHz
   ) wbs_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o), .wbm_sel_i(wbi_sel_o),
@@ -446,6 +487,7 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(0 + 1) - 1: 16*0]),
     .wb_ack_o(wb_ack_i[0]),
     .aux_clk({aux_clk_1, aux_clk_0})
+    ,.debug({test_addr, test_data, test_sel,test_we,test_counter})
   );
 
   /************* XAUI Infrastructure ***************/

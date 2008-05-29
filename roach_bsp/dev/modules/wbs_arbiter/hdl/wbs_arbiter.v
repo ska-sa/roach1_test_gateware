@@ -136,10 +136,14 @@ module wbs_arbiter(
       case (state)
         STATE_IDLE: begin
           if (wbm_cyc_i & wbm_stb_i) begin
-            wbs_active <= wbs_sel;
-            wbs_adr_o_reg <= wbs_adr_o_int;
-            wbs_cyc_o <= wbs_sel;
-            state <= STATE_WAIT;
+            if (wbs_sel == {NUM_SLAVES{1'b0}}) begin
+              wbm_err_o <= 1'b1;
+            end else begin
+              wbs_active <= wbs_sel;
+              wbs_adr_o_reg <= wbs_adr_o_int;
+              wbs_cyc_o <= wbs_sel;
+              state <= STATE_WAIT;
+            end
 `ifdef DEBUG
             $display("wb_arb: got event, wbs_sel = %x",wbs_sel);
 `endif
