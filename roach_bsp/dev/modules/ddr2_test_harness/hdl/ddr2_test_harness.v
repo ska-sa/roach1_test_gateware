@@ -8,8 +8,8 @@ module ddr2_test_harness(
     ddr_mask_o,
     ddr_af_we_o,
     ddr_df_we_o,
-    ddr_af_afull,
-    ddr_df_afull,
+    ddr_af_afull_i,
+    ddr_df_afull_i,
     ddr_data_i,
     ddr_dvalid_i,
     ddr_phy_rdy_i,
@@ -64,36 +64,36 @@ module ddr2_test_harness(
       test_state <= TEST_IDLE;
     end else begin
       case (test_state)
-        WR_IDLE: begin
+        TEST_IDLE: begin
           test_state <= WR_TEST_PATT_0;
         end
         WR_TEST_PATT_0 : begin
           if (1'b1) begin
-            write_state <= TEST_WAIT;
+            test_state <= TEST_WAIT;
           end else begin
-            write_state <= WR_TEST_PATT_1; 
+            test_state <= WR_TEST_PATT_1; 
           end
         end
         WR_TEST_PATT_1 : begin
-          write_state <= WR_TEST_PATT_0; 
+          test_state <= WR_TEST_PATT_0; 
         end
       endcase
     end   
   end
 
 
-  assign ddr_rd_we_n_o = (write_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
+  assign ddr_rd_we_n_o = (test_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
   assign ddr_mask_o    = {MASK_WIDTH*2{1'b1}};
 
-  assign ddr_af_we_o   = (write_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
-  assign ddr_df_we_o   = (write_state == (WR_TEST_PATT_0 || WR_TEST_PATT_1)) ? 1'b0 : 1'b1;
+  assign ddr_af_we_o   = (test_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
+  assign ddr_df_we_o   = (test_state == (WR_TEST_PATT_0 || WR_TEST_PATT_1)) ? 1'b0 : 1'b1;
   
   // Adress Generator
   
   always @(posedge clk)
-  if (write_state == TEST_IDLE) begin
+  if (test_state == TEST_IDLE) begin
     ddr_addr <= 29'b0;
-  end else if (write_state == WR_TEST_PATT_1) begin
+  end else if (test_state == WR_TEST_PATT_1) begin
     ddr_addr <= ddr_addr + 1;
   end
   assign ddr_addr_o = {ddr_addr,2'b0};
