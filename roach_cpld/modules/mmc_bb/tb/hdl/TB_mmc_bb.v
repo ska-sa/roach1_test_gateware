@@ -12,10 +12,10 @@ module TB_mmc_bb();
   wire dstrb;
   wire user_rdy;
 
-  wire lb_we_i, lb_stb_i;
-  wire [2:0] lb_adr_i;
-  wire [7:0] lb_dat_i;
-  wire [7:0] lb_dat_o;
+  wire wb_we_i, wb_stb_i;
+  wire [2:0] wb_adr_i;
+  wire [7:0] wb_dat_i;
+  wire [7:0] wb_dat_o;
   wire mmc_clk;
   wire mmc_cmd_o, mmc_cmd_i, mmc_cmd_oen;
   wire [7:0] mmc_data_i;
@@ -25,9 +25,10 @@ module TB_mmc_bb();
 
 
   mmc_bb mmc_bb_inst(
-    .lb_clk(clk), .lb_rst(reset),
-    .lb_we_i(lb_we_i), .lb_stb_i(lb_stb_i),
-    .lb_adr_i(lb_adr_i), .lb_dat_i(lb_dat_i), .lb_dat_o(lb_dat_o),
+    .wb_clk_i(clk), .wb_rst_i(reset),
+    .wb_we_i(wb_we_i), .wb_stb_i(wb_stb_i), .wb_cyc_i(wb_stb_i),
+    .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
+    .wb_ack_o(),
     .mmc_clk(mmc_clk),
     .mmc_cmd_o(mmc_cmd_o), .mmc_cmd_i(mmc_cmd_i), .mmc_cmd_oen(mmc_cmd_oen),
     .mmc_data_i(mmc_data_i), .mmc_data_o(mmc_data_o), .mmc_data_oen(mmc_data_oen),

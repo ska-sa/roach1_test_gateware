@@ -17,6 +17,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/mmc_bb/hdl/mmc_bb.v\
     ./modules/mmc_infrastructure/hdl/mmc_infrastructure.v \
     ./modules/epb_infrastructure/hdl/epb_infrastructure.v \
+    ./modules/epb_wb_bridge/hdl/epb_wb_bridge.v \
     ./modules/v5c_serial/hdl/v5c_serial.v \
     ./modules/v5c_sm/hdl/v5c_sm.v \
     ./modules/v5c_infrastructure/hdl/v5c_infrastructure.v \

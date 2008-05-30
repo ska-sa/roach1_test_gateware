@@ -5,80 +5,102 @@
 `define REG_MISC_FLASH       3'd4
 `define REG_MISC_REGS        3'd5
 module misc(
-    lb_clk, lb_rst,
-    lb_we_i, lb_stb_i,
-    lb_adr_i, lb_dat_i, lb_dat_o,
+    wb_clk_i, wb_rst_i,
+    wb_stb_i, wb_cyc_i, wb_we_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o,
     
-    por_force_n, reset_mon, gig_eth_reset_n,
-    sys_config, user_dip, config_dip,
-    boot_conf_oen,
+    por_force,
+    geth_reset,
+
+    sys_config,
+    user_dip,
+    config_dip,
+
     user_led,
 
-    eeprom_0_wp, eeprom_1_wp, flash_wp_n, flash_busy_n,
-    serial_busy, serial_abort
+    eeprom_0_wp,
+    eeprom_1_wp,
+    flash_wp,
+    flash_busy,
+
+    serial_conf_busy,
+    serial_conf_disable
   );
-  input  lb_clk, lb_rst;
-  input  lb_we_i, lb_stb_i;
-  input  [2:0] lb_adr_i;
-  input  [7:0] lb_dat_i;
-  output [7:0] lb_dat_o;
+  input  wb_clk_i, wb_rst_i;
+  input  wb_cyc_i, wb_stb_i, wb_we_i;
+  input  [2:0] wb_adr_i;
+  input  [7:0] wb_dat_i;
+  output [7:0] wb_dat_o;
+  output wb_ack_o;
     
-  output por_force_n;
-  input  reset_mon;
-  output gig_eth_reset_n;
+  output por_force;
+  output geth_reset;
 
   input  [7:0] sys_config;
   input  [3:0] user_dip;
   input  [3:0] config_dip;
-  output boot_conf_oen;
   output [1:0] user_led;
   
-  input  eeprom_0_wp, eeprom_1_wp;
-  input  flash_wp_n;
-  input  flash_busy_n;
+  output eeprom_0_wp, eeprom_1_wp;
+  output flash_wp;
+  input  flash_busy;
 
-  input  serial_busy;
-  output serial_abort;
+  input  serial_conf_busy;
+  output serial_conf_disable;
 
+  /* Registers */
+  reg por_force, geth_reset;
+  reg serial_conf_disable;
+  reg eeprom_1_wp, eeprom_0_wp, flash_wp;
   reg [1:0] user_led;
-  reg por_force_n, gig_eth_reset_n;
-  reg boot_conf_oen;
-  reg serial_abort;
-  assign lb_dat_o = lb_adr_i == `REG_MISC_RESET       ? {6'b0, !gig_eth_reset_n, !por_force_n} :
-                    lb_adr_i == `REG_MISC_SYSCONFIG_0 ? {config_dip, user_dip} :
-                    lb_adr_i == `REG_MISC_SYSCONFIG_1 ? sys_config :
-                    lb_adr_i == `REG_MISC_SELECTMAP   ? {6'b0, serial_abort, serial_busy} :
-                    lb_adr_i == `REG_MISC_FLASH       ? {eeprom_1_wp, eeprom_0_wp, flash_wp_n, flash_busy_n} :
-                    lb_adr_i == `REG_MISC_REGS        ? {5'b0, boot_conf_oen, user_led} :
+
+  assign wb_dat_o = wb_adr_i == `REG_MISC_RESET       ? {6'b0, geth_reset, por_force} :
+                    wb_adr_i == `REG_MISC_SYSCONFIG_0 ? {config_dip, user_dip} :
+                    wb_adr_i == `REG_MISC_SYSCONFIG_1 ? sys_config :
+                    wb_adr_i == `REG_MISC_SELECTMAP   ? {6'b0, serial_conf_disable, serial_conf_busy} :
+                    wb_adr_i == `REG_MISC_FLASH       ? {1'b0, eeprom_1_wp, eeprom_0_wp, flash_wp, 3'b0, flash_busy} :
+                    wb_adr_i == `REG_MISC_REGS        ? {6'b0, user_led} :
                     8'b0;
 
-  always @(posedge lb_clk) begin
-    if (lb_rst) begin
-      user_led <= 2'b0;
-      por_force_n <= 1'b1;
-      gig_eth_reset_n <= 1'b1;
-      boot_conf_oen <= 1'b1;
-      serial_abort <= 1'b0;
+  reg wb_ack_o;
+  wire wb_trans = wb_cyc_i & wb_stb_i;
+  always @(posedge wb_clk_i) begin
+    //strobes
+    wb_ack_o <= 1'b0;
+
+    if (wb_rst_i) begin
+      user_led            <= 2'b0;
+      por_force           <= 1'b0;
+      geth_reset          <= 1'b0;
+      eeprom_1_wp         <= 1'b0;
+      eeprom_0_wp         <= 1'b0;
+      flash_wp            <= 1'b0;
+      serial_conf_disable <= 1'b0;
     end else begin
-      por_force_n <= ~reset_mon;
-      if (lb_stb_i & lb_we_i) begin
-        case (lb_adr_i)
+      if (wb_trans)
+        wb_ack_o <= 1'b1;
+
+      if (wb_trans & wb_we_i) begin
+        case (wb_adr_i)
           `REG_MISC_RESET: begin
-            por_force_n <= ~lb_dat_i[0];
-            gig_eth_reset_n <= ~lb_dat_i[1];
+            por_force  <= wb_dat_i[0];
+            geth_reset <= wb_dat_i[1];
           end
           `REG_MISC_SYSCONFIG_0: begin
           end
           `REG_MISC_SYSCONFIG_1: begin
           end
           `REG_MISC_SELECTMAP: begin
-            serial_abort <= lb_dat_i[1];
+            serial_conf_disable <= wb_dat_i[1];
           end
           `REG_MISC_FLASH: begin
+            flash_wp    <= wb_dat_i[4];
+            eeprom_0_wp <= wb_dat_i[5];
+            eeprom_1_wp <= wb_dat_i[6];
           end
           `REG_MISC_REGS: begin
-            user_led <= lb_dat_i[1:0];
-            boot_conf_oen <= lb_dat_i[2];
+            user_led <= wb_dat_i[1:0];
           end
         endcase
       end
