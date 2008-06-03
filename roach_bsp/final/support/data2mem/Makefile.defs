@@ -1,0 +1,4 @@
+BRAM_TAG = bootrom
+MLOW     = fffff000
+MHIGH    = ffffffff
+ELF_FILE = local.elf
