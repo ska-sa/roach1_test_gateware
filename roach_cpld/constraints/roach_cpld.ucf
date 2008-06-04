@@ -51,15 +51,15 @@ NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "115";
 
 NET "v5c_rdwr_n"    IOSTANDARD = LVCMOS33 | LOC = "35";
 NET "v5c_din"       IOSTANDARD = LVCMOS33 | LOC = "40";
-NET "v5c_dout_busy" IOSTANDARD = LVCMOS33 | LOC = "41";
+NET "v5c_dout_busy" IOSTANDARD = LVCMOS33 | LOC = "41" | PULLUP;
 NET "v5c_cs_n"      IOSTANDARD = LVCMOS33 | LOC = "52";
 NET "v5c_prog_n"    IOSTANDARD = LVCMOS33 | LOC = "10";
 NET "v5c_done"      IOSTANDARD = LVCMOS33 | LOC = "11" | PULLUP;
 NET "v5c_init_n"    IOSTANDARD = LVCMOS33 | LOC = "131";
 
-NET "v5c_mode<2>"   IOSTANDARD = LVCMOS33 | LOC = "105";
+NET "v5c_mode<2>"   IOSTANDARD = LVCMOS33 | LOC = "107";
 NET "v5c_mode<1>"   IOSTANDARD = LVCMOS33 | LOC = "106";
-NET "v5c_mode<0>"   IOSTANDARD = LVCMOS33 | LOC = "107";
+NET "v5c_mode<0>"   IOSTANDARD = LVCMOS33 | LOC = "105";
 
 # cclk control
 NET "v5c_cclk_o"    IOSTANDARD = LVCMOS33 | LOC = "43";

@@ -1,3 +1,4 @@
+`include "parameters.v"
 module toplevel(
     /* primary clock inputs */
     clk_master, clk_aux,
@@ -83,13 +84,16 @@ module toplevel(
   wire geth_reset_int; //gigabit ethernet reset tied to a register
 
   //output assignments
-  assign ppc_reset_n      = !sys_reset;
-  assign ppc_ddr2_reset_n = !sys_reset;
-  assign geth_reset_n     = !geth_reset_int & !sys_reset;
+  assign ppc_reset_n      = reset_debug_n & reset_por_n;
+  assign ppc_ddr2_reset_n = reset_debug_n & reset_por_n;
+  assign geth_reset_n     = reset_debug_n & reset_por_n;
+
+  //assign ppc_reset_n      = !sys_reset;
+  //assign ppc_ddr2_reset_n = !sys_reset;
+  //assign geth_reset_n     = !geth_reset_int & !sys_reset;
 
   /* Tri-state control for por_force_n output */
   OBUFT por_force_obuft(
-    //.T(!por_force_int), .I(1'b0), .O(por_force_n)
     .T(!por_force_int), .I(1'b0), .O(por_force_n)
   );
 
@@ -105,8 +109,6 @@ module toplevel(
       por_force_sys <= por_force && prev_por_force != por_force;
     end
   end
-  
-
 
   /************************* LEDs *****************************/
 
@@ -131,16 +133,18 @@ module toplevel(
     end
   end
 
-  assign sys_led_n  = ~{!flash_busy_n, !reset_por_n};
+  assign sys_led_n  = {counter[0][25], counter[1][25]};
   //assign sys_led_n  = ~{!flash_busy_n, ppc_syserr};
   
-  assign user_led_n = ~user_led_int;
+  //assign user_led_n = ~user_led_int;
+  wire foo;
+  assign user_led_n = ~{foo, 1'b0};// ~user_led_int;
 
 
   /******************* Fixed Assignments **********************/
 
-  assign clk_aux_en     = 1'b0;
-  assign clk_master_sel = 1'b0;
+  assign clk_aux_en     = 1'b1;
+  assign clk_master_sel = 1'b1;
   assign tempsense_addr = 1'b0; //TODO: check this
   assign ppc_tmr_clk    = clk_aux;
 
@@ -149,9 +153,13 @@ module toplevel(
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
 
-  assign eeprom_0_wp = user_dip[3] | eeprom_0_wp_int;
-  assign eeprom_1_wp = user_dip[3] | eeprom_1_wp_int;
-  assign flash_wp_n  = 1'b1        & !flash_wp_int;
+  //assign eeprom_0_wp = user_dip[3] | eeprom_0_wp_int;
+  assign eeprom_0_wp = user_dip[3];
+  //assign eeprom_1_wp = user_dip[3] | eeprom_1_wp_int;
+  assign eeprom_1_wp = user_dip[3];
+  //assign flash_wp_n  = 1'b1        & !flash_wp_int;
+  assign flash_wp_n  = 1'b1;
+
   //TODO: this must change to something more sensible
 
   // Signals for controlling the v5 serial configuration at startup
@@ -224,7 +232,7 @@ module toplevel(
   misc misc_inst(
     .wb_clk_i(wb_clk_i),   .wb_rst_i(wb_rst_i),
     .wb_stb_i(wb_stb_o_0), .wb_cyc_i(wb_cyc_o_0), .wb_we_i (wb_we_o),
-    .wb_adr_i(wb_adr_o),   .wb_dat_i(wb_dat_o),   .wb_dat_o(wb_dat_i_0),
+    .wb_adr_i(wb_adr_o_0),   .wb_dat_i(wb_dat_o),   .wb_dat_o(wb_dat_i_0),
     .wb_ack_o(wb_ack_i_0),
     
     .por_force(por_force),
@@ -242,22 +250,25 @@ module toplevel(
   );
 
   /********************** V5 config/SelectMap ****************************/
-  
+
   wire v5c_init_n_o;
   wire v5c_init_n_oen;
   wire v5c_init_n_i;
 
   wire v5c_cclk_o_int;
+  wire v5c_cclk_o_int_0;
+  wire v5c_cclk_o_int_1;
   wire v5c_cclk_oen;
 
   v5c_infrastructure v5c_infrastructure_inst (
-    .v5c_init_n(v5c_init_n),
-    .v5c_init_n_i(v5c_init_n_o),
-    .v5c_init_n_o(v5c_init_n_i),
+    .v5c_init_n    (v5c_init_n),
+    .v5c_init_n_i  (v5c_init_n_o),
+    .v5c_init_n_o  (v5c_init_n_i),
     .v5c_init_n_oen(v5c_init_n_oen), 
 
-    .v5c_cclk(v5c_cclk_o),
-    .v5c_cclk_i(v5c_cclk_o_int), .v5c_cclk_oen(v5c_cclk_oen)
+    .v5c_cclk    (v5c_cclk_o),
+    .v5c_cclk_i  (v5c_cclk_o_int),
+    .v5c_cclk_oen(v5c_cclk_oen)
   );
 
   wire [2:0] v5c_mode_0;
@@ -270,10 +281,15 @@ module toplevel(
   wire v5c_init_n_o_1;
   wire v5c_init_n_oen_1;
 
-  assign v5c_cclk_oen  = serial_conf_busy;
-  assign v5c_cclk_en_n = ~v5c_cclk_oen;
+  assign v5c_cclk_oen  = 1'b1;//serial_conf_busy;
 
-  assign v5c_mode       = serial_conf_busy ? v5c_mode_0     : v5c_mode_1;
+  assign v5c_cclk_o_int = serial_conf_busy ? v5c_cclk_o_int_0 : v5c_cclk_o_int_1;
+  assign v5c_cclk_o_int_1 = !wb_clk_i;
+  assign v5c_cclk_en_n  = 1'b1;//serial_conf_busy;
+
+  assign foo = serial_conf_busy;
+
+  assign v5c_mode       = 3'b110;//serial_conf_busy ? v5c_mode_0     : v5c_mode_1;
   assign v5c_prog_n     = serial_conf_busy ? v5c_prog_n_0   : v5c_prog_n_1;  
   assign v5c_init_n_o   = serial_conf_busy ? v5c_init_n_o_0 : v5c_init_n_o_1;  
   assign v5c_init_n_oen = serial_conf_busy ? 1'b1           : v5c_init_n_oen_1;  
@@ -295,7 +311,7 @@ module toplevel(
     //select map signals
     .v5c_mode(v5c_mode_0),
     .v5c_prog_n(v5c_prog_n_0), .v5c_init_n(v5c_init_n_o_0), .v5c_done(v5c_done),
-    .v5c_din(v5c_din), .v5c_cclk(v5c_cclk_o_int)
+    .v5c_din(v5c_din), .v5c_cclk(v5c_cclk_o_int_0)
   );
 
   v5c_sm v5c_sm_inst (

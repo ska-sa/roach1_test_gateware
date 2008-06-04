@@ -52,7 +52,7 @@ module v5c_sm(
     if (wb_rst_i) begin
       v5c_rdwr_n <= 1'b0;
       v5c_prog_n <= 1'b1;
-      v5c_init_n_oen <= 1'b0;
+      v5c_init_n_oen <= 1'b1;
       v5c_init_n_o <= 1'b1;
     end else begin
       if (wb_trans) begin
