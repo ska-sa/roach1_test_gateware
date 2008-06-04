@@ -55,7 +55,7 @@ NET "v5c_dout_busy" IOSTANDARD = LVCMOS33 | LOC = "41" | PULLUP;
 NET "v5c_cs_n"      IOSTANDARD = LVCMOS33 | LOC = "52";
 NET "v5c_prog_n"    IOSTANDARD = LVCMOS33 | LOC = "10";
 NET "v5c_done"      IOSTANDARD = LVCMOS33 | LOC = "11" | PULLUP;
-NET "v5c_init_n"    IOSTANDARD = LVCMOS33 | LOC = "131";
+NET "v5c_init_n"    IOSTANDARD = LVCMOS33 | LOC = "131" | PULLUP;
 
 NET "v5c_mode<2>"   IOSTANDARD = LVCMOS33 | LOC = "107";
 NET "v5c_mode<1>"   IOSTANDARD = LVCMOS33 | LOC = "106";
