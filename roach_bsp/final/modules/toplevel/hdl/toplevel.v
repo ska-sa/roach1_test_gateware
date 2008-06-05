@@ -1,5 +1,7 @@
 `include "build_parameters.v"
 `include "parameters.v"
+`include "mem_layout.v"
+
 module toplevel(
     // System signals
     sys_clk_n, sys_clk_p,
@@ -163,14 +165,18 @@ module toplevel(
   input  [3:0] mgt_rx_bottom_0_n;
   input  [3:0] mgt_rx_bottom_0_p;
 
-
   /****************** Glocal Signals **********************/
 
   wire sys_clk, dly_clk, epb_clk, mgt_clk, aux_clk_0, aux_clk_1;
+  wire adc0_clk_0, adc1_clk_0;
+
   // Ensure that the above nets are not synthesized away
-  // synthesis attribute KEEP of sys_clk is TRUE
-  // synthesis attribute KEEP of mgt_clk is TRUE
-  // synthesis attribute KEEP of epb_clk is TRUE
+  // synthesis attribute KEEP of sys_clk    is TRUE
+  // synthesis attribute KEEP of mgt_clk    is TRUE
+  // synthesis attribute KEEP of epb_clk    is TRUE
+  // synthesis attribute KEEP of adc0_clk_0 is TRUE
+  // synthesis attribute KEEP of adc1_clk_0 is TRUE
+
   wire sys_reset;
   wire soft_reset;
 
@@ -193,7 +199,6 @@ module toplevel(
     .aux_clk1_n(aux_clk1_n), .aux_clk1_p(aux_clk1_p),
     .aux_clk_1(aux_clk_1)
   );
-
 
   /******************** Reset Block *********************/
 
@@ -275,91 +280,14 @@ module toplevel(
   wire [15:0] wbm_dat_o_1;
   wire wbm_ack_i_1, wbm_err_i_1;
 
-  reg foo_led;
-`ifdef EPB_FIXED_TIMING
+`ifdef EPB_DIRECT_CLOCKING
 
-  reg prev_epb_cs_n;
-
-  reg [1:0] trans_counter; // 4 cycle transaction
-
-  wire trans_first = !epb_cs_n_dly & prev_epb_cs_n != epb_cs_n_dly; //first cycle of transaction
-  wire trans_busy  = trans_first | trans_counter != 2'b0;
-
-  assign epb_data_oen = trans_busy;
-
-
-  always @(posedge epb_clk) begin
-    prev_epb_cs_n <= epb_cs_n_dly;
-    trans_counter <= trans_counter << 1;
-
-    if (sys_reset) begin
-      foo_led <= 1'b0;
-    end else begin
-      if (trans_first) begin
-        foo_led <= ~foo_led;
-        trans_counter <= 2'b11;
-      end
-    end
-  end
-
-
-  bram_controller #(
-    .RAM_SIZE_K(512)
-  ) bram_controller_bootrom_foo (
-    .wb_clk_i(epb_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(trans_first), .wb_stb_i(trans_first),
-    .wb_we_i(!epb_r_w_n_dly), .wb_sel_i(!epb_be_n_dly),
-    .wb_adr_i({epb_addr_gp_dly, epb_addr_dly}), .wb_dat_i(epb_data_i),
-    .wb_dat_o(epb_data_o),
-    .wb_ack_o()
-  );
-/*
-  reg [15:0] my_reg [1:0];
-  assign epb_data_o = epb_addr_dly[0:0] == 1'b0 ? my_reg[0] :
-                      epb_addr_dly[0:0] == 1'b1 ? my_reg[1] :
-                                                  my_reg[1] ;
-
-
-  always @(posedge epb_clk) begin
-    if (sys_reset) begin
-      my_reg[0] <= 16'hdead;
-      my_reg[1] <= 16'hbeef;
-    end else begin
-      if (trans_first & !epb_r_w_n_dly) begin
-        case (epb_addr_dly[0:0])
-          1'b0: begin
-            if (!epb_be_n_dly[0])
-              my_reg[0][7:0]  <= epb_data_i[7:0];
-            if (!epb_be_n_dly[1])
-              my_reg[0][15:8] <= epb_data_i[15:8];
-          end
-          1'b1: begin
-            my_reg[1][7:0]  <= epb_data_i[7:0];
-            my_reg[1][15:8] <= epb_data_i[15:8];
-          end
-        endcase
-      end
-    end
-  end
-  */
-  assign epb_rdy = 1'b1;
-
-
-`else
-
-  wire [3:0] moo_debug;
-
-  reg fu;
-  reg [15:0] moo;
-
-  epb_wb_bridge_reg epb_wb_bridge_reg_inst(
+  epb_wb_bridge epb_wb_bridge_inst(
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wb_stb_o(wbm_stb_o_1), .wb_cyc_o(wbm_cyc_o_1),
     .wb_we_o(wbm_we_o_1), .wb_sel_o(wbm_sel_o_1),
     .wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(wbm_dat_i),
-    //.wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(moo),
     .wb_ack_i(wbm_ack_i_1), .wb_err_i(wbm_err_i_1),
-    //.wb_ack_i(fu), .wb_err_i(1'b0),
 
     .epb_clk(epb_clk),
     .epb_data_oen(epb_data_oen),
@@ -368,45 +296,25 @@ module toplevel(
     .epb_addr(epb_addr_dly), .epb_addr_gp(epb_addr_gp_dly),
     .epb_data_i(epb_data_i), .epb_data_o(epb_data_o),
     .epb_rdy(epb_rdy)
-    ,.debug(moo_debug)
   );
 
-  reg [15:0] test_data;
-  reg [31:0] test_addr;
-  reg test_we;
-  reg [1:0] test_sel;
-  reg [12:0] test_counter;
+`else
 
-  reg foo_wait;
+  epb_wb_bridge_reg epb_wb_bridge_reg_inst(
+    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_stb_o(wbm_stb_o_1), .wb_cyc_o(wbm_cyc_o_1),
+    .wb_we_o(wbm_we_o_1), .wb_sel_o(wbm_sel_o_1),
+    .wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(wbm_dat_i),
+    .wb_ack_i(wbm_ack_i_1), .wb_err_i(wbm_err_i_1),
 
-
-  always @(posedge sys_clk) begin
-    foo_wait <= 1'b0;
-    fu <= 1'b0;
-    if (sys_reset) begin
-      test_data <= 16'b0;
-      test_addr <= 32'b0;
-      test_we   <= 1'b0;
-      test_sel  <= 2'b0;
-      test_counter <= 13'b0;
-    end else begin
-      if (wbm_stb_o_1 & wbm_cyc_o_1 & !foo_wait) begin
-        test_sel <= wbm_sel_o_1;
-        test_we  <= wbm_we_o_1;
-        test_addr <= wbm_adr_o_1;
-        test_data <= wbm_dat_o_1;
-        test_counter <= test_counter + 1;
-        foo_wait <= 1'b1;
-        fu <= 1'b1;
-        if (wbm_we_o_1) begin
-          if (wbm_sel_o_1[0])
-            moo[7:0] <= wbm_dat_o_1[7:0];
-          if (wbm_sel_o_1[1])
-            moo[15:8] <= wbm_dat_o_1[15:8];
-        end
-      end
-    end
-  end
+    .epb_clk(epb_clk),
+    .epb_data_oen(epb_data_oen),
+    .epb_cs_n(epb_cs_n_dly), .epb_r_w_n(epb_r_w_n_dly),
+    .epb_be_n(epb_be_n_dly), 
+    .epb_addr(epb_addr_dly), .epb_addr_gp(epb_addr_gp_dly),
+    .epb_data_i(epb_data_i), .epb_data_o(epb_data_o),
+    .epb_rdy(epb_rdy)
+  );
 
 `endif
   /** WB Master Arbitration **/
@@ -436,17 +344,70 @@ module toplevel(
     .wbm_id(wbm_id_nc)
   );
 
-  localparam NUM_SLAVES = 14;
+  localparam NUM_SLAVES = 18;
+  
+  // Slave Indexes [SLI]
+  localparam DRAM_SLI      = 17;
+  localparam QDR1_SLI      = 16;
+  localparam QDR0_SLI      = 15;
+  localparam BLOCKRAMS_SLI = 14;
+  localparam REGISTERS_SLI = 13;
+  localparam TESTING_SLI   = 12;
+  localparam TGE3_SLI      = 11;
+  localparam TGE2_SLI      = 10;
+  localparam TGE1_SLI      =  9;
+  localparam TGE0_SLI      =  8;
+  localparam RSRVD1_SLI    =  7;
+  localparam RSRVD0_SLI    =  6;
+  localparam DRAMCONF_SLI  =  5;
+  localparam QDR1CONF_SLI  =  4;
+  localparam QDR0CONF_SLI  =  3;
+  localparam ADC1_SLI      =  2;
+  localparam ADC0_SLI      =  1;
+  localparam SYSBLOCK_SLI  =  0;
 
-  localparam SLAVE_ADDR = {32'h8000_0000, 32'h000c_0000, 32'h000b_0000, 32'h000a_0000, //slaves 13:10
-                           32'h0009_0000, 32'h0008_0000, 32'h0007_0000, 32'h0006_0000, //slaves 9:6
-                           32'h0005_0000, 32'h0004_0000, 32'h0003_0000, 32'h0002_0000, //slaves 5:2
-                           32'h0001_0000, 32'h0000_0000};                              //slaves 1:0
+  localparam SLAVE_ADDR = {
+                          `DRAM_A_BASE     ,
+                          `QDR1_A_BASE     ,
+                          `QDR0_A_BASE     ,
+                          `BLOCKRAMS_A_BASE,
+                          `REGISTERS_A_BASE,
+                          `TESTING_A_BASE  ,
+                          `TGE3_A_BASE     ,
+                          `TGE2_A_BASE     ,
+                          `TGE1_A_BASE     ,
+                          `TGE0_A_BASE     ,
+                          `RSRVD1_A_BASE   ,
+                          `RSRVD0_A_BASE   ,
+                          `DRAMCONF_A_BASE ,
+                          `QDR1CONF_A_BASE ,
+                          `QDR0CONF_A_BASE ,
+                          `ADC1_A_BASE     ,
+                          `ADC0_A_BASE     ,
+                          `SYSBLOCK_A_BASE  
+                          };
 
-  localparam SLAVE_HIGH = {32'hffff_ffff, 32'h000c_ffff, 32'h000b_ffff, 32'h000a_ffff, //slaves 13:10
-                           32'h0009_ffff, 32'h0008_ffff, 32'h0007_ffff, 32'h0006_ffff, //slaves 9:6
-                           32'h0005_ffff, 32'h0004_ffff, 32'h0003_ffff, 32'h0002_ffff, //slaves 5:2
-                           32'h0001_ffff, 32'h0000_ffff};                              //slaves 1:0
+  localparam SLAVE_HIGH = {
+                          `DRAM_A_HIGH     ,
+                          `QDR1_A_HIGH     ,
+                          `QDR0_A_HIGH     ,
+                          `BLOCKRAMS_A_HIGH,
+                          `REGISTERS_A_HIGH,
+                          `TESTING_A_HIGH  ,
+                          `TGE3_A_HIGH     ,
+                          `TGE2_A_HIGH     ,
+                          `TGE1_A_HIGH     ,
+                          `TGE0_A_HIGH     ,
+                          `RSRVD1_A_HIGH   ,
+                          `RSRVD0_A_HIGH   ,
+                          `DRAMCONF_A_HIGH ,
+                          `QDR1CONF_A_HIGH ,
+                          `QDR0CONF_A_HIGH ,
+                          `ADC1_A_HIGH     ,
+                          `ADC0_A_HIGH     ,
+                          `SYSBLOCK_A_HIGH  
+                          };
+
 
   wire [NUM_SLAVES - 1:0] wb_cyc_o;
   wire [NUM_SLAVES - 1:0] wb_stb_o;
@@ -458,10 +419,10 @@ module toplevel(
   wire    [NUM_SLAVES - 1:0] wb_ack_i;
 
   wbs_arbiter #(
-    .NUM_SLAVES(NUM_SLAVES),
-    .SLAVE_ADDR(SLAVE_ADDR),
-    .SLAVE_HIGH(SLAVE_HIGH),
-    .TIMEOUT(1000) //10us @ 100MHz
+    .NUM_SLAVES (NUM_SLAVES),
+    .SLAVE_ADDR (SLAVE_ADDR),
+    .SLAVE_HIGH (SLAVE_HIGH),
+    .TIMEOUT    (1000) //10us @ 100MHz
   ) wbs_arbiter_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o), .wbm_sel_i(wbi_sel_o),
@@ -475,19 +436,18 @@ module toplevel(
   /******************* System Module *****************/
    
   sys_block #(
-    .BOARD_ID(`BOARD_ID),
+    .BOARD_ID (`BOARD_ID),
     .REV_MAJOR(`REV_MAJOR),
     .REV_MINOR(`REV_MINOR),
-    .REV_RCS(`REV_RCS)
+    .REV_RCS  (`REV_RCS)
   ) sys_block_inst (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[0]), .wb_stb_i(wb_stb_o[0]),
+    .wb_cyc_i(wb_cyc_o[SYSBLOCK_SLI]), .wb_stb_i(wb_stb_o[SYSBLOCK_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(0 + 1) - 1: 16*0]),
-    .wb_ack_o(wb_ack_i[0]),
+    .wb_dat_o(wb_dat_i[16*(SYSBLOCK_SLI + 1) - 1: 16*SYSBLOCK_SLI]),
+    .wb_ack_o(wb_ack_i[SYSBLOCK_SLI]),
     .aux_clk({aux_clk_1, aux_clk_0})
-    ,.debug({test_addr, test_data, test_sel,test_we,test_counter})
   );
 
   /************* XAUI Infrastructure ***************/
@@ -576,7 +536,6 @@ module toplevel(
     .mgt_codevalid_0(mgt_codevalid[0]), .mgt_rxbufferr_0(mgt_rxbufferr[0]),
     .mgt_rxeqmix_0(mgt_rxeqmix[0]), .mgt_rxeqpole_0(mgt_rxeqpole[0]),
     .mgt_txpreemphasis_0(mgt_txpreemphasis[0]), .mgt_txdiffctrl_0(mgt_txdiffctrl[0])
-    ,.debug(debug)
   );
 
   /**** Ten Gigabit Ethernet Fabric Interfaces ****/
@@ -626,11 +585,11 @@ module toplevel(
     .mgt_tx_reset(mgt_tx_reset[0]), .mgt_rx_reset(mgt_rx_reset[0]),
 
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[1]), .wb_stb_i(wb_stb_o[1]),
+    .wb_cyc_i(wb_cyc_o[TGE0_SLI]), .wb_stb_i(wb_stb_o[TGE0_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
-    .wb_ack_o(wb_ack_i[1])
+    .wb_dat_o(wb_dat_i[16*(TGE0_SLI + 1) - 1: 16*TGE0_SLI]),
+    .wb_ack_o(wb_ack_i[TGE0_SLI])
   );
 
   assign mgt_rxeqmix[0]       = 2'b0; 
@@ -671,11 +630,11 @@ module toplevel(
     .mgt_txpreemphasis(mgt_txpreemphasis[0]), .mgt_txdiffctrl(mgt_txdiffctrl[0]),
 
     .wb_clk_i(sys_clk),
-    .wb_cyc_i(wb_cyc_o[1]), .wb_stb_i(wb_stb_o[1]),
+    .wb_cyc_i(wb_cyc_o[TGE0_SLI]), .wb_stb_i(wb_stb_o[TGE0_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(1 + 1) - 1: 16*1]),
-    .wb_ack_o(wb_ack_i[1]),
+    .wb_dat_o(wb_dat_i[16*(TGE0_SLI + 1) - 1: 16*TGE0_SLI]),
+    .wb_ack_o(wb_ack_i[TGE0_SLI]),
     .leds() //rx, tx, linkup
     ,.debug(debug)
   );
@@ -696,8 +655,8 @@ module toplevel(
   assign mgt_txpreemphasis[0] = 3'b0;
   assign mgt_txdiffctrl[0]    = 3'b0;
 
-  assign wb_ack_i[1] = 1'b0;
-  assign wb_dat_i[16*(1 + 1) - 1: 16*1] = 16'b0;
+  assign wb_ack_i[TGE0_SLI] = 1'b0;
+  assign wb_dat_i[16*(TGE0_SLI + 1) - 1: 16*TGE0_SLI] = 16'b0;
 `endif
 `endif
 
@@ -728,11 +687,11 @@ module toplevel(
     .mgt_tx_reset(mgt_tx_reset[1]), .mgt_rx_reset(mgt_rx_reset[1]),
 
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[2]), .wb_stb_i(wb_stb_o[2]),
+    .wb_cyc_i(wb_cyc_o[TGE1_SLI]), .wb_stb_i(wb_stb_o[TGE1_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(2 + 1) - 1: 16*2]),
-    .wb_ack_o(wb_ack_i[2])
+    .wb_dat_o(wb_dat_i[16*(TGE1_SLI + 1) - 1: 16*TGE1_SLI]),
+    .wb_ack_o(wb_ack_i[TGE1_SLI])
   );
 
   assign mgt_rxeqmix[1]       = 2'b0; 
@@ -772,11 +731,11 @@ module toplevel(
     .mgt_txpreemphasis(mgt_txpreemphasis[1]), .mgt_txdiffctrl(mgt_txdiffctrl[1]),
 
     .wb_clk_i(sys_clk),
-    .wb_cyc_i(wb_cyc_o[2]), .wb_stb_i(wb_stb_o[2]),
+    .wb_cyc_i(wb_cyc_o[TGE1_SLI]), .wb_stb_i(wb_stb_o[TGE1_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(2 + 1) - 1: 16*2]),
-    .wb_ack_o(wb_ack_i[2]),
+    .wb_dat_o(wb_dat_i[16*(TGE1_SLI + 1) - 1: 16*TGE1_SLI]),
+    .wb_ack_o(wb_ack_i[TGE1_SLI]),
     .leds() //rx, tx, linkup
   );
 `endif
@@ -796,8 +755,8 @@ module toplevel(
   assign mgt_txpreemphasis[1] = 3'b0;
   assign mgt_txdiffctrl[1]    = 3'b0;
 
-  assign wb_ack_i[2] = 1'b0;
-  assign wb_dat_i[16*(2 + 1) - 1: 16*2] = 16'b0;
+  assign wb_ack_i[TGE1_SLI] = 1'b0;
+  assign wb_dat_i[16*(TGE1_SLI + 1) - 1: 16*TGE1_SLI] = 16'b0;
 `endif
 `endif
 
@@ -827,11 +786,11 @@ module toplevel(
     .mgt_tx_reset(mgt_tx_reset[2]), .mgt_rx_reset(mgt_rx_reset[2]),
 
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[3]), .wb_stb_i(wb_stb_o[3]),
+    .wb_cyc_i(wb_cyc_o[TGE2_SLI]), .wb_stb_i(wb_stb_o[TGE2_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(3 + 1) - 1: 16*3]),
-    .wb_ack_o(wb_ack_i[3])
+    .wb_dat_o(wb_dat_i[16*(TGE2_SLI + 1) - 1: 16*TGE2_SLI]),
+    .wb_ack_o(wb_ack_i[TGE2_SLI])
   );
 
   assign mgt_rxeqmix[2]       = 2'b0; 
@@ -871,11 +830,11 @@ module toplevel(
     .mgt_txpreemphasis(mgt_txpreemphasis[2]), .mgt_txdiffctrl(mgt_txdiffctrl[2]),
 
     .wb_clk_i(sys_clk),
-    .wb_cyc_i(wb_cyc_o[3]), .wb_stb_i(wb_stb_o[3]),
+    .wb_cyc_i(wb_cyc_o[TGE2_SLI]), .wb_stb_i(wb_stb_o[TGE2_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(3 + 1) - 1: 16*3]),
-    .wb_ack_o(wb_ack_i[3]),
+    .wb_dat_o(wb_dat_i[16*(TGE2_SLI + 1) - 1: 16*TGE2_SLI]),
+    .wb_ack_o(wb_ack_i[TGE2_SLI]),
     .leds() //rx, tx, linkup
   );
 `endif
@@ -895,8 +854,8 @@ module toplevel(
   assign mgt_txpreemphasis[2] = 3'b0;
   assign mgt_txdiffctrl[2]    = 3'b0;
 
-  assign wb_ack_i[3] = 1'b0;
-  assign wb_dat_i[16*(3 + 1) - 1: 16*3] = 16'b0;
+  assign wb_ack_i[TGE2_SLI] = 1'b0;
+  assign wb_dat_i[16*(TGE2_SLI + 1) - 1: 16*TGE2_SLI] = 16'b0;
 `endif
 `endif
 
@@ -926,11 +885,11 @@ module toplevel(
     .mgt_tx_reset(mgt_tx_reset[3]), .mgt_rx_reset(mgt_rx_reset[3]),
 
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[4]), .wb_stb_i(wb_stb_o[4]),
+    .wb_cyc_i(wb_cyc_o[TGE3_SLI]), .wb_stb_i(wb_stb_o[TGE3_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(4 + 1) - 1: 16*4]),
-    .wb_ack_o(wb_ack_i[4])
+    .wb_dat_o(wb_dat_i[16*(TGE3_SLI + 1) - 1: 16*TGE3_SLI]),
+    .wb_ack_o(wb_ack_i[TGE3_SLI])
   );
 
   assign mgt_rxeqmix[3]       = 2'b0; 
@@ -970,11 +929,11 @@ module toplevel(
     .mgt_txpreemphasis(mgt_txpreemphasis[3]), .mgt_txdiffctrl(mgt_txdiffctrl[3]),
 
     .wb_clk_i(sys_clk),
-    .wb_cyc_i(wb_cyc_o[4]), .wb_stb_i(wb_stb_o[4]),
+    .wb_cyc_i(wb_cyc_o[TGE3_SLI]), .wb_stb_i(wb_stb_o[TGE3_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(4 + 1) - 1: 16*4]),
-    .wb_ack_o(wb_ack_i[4]),
+    .wb_dat_o(wb_dat_i[16*(TGE3_SLI + 1) - 1: 16*TGE3_SLI]),
+    .wb_ack_o(wb_ack_i[TGE3_SLI]),
     .leds() //rx, tx, linkup
   );
 `endif
@@ -994,13 +953,10 @@ module toplevel(
   assign mgt_txpreemphasis[3] = 3'b0;
   assign mgt_txdiffctrl[3]    = 3'b0;
 
-  assign wb_ack_i[4] = 1'b0;
-  assign wb_dat_i[16*(4 + 1) - 1: 16*4] = 16'b0;
+  assign wb_ack_i[TGE3_SLI] = 1'b0;
+  assign wb_dat_i[16*(TGE3_SLI + 1) - 1: 16*TGE3_SLI] = 16'b0;
 `endif
 `endif
-
-
-
 
   /*********** DDR2 Memory Controller ***************/
 
@@ -1095,17 +1051,19 @@ module toplevel(
     //memory wb slave IF
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
 
-    .reg_wb_we_i(wb_we_o), .reg_wb_cyc_i(wb_cyc_o[5]), .reg_wb_stb_i(wb_stb_o[5]),
+    .reg_wb_we_i(wb_we_o),
+    .reg_wb_cyc_i(wb_cyc_o[DRAMCONF_SLI]), .reg_wb_stb_i(wb_stb_o[DRAMCONF_SLI]),
     .reg_wb_sel_i(wb_sel_o),
     .reg_wb_adr_i(wb_adr_o), .reg_wb_dat_i(wb_dat_o),
-    .reg_wb_dat_o(wb_dat_i[16*(5 + 1) - 1: 16*5]),
-    .reg_wb_ack_o(wb_ack_i[5]),
+    .reg_wb_dat_o(wb_dat_i[16*(DRAMCONF_SLI + 1) - 1: 16*DRAMCONF_SLI]),
+    .reg_wb_ack_o(wb_ack_i[DRAMCONF_SLI]),
     //memory wb slave IF
-    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[13]), .mem_wb_stb_i(wb_stb_o[13]),
+    .mem_wb_we_i(wb_we_o),
+    .mem_wb_cyc_i(wb_cyc_o[DRAM_SLI]), .mem_wb_stb_i(wb_stb_o[DRAM_SLI]),
     .mem_wb_sel_i(wb_sel_o),
     .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
-    .mem_wb_dat_o(wb_dat_i[16*(13 + 1) - 1: 16*13]),
-    .mem_wb_ack_o(wb_ack_i[13]),
+    .mem_wb_dat_o(wb_dat_i[16*(DRAM_SLI + 1) - 1: 16*DRAM_SLI]),
+    .mem_wb_ack_o(wb_ack_i[DRAM_SLI]),
     .mem_wb_burst(1'b0),
     //ddr interface
     .ddr2_clk_o(ddr_usr_clk), .ddr2_rst_o(ddr_usr_rst),
@@ -1149,6 +1107,12 @@ module toplevel(
     .OB({ddr2_ck_2_n, ddr2_ck_1_n, ddr2_ck_0_n}),
     .I(3'b0)
   );
+
+  assign wb_dat_i[16*(DRAMCONF_SLI + 1) - 1: 16*DRAMCONF_SLI] = 16'b0;
+  assign wb_ack_i[DRAMCONF_SLI] = 1'b0;
+  assign wb_dat_i[16*(DRAM_SLI + 1) - 1: 16*DRAM_SLI] = 16'b0;
+  assign wb_ack_i[DRAM_SLI] = 1'b0;
+  
 `endif
 
   /***************** QDR0 ************************/
@@ -1233,18 +1197,20 @@ module toplevel(
 
   qdr_cpu_interface qdr_cpu_interface_inst_0(
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    //memory wb slave IF
-    .reg_wb_we_i(wb_we_o), .reg_wb_cyc_i(wb_cyc_o[6]), .reg_wb_stb_i(wb_stb_o[6]),
+    //register wb slave IF
+    .reg_wb_we_i(wb_we_o),
+    .reg_wb_cyc_i(wb_cyc_o[QDR0CONF_SLI]), .reg_wb_stb_i(wb_stb_o[QDR0CONF_SLI]),
     .reg_wb_sel_i(wb_sel_o),
     .reg_wb_adr_i(wb_adr_o), .reg_wb_dat_i(wb_dat_o),
-    .reg_wb_dat_o(wb_dat_i[16*(6 + 1) - 1: 16*6]),
-    .reg_wb_ack_o(wb_ack_i[6]),
+    .reg_wb_dat_o(wb_dat_i[16*(QDR0CONF_SLI + 1) - 1: 16*QDR0CONF_SLI]),
+    .reg_wb_ack_o(wb_ack_i[QDR0CONF_SLI]),
     //memory wb slave IF
-    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[12]), .mem_wb_stb_i(wb_stb_o[12]),
+    .mem_wb_we_i(wb_we_o),
+    .mem_wb_cyc_i(wb_cyc_o[QDR0_SLI]), .mem_wb_stb_i(wb_stb_o[QDR0_SLI]),
     .mem_wb_sel_i(wb_sel_o),
     .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
-    .mem_wb_dat_o(wb_dat_i[16*(12 + 1) - 1: 16*12]),
-    .mem_wb_ack_o(wb_ack_i[12]),
+    .mem_wb_dat_o(wb_dat_i[16*(QDR0_SLI + 1) - 1: 16*QDR0_SLI]),
+    .mem_wb_ack_o(wb_ack_i[QDR0_SLI]),
     .mem_wb_burst(1'b0),
     //qdr interface
 
@@ -1278,10 +1244,10 @@ module toplevel(
   assign qdr0_k_p = 1'b0;
   assign qdr0_k_n = 1'b1;
 
-  assign wb_dat_i[16*(6 + 1) - 1: 16*6] = 16'b0;
-  assign wb_ack_i[6] = 1'b0;
-  assign wb_dat_i[16*(12 + 1) - 1: 16*12] = 16'b0;
-  assign wb_ack_i[12] = 1'b0;
+  assign wb_dat_i[16*(QDR0CONF_SLI + 1) - 1: 16*QDR0CONF_SLI] = 16'b0;
+  assign wb_ack_i[QDR0CONF_SLI] = 1'b0;
+  assign wb_dat_i[16*(QDR0_SLI + 1) - 1: 16*QDR0_SLI] = 16'b0;
+  assign wb_ack_i[QDR0_SLI] = 1'b0;
 `endif
 
   /***************** QDR1 ************************/
@@ -1351,17 +1317,19 @@ module toplevel(
   qdr_cpu_interface qdr_cpu_interface_inst_1(
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
     //memory wb slave IF
-    .reg_wb_we_i(wb_we_o), .reg_wb_cyc_i(wb_cyc_o[7]), .reg_wb_stb_i(wb_stb_o[7]),
+    .reg_wb_we_i(wb_we_o),
+    .reg_wb_cyc_i(wb_cyc_o[QDR1CONF_SLI]), .reg_wb_stb_i(wb_stb_o[QDR1CONF_SLI]),
     .reg_wb_sel_i(wb_sel_o),
     .reg_wb_adr_i(wb_adr_o), .reg_wb_dat_i(wb_dat_o),
-    .reg_wb_dat_o(wb_dat_i[16*(7 + 1) - 1: 16*7]),
-    .reg_wb_ack_o(wb_ack_i[7]),
+    .reg_wb_dat_o(wb_dat_i[16*(QDR1CONF_SLI + 1) - 1: 16*QDR1CONF_SLI]),
+    .reg_wb_ack_o(wb_ack_i[QDR1CONF_SLI]),
     //memory wb slave IF
-    .mem_wb_we_i(wb_we_o), .mem_wb_cyc_i(wb_cyc_o[11]), .mem_wb_stb_i(wb_stb_o[11]),
+    .mem_wb_we_i(wb_we_o),
+    .mem_wb_cyc_i(wb_cyc_o[QDR1_SLI]), .mem_wb_stb_i(wb_stb_o[QDR1_SLI]),
     .mem_wb_sel_i(wb_sel_o),
     .mem_wb_adr_i(wb_adr_o), .mem_wb_dat_i(wb_dat_o),
-    .mem_wb_dat_o(wb_dat_i[16*(11 + 1) - 1: 16*11]),
-    .mem_wb_ack_o(wb_ack_i[11]),
+    .mem_wb_dat_o(wb_dat_i[16*(QDR1_SLI + 1) - 1: 16*QDR1_SLI]),
+    .mem_wb_ack_o(wb_ack_i[QDR1_SLI]),
     .mem_wb_burst(1'b0),
     //qdr interface
 
@@ -1395,10 +1363,10 @@ module toplevel(
   assign qdr1_k_p = 1'b0;
   assign qdr1_k_n = 1'b1;
 
-  assign wb_dat_i[16*(7 + 1) - 1: 16*7] = 16'b0;
-  assign wb_ack_i[7] = 1'b0;
-  assign wb_dat_i[16*(11 + 1) - 1: 16*11] = 16'b0;
-  assign wb_ack_i[11] = 1'b0;
+  assign wb_dat_i[16*(QDR1CONF_SLI + 1) - 1: 16*QDR1CONF_SLI] = 16'b0;
+  assign wb_ack_i[QDR1CONF_SLI] = 1'b0;
+  assign wb_dat_i[16*(QDR1_SLI + 1) - 1: 16*QDR1_SLI] = 16'b0;
+  assign wb_ack_i[QDR1_SLI] = 1'b0;
 `endif
 
   /********** Boot Memory ************/
@@ -1409,11 +1377,11 @@ module toplevel(
     .RAM_SIZE_K(4)
   ) bram_controller_bootrom (
     .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[8]), .wb_stb_i(wb_stb_o[8]),
+    .wb_cyc_i(wb_cyc_o[BLOCKRAMS_SLI]), .wb_stb_i(wb_stb_o[BLOCKRAMS_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(8 + 1) - 1: 16*8]),
-    .wb_ack_o(wb_ack_i[8])
+    .wb_dat_o(wb_dat_i[16*(BLOCKRAMS_SLI + 1) - 1: 16*BLOCKRAMS_SLI]),
+    .wb_ack_o(wb_ack_i[BLOCKRAMS_SLI])
   );
 
   /****************** ZDOKs **********************/
@@ -1522,11 +1490,11 @@ module toplevel(
     /* Wishbone Interface */
     .wb_clk_i(sys_clk),
     .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[9]), .wb_stb_i(wb_stb_o[9]),
+    .wb_cyc_i(wb_cyc_o[ADC0_SLI]), .wb_stb_i(wb_stb_o[ADC0_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(9 + 1) - 1: 16*9]),
-    .wb_ack_o(wb_ack_i[9]),
+    .wb_dat_o(wb_dat_i[16*(ADC0_SLI + 1) - 1: 16*ADC0_SLI]),
+    .wb_ack_o(wb_ack_i[ADC0_SLI]),
     /* ADC inputs */
     .adc_clk_0(adc0_clk_0), .adc_clk_90(adc0_clk_90),
     .adc_data(adc0_data),
@@ -1544,8 +1512,8 @@ module toplevel(
 `else
   assign zdok0_dp_n = {38{1'bz}};
   assign zdok0_dp_p = {38{1'bz}};
-  assign wb_dat_i[16*(9 + 1) - 1: 16*9] = 16'b0;
-  assign wb_ack_i[9] = 1'b0;
+  assign wb_dat_i[16*(ADC0_SLI + 1) - 1: 16*ADC0_SLI] = 16'b0;
+  assign wb_ack_i[ADC0_SLI] = 1'b0;
 `endif
 
 
@@ -1653,11 +1621,11 @@ module toplevel(
     /* Wishbone Interface */
     .wb_clk_i(sys_clk),
     .wb_rst_i(sys_reset),
-    .wb_cyc_i(wb_cyc_o[10]), .wb_stb_i(wb_stb_o[10]),
+    .wb_cyc_i(wb_cyc_o[ADC1_SLI]), .wb_stb_i(wb_stb_o[ADC1_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
-    .wb_dat_o(wb_dat_i[16*(10 + 1) - 1: 16*10]),
-    .wb_ack_o(wb_ack_i[10]),
+    .wb_dat_o(wb_dat_i[16*(ADC1_SLI + 1) - 1: 16*ADC1_SLI]),
+    .wb_ack_o(wb_ack_i[ADC1_SLI]),
     /* ADC inputs */
     .adc_clk_0(adc1_clk_0), .adc_clk_90(adc1_clk_90),
     .adc_data(adc1_data),
@@ -1677,10 +1645,29 @@ module toplevel(
   assign zdok1_dp_n = {38{1'bz}};
   assign zdok1_dp_p = {38{1'bz}};
 
-  assign wb_dat_i[16*(10 + 1) - 1: 16*10] = 16'b0;
-  assign wb_ack_i[10] = 1'b0;
+  assign wb_dat_i[16*(ADC1_SLI + 1) - 1: 16*ADC1_SLI] = 16'b0;
+  assign wb_ack_i[ADC1_SLI] = 1'b0;
 
 `endif
+
+  /* Other Slave assignments */
+
+  /******************* Testing ***********************/
+
+  assign wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI] = 16'b0;
+  assign wb_ack_i[TESTING_SLI] = 1'b0;
+
+  /********************* Incomplete *****************/
+
+
+  assign wb_dat_i[16*(REGISTERS_SLI + 1) - 1: 16*REGISTERS_SLI] = 16'b0;
+  assign wb_ack_i[REGISTERS_SLI] = 1'b0;
+
+  assign wb_dat_i[16*(RSRVD1_SLI + 1) - 1: 16*RSRVD1_SLI] = 16'b0;
+  assign wb_ack_i[RSRVD1_SLI] = 1'b0;
+
+  assign wb_dat_i[16*(RSRVD0_SLI + 1) - 1: 16*RSRVD0_SLI] = 16'b0;
+  assign wb_ack_i[RSRVD0_SLI] = 1'b0;
 
 
   /******************* GPIO ***********************/
@@ -1689,17 +1676,18 @@ module toplevel(
   assign se_gpio_a_oen_n = 1'b1;
   assign se_gpio_b_oen_n = 1'b0;
 
-  assign se_gpio_b[0] = serial_out;
+  assign se_gpio_b[0] = 1'b0;
   assign se_gpio_b[1] = 1'b0;
   assign se_gpio_b[2] = 1'b0;
-  assign se_gpio_b[3] = 1'b0;
+  assign se_gpio_b[3] = serial_out;
   assign se_gpio_b[4] = 1'b0;
   assign se_gpio_b[5] = 1'b0;
   assign se_gpio_b[6] = 1'b0;
   assign se_gpio_b[7] = 1'b0;
 
-  assign serial_in    = se_gpio_a[0];
-  assign se_gpio_a[7:1] = {7{1'bz}};
+  assign se_gpio_a[2:0] = {3{1'bz}};
+  assign serial_in      = se_gpio_a[3];
+  assign se_gpio_a[7:4] = {4{1'bz}};
 
   /******** Differential **********/
   assign diff_gpio_a_n = {19{1'bz}};
@@ -1710,20 +1698,17 @@ module toplevel(
   assign diff_gpio_b_p = {19{1'bz}};
   assign diff_gpio_b_clk_n = 1'bz;
   assign diff_gpio_b_clk_p = 1'bz;
+
   /************************* LEDs ************************/
 
-  wire [3:0] debug_foo;
-
-  reg foo;
-
   reg [27:0] counter [2:0];
-  assign led_n = moo_debug;
-  //assign led_n = {foo_led, counter[0][27], counter[1][27], counter[2][27]};
+  
+  assign led_n = ~{1'b1, counter[0][27], counter[1][27], counter[2][27]};
 
   always @(posedge sys_clk) begin
     counter[0] <= counter[0] + 1;
   end
-/*
+
   always @(posedge adc0_clk_0) begin
     counter[1] <= counter[1] + 1;
   end
@@ -1731,16 +1716,5 @@ module toplevel(
   always @(posedge adc1_clk_0) begin
     counter[2] <= counter[2] + 1;
   end
-  reg prev_sync;
-
-  always @(posedge adc1_clk_0) begin
-    prev_sync <= adc1_sync;
-    if (prev_sync != adc1_sync && adc1_sync) begin
-      foo <= ~foo;
-    end
-  end
-*/
-
-
 
 endmodule

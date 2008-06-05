@@ -1,5 +1,5 @@
 
-'define HALF_CLKPERIOD = 5 
+`define HALF_CLKPERIOD = 5 
 
 module TB_ddr2_test_harness();
 

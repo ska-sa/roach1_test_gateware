@@ -111,6 +111,152 @@ module ddr2_cpu_interface(
   reg  [15:0] mem_wb_dat_o;
   reg mem_wb_ack_o;
 
+  
+  reg [15:0] rd_buffer;
+  reg burst_second;
+
+  always @(posedge ddr_clk_90) begin
+    burst_second <= 1'b0;
+    if (ddr2_rst_o || wb_rst_i) begin
+      rd_got  <= 1'b0;
+    end else begin
+      if (ddr2_dvalid_i) begin
+        if (!mem_wb_adr_i[4]) begin
+          case (mem_wb_adr_i[3:1])
+            3'd0: rd_buffer <= ddr2_data_i[16*(0+1)-1:16*0];
+            3'd1: rd_buffer <= ddr2_data_i[16*(1+1)-1:16*1];
+            3'd2: rd_buffer <= ddr2_data_i[16*(2+1)-1:16*2];
+            3'd3: rd_buffer <= ddr2_data_i[16*(3+1)-1:16*3];
+            3'd4: rd_buffer <= ddr2_data_i[16*(4+1)-1:16*4];
+            3'd5: rd_buffer <= ddr2_data_i[16*(5+1)-1:16*5];
+            3'd6: rd_buffer <= ddr2_data_i[16*(6+1)-1:16*6];
+            3'd7: rd_buffer <= ddr2_data_i[16*(7+1)-1:16*7];
+          endcase
+        end
+
+        burst_second <= 1'b1;
+        rd_got       <= 1'b1;
+      end else if (burst_second) begin
+        if (mem_wb_adr_i[4]) begin
+          case (mem_wb_adr_i[3:1])
+            3'd0: rd_buffer <= ddr2_data_i[16*(0+1)-1:16*0];
+            3'd1: rd_buffer <= ddr2_data_i[16*(1+1)-1:16*1];
+            3'd2: rd_buffer <= ddr2_data_i[16*(2+1)-1:16*2];
+            3'd3: rd_buffer <= ddr2_data_i[16*(3+1)-1:16*3];
+            3'd4: rd_buffer <= ddr2_data_i[16*(4+1)-1:16*4];
+            3'd5: rd_buffer <= ddr2_data_i[16*(5+1)-1:16*5];
+            3'd6: rd_buffer <= ddr2_data_i[16*(6+1)-1:16*6];
+            3'd7: rd_buffer <= ddr2_data_i[16*(7+1)-1:16*7];
+          endcase
+        end
+      end
+      if (rd_got) begin
+        if (rd_ack) begin
+          rd_got <= 1'b0;
+        end
+      end
+    end
+  end
+
+  reg wr_data_strb, wr_addr_strb;
+  reg rd_addr_strb;
+
+  always @(posedge ddr_clk_0) begin
+    if (ddr2_rst_o || wb_rst_i) begin
+      trans_ack_o <= 1'b0;
+      wr_state <= WR_STATE_IDLE;
+    end else begin
+      if (trans_got && !trans_ack) begin
+        trans_ack <= 1'b1;
+      end else begin
+        trans_ack <= 1'b0;
+      end
+    end
+  end
+
+  reg wr_state;
+  localparam WR_STATE_IDLE = 1'b0;
+  localparam WR_STATE_TX   = 1'b1;
+
+  always @(posedge ddr_clk_0) begin
+    wr_data_strb <= 1'b0;
+    wr_addr_strb <= 1'b0;
+
+    if (ddr2_rst_o || wb_rst_i) begin
+      wr_state <= WR_STATE_IDLE;
+    end else begin
+      case (wr_state)
+        WR_STATE_IDLE: begin
+          if (trans_got && !trans_ack && trans_wr) begin
+            wr_addr_strb <= 1'b1;
+            wr_data_strb <= 1'b1;
+            wr_state <= WR_STATE_TX;
+          end
+        end
+        WR_STATE_TX: begin
+          wr_data_strb <= 1'b1;
+          wr_state <= WR_STATE_IDLE;
+        end
+      endcase
+    end
+  end
+
+  always @(posedge ddr_clk_0) begin
+    rd_addr_strb <= 1'b0;
+
+    if (ddr2_rst_o || wb_rst_i) begin
+    end else begin
+      if (trans_got && !trans_ack && !trans_wr) begin
+        rd_addr_strb <= 1'b1;
+      endcase
+    end
+  end
+
+  assign ddr2_af_cmnd_o = wr_addr_strb ? 3'b000 : 3'b001;
+  assign ddr2_af_addr_o = {soft_addr, mem_wb_adr_i[25:5], 2'b0};
+  assign ddr2_af_wen_o  = rd_addr_strb || wr_addr_strb;
+
+  assign [DATA_BITS*4-1:0] data_to_shift = {{(DATA_BITS*4-16){1'b0}}, mem_wb_dat_i};
+
+  assign ddr2_df_data_o = data_to_shift << (16*mem_wb_adr_i[4:1]);
+  assign ddr2_df_mask_o = ~({14'b0, mem_wb_sel_i} << (2*mem_wb_adr_i[4:1]));
+  assign ddr2_df_wen_o  = wr_data_strb;
+
+  /* */
+
+  reg rd_wait;
+
+  always @(posedge wb_clk_i) begin
+    mem_wb_ack_o <= 1'b0;
+    if (wb_rst_i) begin
+      rd_wait   <= 1'b0;
+      rd_ack    <= 1'b0;
+      trans_got <= 1'b0;
+    end else begin
+      if (rd_wait) begin
+        if (rd_got) begin
+          rd_ack   <= 1'b1;
+          wb_ack_o <= 1'b1;
+        end
+      end else if (mem_wb_cyc_i & mem_wb_stb_i & ~mem_wb_ack_o) begin
+        trans_got <= 1'b1;
+        if (mem_wb_we_i) begin
+          mem_wb_ack_o <= 1'b1;
+        end else begin
+          rd_wait <= 1'b1;
+        end
+      end
+
+      if (trans_ack) begin
+        trans_got <= 1'b0;
+      end
+
+      if (~rd_got) begin
+        rd_ack <= 1'b0;
+      end
+    end
+  end
+
   always @(posedge wb_clk_i) begin
     mem_wb_ack_o <= 1'b0;
     if (wb_rst_i) begin
@@ -723,4 +869,5 @@ module ddr2_cpu_interface(
     .ddr_af_afull_i(ddr2_af_afull_i), .ddr_df_afull_i(ddr2_df_afull_i)
   );
   */
+
 endmodule

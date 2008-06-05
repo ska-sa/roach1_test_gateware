@@ -674,23 +674,23 @@ NET "diff_gpio_b_clk_n" LOC = J19;
 # Single-ended GPIO
 #
 
-NET "se_gpio_a<0>"    LOC = AE14;
-NET "se_gpio_a<1>"    LOC = AE18;
-NET "se_gpio_a<2>"    LOC = AH18;
-NET "se_gpio_a<3>"    LOC = AG17;
-NET "se_gpio_a<4>"    IOSTANDARD = LVCMOS18 | LOC = B27;
-NET "se_gpio_a<5>"    IOSTANDARD = LVCMOS18 | LOC = D24;
-NET "se_gpio_a<6>"    IOSTANDARD = LVCMOS18 | LOC = E24;
-NET "se_gpio_a<7>"    IOSTANDARD = LVCMOS18 | LOC = A26;
+NET "se_gpio_a<7>"    IOSTANDARD = LVCMOS18 | LOC = B27;
+NET "se_gpio_a<6>"    IOSTANDARD = LVCMOS18 | LOC = D24;
+NET "se_gpio_a<5>"    IOSTANDARD = LVCMOS18 | LOC = E24;
+NET "se_gpio_a<4>"    IOSTANDARD = LVCMOS18 | LOC = A26;
+NET "se_gpio_a<3>"    LOC = AE14;
+NET "se_gpio_a<2>"    LOC = AE18;
+NET "se_gpio_a<1>"    LOC = AH18;
+NET "se_gpio_a<0>"    LOC = AG17;
 NET "se_gpio_a_oen_n" IOSTANDARD = LVCMOS18 | LOC = AP22;
-NET "se_gpio_b<0>"    LOC = N33;
-NET "se_gpio_b<1>"    LOC = N34;
-NET "se_gpio_b<2>"    LOC = P34;
-NET "se_gpio_b<3>"    LOC = R33;
-NET "se_gpio_b<4>"    LOC = M33;
-NET "se_gpio_b<5>"    LOC = L33;
-NET "se_gpio_b<6>"    LOC = P32;
-NET "se_gpio_b<7>"    LOC = N32;
+NET "se_gpio_b<7>"    LOC = M33;
+NET "se_gpio_b<6>"    LOC = L33;
+NET "se_gpio_b<5>"    LOC = P32;
+NET "se_gpio_b<4>"    LOC = N32;
+NET "se_gpio_b<3>"    LOC = N33;
+NET "se_gpio_b<2>"    LOC = N34;
+NET "se_gpio_b<1>"    LOC = P34;
+NET "se_gpio_b<0>"    LOC = R33;
 NET "se_gpio_b_oen_n" LOC = M32;
 
 #
