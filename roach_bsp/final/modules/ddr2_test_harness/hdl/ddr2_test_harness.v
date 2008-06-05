@@ -5,7 +5,7 @@ module ddr2_test_harness(
     ddr_rd_wr_n_o,
     ddr_addr_o,
     ddr_data_o,
-    ddr_mask_o,
+    ddr_mask_n_o,
     ddr_af_we_o,
     ddr_df_we_o,
     ddr_af_afull_i,
@@ -33,7 +33,7 @@ module ddr2_test_harness(
   output ddr_rd_wr_n_o;                    //read/not-write  -- latched on ddr_af_we_o 
   output [30:0] ddr_addr_o;                //address         -- latched on ddr_af_we_o
   output [DATA_WIDTH*2 - 1:0] ddr_data_o;  //write data      -- latched on ddr_df_we_o
-  output [MASK_WIDTH*2 - 1:0] ddr_mask_o;  //write data mask -- latched on ddr_df_we_o
+  output [MASK_WIDTH*2 - 1:0] ddr_mask_n_o;  //write data mask -- latched on ddr_df_we_o
   output ddr_af_we_o;                      //address fifo write enable
   output ddr_df_we_o;                      //data fifo write enable
   input  ddr_af_afull_i;                   //address fifo almost full
@@ -160,7 +160,7 @@ module ddr2_test_harness(
   end
 
   assign ddr_rd_wr_n_o = (test_state == WR_TEST_PATT_0) ? 1'b0 : 1'b1;
-  assign ddr_mask_o    = {MASK_WIDTH*2{1'b1}};
+  assign ddr_mask_n_o  = {MASK_WIDTH*2{1'b0}};
 
   assign ddr_af_we_o   = ((test_state == WR_TEST_PATT_0) || (test_state == RD_TEST_PATT)) ? 1'b1 : 1'b0;
   assign ddr_df_we_o   = ((test_state == WR_TEST_PATT_0) || (test_state == WR_TEST_PATT_1)) ? 1'b1 : 1'b0;
