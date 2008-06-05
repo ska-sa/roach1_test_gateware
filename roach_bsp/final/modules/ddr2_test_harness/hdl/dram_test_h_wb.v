@@ -26,11 +26,6 @@ module dram_test_h_wb(
 
   reg [31:0] harness_control;
 
-`define REG_DDR2_TH_STATUS_0 4'd0
-`define REG_DDR2_TH_STATUS_1 4'd1
-`define REG_DDR2_TH_CTRL_0   4'd2
-`define REG_DDR2_TH_CTRL_1   4'd3
-
   reg wb_ack_o;
   reg [3:0] wb_dat_o_src;
   assign wb_dat_o = wb_dat_o_src == `REG_DDR2_TH_STATUS_0 ? harness_status [15:0 ] :

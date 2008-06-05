@@ -227,7 +227,11 @@ module toplevel(
 
   serial_uart #(
     .BAUD(`SERIAL_UART_BAUD),
-    .CLOCK_RATE((`MASTER_CLOCK_EPB) ? (`EPB_CLK_RATE) : (`SYS_CLK_RATE))
+`ifdef MASTER_CLOCK_EPB
+    .CLOCK_RATE(`EPB_CLOCK_RATE)
+`else
+    .CLOCK_RATE(`SYS_CLOCK_RATE)
+`endif
   ) serial_uart_inst (
     .clk(wb_clk), .reset(sys_reset),
     .serial_in(serial_in), .serial_out(serial_out),
@@ -1132,31 +1136,6 @@ module toplevel(
   assign ddr_rd_data_1   = ddr_rd_data;
   assign ddr_rd_dvalid_0 = ddr_rd_dvalid;
   assign ddr_rd_dvalid_1 = ddr_rd_dvalid;
-
-  /* CPU DRAM interface */
-  wire  [2:0] ddr_af_cmd_0;
-  wire [30:0] ddr_af_addr_0;
-  wire ddr_af_wren_0;
-  wire ddr_af_afull_0;
-  wire [143:0] ddr_df_data_0;
-  wire  [17:0] ddr_df_mask_0;
-  wire ddr_df_wren_0;
-  wire ddr_df_afull_0;
-  wire [143:0] ddr_rd_data_0;
-  wire ddr_rd_dvalid_0;
-
-  /* Fabric DRAM interface */
-  wire  [2:0] ddr_af_cmd_1;
-  wire [30:0] ddr_af_addr_1;
-  wire ddr_af_wren_1;
-  wire ddr_af_afull_1;
-  wire [143:0] ddr_df_data_1;
-  wire  [17:0] ddr_df_mask_1;
-  wire ddr_df_wren_1;
-  wire ddr_df_afull_1;
-  wire [143:0] ddr_rd_data_1;
-  wire ddr_rd_dvalid_1;
-
 `else
   assign ddr2_dq = {72{1'bz}};
   assign ddr2_dm = 9'b0;
@@ -1741,7 +1720,7 @@ module toplevel(
     .ddr_rd_wr_n_o  (ddr_rd_wr_n_o),
     .ddr_addr_o     (ddr_af_addr_1),
     .ddr_data_o     (ddr_df_data_1),
-    .ddr_mask_o     (ddr_df_mask_1),
+    .ddr_mask_n_o   (ddr_df_mask_1),
     .ddr_af_we_o    (ddr_af_wren_1),
     .ddr_df_we_o    (ddr_df_wren_1),
     .ddr_af_afull_i (ddr_af_afull_1),
