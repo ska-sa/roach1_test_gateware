@@ -169,6 +169,7 @@ module toplevel(
 
   wire sys_clk, dly_clk, epb_clk, mgt_clk, aux_clk_0, aux_clk_1;
   wire adc0_clk_0, adc1_clk_0;
+  wire wb_clk;
 
   // Ensure that the above nets are not synthesized away
   // synthesis attribute KEEP of sys_clk    is TRUE
@@ -176,6 +177,13 @@ module toplevel(
   // synthesis attribute KEEP of epb_clk    is TRUE
   // synthesis attribute KEEP of adc0_clk_0 is TRUE
   // synthesis attribute KEEP of adc1_clk_0 is TRUE
+
+`ifdef MASTER_CLOCK_EPB
+  assign wb_clk = epb_clk;
+`else
+  assign wb_clk = sys_clk;
+`endif
+
 
   wire sys_reset;
   wire soft_reset;
@@ -219,9 +227,9 @@ module toplevel(
 
   serial_uart #(
     .BAUD(`SERIAL_UART_BAUD),
-    .CLOCK_RATE(`MASTER_CLOCK_RATE)
+    .CLOCK_RATE((`MASTER_CLOCK_EPB) ? (`EPB_CLK_RATE) : (`SYS_CLK_RATE))
   ) serial_uart_inst (
-    .clk(sys_clk), .reset(sys_reset),
+    .clk(wb_clk), .reset(sys_reset),
     .serial_in(serial_in), .serial_out(serial_out),
     .as_data_i(as_data_i),  .as_data_o(as_data_o),
     .as_dstrb_i(as_dstrb_i), .as_busy_o(as_busy_o), .as_dstrb_o(as_dstrb_o)
@@ -239,7 +247,7 @@ module toplevel(
   wire wbm_ack_i_0, wbm_err_i_0;
 
   as_wb_bridge as_wb_bridge_inst (
-    .clk(sys_clk), .reset(sys_reset),
+    .clk(wb_clk), .reset(sys_reset),
     .as_data_i(as_data_o), .as_data_o(as_data_i),
     .as_dstrb_o(as_dstrb_i), .as_busy_i(as_busy_o), .as_dstrb_i(as_dstrb_o),
     .wb_stb_o(wbm_stb_o_0), .wb_cyc_o(wbm_cyc_o_0),
@@ -280,10 +288,10 @@ module toplevel(
   wire [15:0] wbm_dat_o_1;
   wire wbm_ack_i_1, wbm_err_i_1;
 
-`ifdef EPB_DIRECT_CLOCKING
+`ifdef MASTER_CLOCK_EPB
 
   epb_wb_bridge epb_wb_bridge_inst(
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_stb_o(wbm_stb_o_1), .wb_cyc_o(wbm_cyc_o_1),
     .wb_we_o(wbm_we_o_1), .wb_sel_o(wbm_sel_o_1),
     .wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(wbm_dat_i),
@@ -301,7 +309,7 @@ module toplevel(
 `else
 
   epb_wb_bridge_reg epb_wb_bridge_reg_inst(
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_stb_o(wbm_stb_o_1), .wb_cyc_o(wbm_cyc_o_1),
     .wb_we_o(wbm_we_o_1), .wb_sel_o(wbm_sel_o_1),
     .wb_adr_o(wbm_adr_o_1), .wb_dat_o(wbm_dat_o_1), .wb_dat_i(wbm_dat_i),
@@ -332,7 +340,7 @@ module toplevel(
   wbm_arbiter #(
     .NUM_MASTERS(2)
   ) wbm_arbiter_inst (
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i({wbm_cyc_o_1, wbm_cyc_o_0}), .wbm_stb_i({wbm_stb_o_1, wbm_stb_o_0}), .wbm_we_i({wbm_we_o_1, wbm_we_o_0}), .wbm_sel_i({wbm_sel_o_1, wbm_sel_o_0}),
     .wbm_adr_i({wbm_adr_o_1, wbm_adr_o_0}), .wbm_dat_i({wbm_dat_o_1, wbm_dat_o_0}), .wbm_dat_o(wbm_dat_i),
     .wbm_ack_o({wbm_ack_i_1, wbm_ack_i_0}), .wbm_err_o({wbm_err_i_1, wbm_err_i_0}),
@@ -424,7 +432,7 @@ module toplevel(
     .SLAVE_HIGH (SLAVE_HIGH),
     .TIMEOUT    (1000) //10us @ 100MHz
   ) wbs_arbiter_inst (
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wbm_cyc_i(wbi_cyc_o), .wbm_stb_i(wbi_stb_o), .wbm_we_i(wbi_we_o), .wbm_sel_i(wbi_sel_o),
     .wbm_adr_i(wbi_adr_o), .wbm_dat_i(wbi_dat_o), .wbm_dat_o(wbi_dat_i),
     .wbm_ack_o(wbi_ack_i), .wbm_err_o(wbi_err_i),
@@ -441,7 +449,7 @@ module toplevel(
     .REV_MINOR(`REV_MINOR),
     .REV_RCS  (`REV_RCS)
   ) sys_block_inst (
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[SYSBLOCK_SLI]), .wb_stb_i(wb_stb_o[SYSBLOCK_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -584,7 +592,7 @@ module toplevel(
     .mgt_loopback(mgt_loopback[0]), .mgt_powerdown(mgt_powerdown[0]),
     .mgt_tx_reset(mgt_tx_reset[0]), .mgt_rx_reset(mgt_rx_reset[0]),
 
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[TGE0_SLI]), .wb_stb_i(wb_stb_o[TGE0_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -629,14 +637,13 @@ module toplevel(
     .mgt_rxeqmix(mgt_rxeqmix[0]), .mgt_rxeqpole(mgt_rxeqpole[0]),
     .mgt_txpreemphasis(mgt_txpreemphasis[0]), .mgt_txdiffctrl(mgt_txdiffctrl[0]),
 
-    .wb_clk_i(sys_clk),
+    .wb_clk_i(wb_clk),
     .wb_cyc_i(wb_cyc_o[TGE0_SLI]), .wb_stb_i(wb_stb_o[TGE0_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
     .wb_dat_o(wb_dat_i[16*(TGE0_SLI + 1) - 1: 16*TGE0_SLI]),
     .wb_ack_o(wb_ack_i[TGE0_SLI]),
     .leds() //rx, tx, linkup
-    ,.debug(debug)
   );
 `endif
 
@@ -686,7 +693,7 @@ module toplevel(
     .mgt_loopback(mgt_loopback[1]), .mgt_powerdown(mgt_powerdown[1]),
     .mgt_tx_reset(mgt_tx_reset[1]), .mgt_rx_reset(mgt_rx_reset[1]),
 
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[TGE1_SLI]), .wb_stb_i(wb_stb_o[TGE1_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -730,7 +737,7 @@ module toplevel(
     .mgt_rxeqmix(mgt_rxeqmix[1]), .mgt_rxeqpole(mgt_rxeqpole[1]),
     .mgt_txpreemphasis(mgt_txpreemphasis[1]), .mgt_txdiffctrl(mgt_txdiffctrl[1]),
 
-    .wb_clk_i(sys_clk),
+    .wb_clk_i(wb_clk),
     .wb_cyc_i(wb_cyc_o[TGE1_SLI]), .wb_stb_i(wb_stb_o[TGE1_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -785,7 +792,7 @@ module toplevel(
     .mgt_loopback(mgt_loopback[2]), .mgt_powerdown(mgt_powerdown[2]),
     .mgt_tx_reset(mgt_tx_reset[2]), .mgt_rx_reset(mgt_rx_reset[2]),
 
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[TGE2_SLI]), .wb_stb_i(wb_stb_o[TGE2_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -829,7 +836,7 @@ module toplevel(
     .mgt_rxeqmix(mgt_rxeqmix[2]), .mgt_rxeqpole(mgt_rxeqpole[2]),
     .mgt_txpreemphasis(mgt_txpreemphasis[2]), .mgt_txdiffctrl(mgt_txdiffctrl[2]),
 
-    .wb_clk_i(sys_clk),
+    .wb_clk_i(wb_clk),
     .wb_cyc_i(wb_cyc_o[TGE2_SLI]), .wb_stb_i(wb_stb_o[TGE2_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -884,7 +891,7 @@ module toplevel(
     .mgt_loopback(mgt_loopback[3]), .mgt_powerdown(mgt_powerdown[3]),
     .mgt_tx_reset(mgt_tx_reset[3]), .mgt_rx_reset(mgt_rx_reset[3]),
 
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[TGE3_SLI]), .wb_stb_i(wb_stb_o[TGE3_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -928,7 +935,7 @@ module toplevel(
     .mgt_rxeqmix(mgt_rxeqmix[3]), .mgt_rxeqpole(mgt_rxeqpole[3]),
     .mgt_txpreemphasis(mgt_txpreemphasis[3]), .mgt_txdiffctrl(mgt_txdiffctrl[3]),
 
-    .wb_clk_i(sys_clk),
+    .wb_clk_i(wb_clk),
     .wb_cyc_i(wb_cyc_o[TGE3_SLI]), .wb_stb_i(wb_stb_o[TGE3_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -960,11 +967,9 @@ module toplevel(
 
   /*********** DDR2 Memory Controller ***************/
 
-  // synthesis attribute KEEP of ddr_clk_0  is TRUE
-  // synthesis attribute KEEP of ddr_clk_90 is TRUE
-  wire ddr_clk_0, ddr_clk_90, ddr_clk_div;
 
 `ifdef ENABLE_DDR2
+  wire ddr_clk_0, ddr_clk_90, ddr_clk_div;
 
   wire ddr_rst_0, ddr_rst_90, ddr_rst_div;
   wire ddr_usr_rst;
@@ -976,9 +981,10 @@ module toplevel(
     .clk_in(sys_clk),
     .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90), .ddr_clk_div(ddr_clk_div),
     .ddr_rst_0(ddr_rst_0), .ddr_rst_90(ddr_rst_90), .ddr_rst_div(ddr_rst_div),
-    .usr_clk(sys_clk), .usr_rst(ddr_usr_rst)
+    .usr_clk(wb_clk), .usr_rst(ddr_usr_rst)
   );
 
+  /* Master DDR2 interface */
   wire  [2:0] ddr_af_cmd;
   wire [30:0] ddr_af_addr;
   wire ddr_af_wren;
@@ -991,7 +997,6 @@ module toplevel(
   wire ddr_rd_dvalid;
 
   wire ddr_phy_ready;
-  wire ddr_usr_clk;
   
   localparam DDR_PERIOD = `DDR2_CLK_FREQ == 150 ? 6666 :
                           `DDR2_CLK_FREQ == 200 ? 5000 :
@@ -1037,19 +1042,44 @@ module toplevel(
   );
 
   assign ddr2_par_out = ddr2_par_in;
-  assign ddr2_reset_n = 1'b0;
+  assign ddr2_reset_n = 1'b1;
 
   assign ddr2_scl = 1'b1;
   assign ddr2_sda = 1'b1;
 
-  wire ddr_arb;
+  wire ddr_arb_rqst_0, ddr_arb_grant_0;
+  wire ddr_arb_rqst_1, ddr_arb_grant_1;
+
+  /* CPU DRAM interface */
+  wire  [2:0] ddr_af_cmd_0;
+  wire [30:0] ddr_af_addr_0;
+  wire ddr_af_wren_0;
+  wire ddr_af_afull_0;
+  wire [143:0] ddr_df_data_0;
+  wire  [17:0] ddr_df_mask_0;
+  wire ddr_df_wren_0;
+  wire ddr_df_afull_0;
+  wire [143:0] ddr_rd_data_0;
+  wire ddr_rd_dvalid_0;
+
+  /* Fabric DRAM interface */
+  wire  [2:0] ddr_af_cmd_1;
+  wire [30:0] ddr_af_addr_1;
+  wire ddr_af_wren_1;
+  wire ddr_af_afull_1;
+  wire [143:0] ddr_df_data_1;
+  wire  [17:0] ddr_df_mask_1;
+  wire ddr_df_wren_1;
+  wire ddr_df_afull_1;
+  wire [143:0] ddr_rd_data_1;
+  wire ddr_rd_dvalid_1;
 
   ddr2_cpu_interface #(
     .SOFT_ADDR_BITS(8)
   ) ddr2_cpu_interface_inst (
     .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90),
     //memory wb slave IF
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
 
     .reg_wb_we_i(wb_we_o),
     .reg_wb_cyc_i(wb_cyc_o[DRAMCONF_SLI]), .reg_wb_stb_i(wb_stb_o[DRAMCONF_SLI]),
@@ -1066,15 +1096,67 @@ module toplevel(
     .mem_wb_ack_o(wb_ack_i[DRAM_SLI]),
     .mem_wb_burst(1'b0),
     //ddr interface
-    .ddr2_clk_o(ddr_usr_clk), .ddr2_rst_o(ddr_usr_rst),
-    .ddr2_phy_rdy(ddr_phy_ready),
-    .ddr2_request_o(ddr_arb), .ddr2_granted_i(ddr_arb),
-    .ddr2_af_cmnd_o(ddr_af_cmd), .ddr2_af_addr_o(ddr_af_addr), .ddr2_af_wen_o(ddr_af_wren),
-    .ddr2_af_afull_i(ddr_af_afull),
-    .ddr2_df_data_o(ddr_df_data), .ddr2_df_mask_o(ddr_df_mask), .ddr2_df_wen_o(ddr_df_wren),
-    .ddr2_df_afull_i(ddr_df_afull),
-    .ddr2_data_i(ddr_rd_data), .ddr2_dvalid_i(ddr_rd_dvalid)
+    .ddr2_rst_o     (ddr_usr_rst),
+    .ddr2_phy_rdy   (ddr_phy_ready),
+    .ddr2_request_o (ddr_arb_rqst_0),
+    .ddr2_granted_i (ddr_arb_grant_0),
+    .ddr2_af_cmnd_o (ddr_af_cmd_0),
+    .ddr2_af_addr_o (ddr_af_addr_0),
+    .ddr2_af_wen_o  (ddr_af_wren_0),
+    .ddr2_af_afull_i(ddr_af_afull_0),
+    .ddr2_df_data_o (ddr_df_data_0),
+    .ddr2_df_mask_o (ddr_df_mask_0),
+    .ddr2_df_wen_o  (ddr_df_wren_0),
+    .ddr2_df_afull_i(ddr_df_afull_0),
+    .ddr2_data_i    (ddr_rd_data_0),
+    .ddr2_dvalid_i  (ddr_rd_dvalid_0)
   );
+
+  //Lame DRAM arbitration. TODO: change to Berkeley shared DRAM scheme
+
+  assign ddr_arb_grant_0 =  ddr_arb_rqst_0;
+  assign ddr_arb_grant_1 = !ddr_arb_rqst_0;
+
+  assign ddr_af_cmd    = ddr_arb_grant_0 ? ddr_af_cmd_0    : ddr_af_cmd_1;
+  assign ddr_af_addr   = ddr_arb_grant_0 ? ddr_af_addr_0   : ddr_af_addr_1;
+  assign ddr_af_wren   = ddr_arb_grant_0 ? ddr_af_wren_0   : ddr_af_wren_1;
+  assign ddr_df_data   = ddr_arb_grant_0 ? ddr_df_data_0   : ddr_df_data_1;
+  assign ddr_df_mask   = ddr_arb_grant_0 ? ddr_df_mask_0   : ddr_df_mask_1;
+  assign ddr_df_wren   = ddr_arb_grant_0 ? ddr_df_wren_0   : ddr_df_wren_1;
+
+  assign ddr_af_afull_0  = ddr_af_afull;
+  assign ddr_af_afull_1  = ddr_af_afull;
+  assign ddr_df_afull_0  = ddr_df_afull;
+  assign ddr_df_afull_1  = ddr_df_afull;
+  assign ddr_rd_data_0   = ddr_rd_data;
+  assign ddr_rd_data_1   = ddr_rd_data;
+  assign ddr_rd_dvalid_0 = ddr_rd_dvalid;
+  assign ddr_rd_dvalid_1 = ddr_rd_dvalid;
+
+  /* CPU DRAM interface */
+  wire  [2:0] ddr_af_cmd_0;
+  wire [30:0] ddr_af_addr_0;
+  wire ddr_af_wren_0;
+  wire ddr_af_afull_0;
+  wire [143:0] ddr_df_data_0;
+  wire  [17:0] ddr_df_mask_0;
+  wire ddr_df_wren_0;
+  wire ddr_df_afull_0;
+  wire [143:0] ddr_rd_data_0;
+  wire ddr_rd_dvalid_0;
+
+  /* Fabric DRAM interface */
+  wire  [2:0] ddr_af_cmd_1;
+  wire [30:0] ddr_af_addr_1;
+  wire ddr_af_wren_1;
+  wire ddr_af_afull_1;
+  wire [143:0] ddr_df_data_1;
+  wire  [17:0] ddr_df_mask_1;
+  wire ddr_df_wren_1;
+  wire ddr_df_afull_1;
+  wire [143:0] ddr_rd_data_1;
+  wire ddr_rd_dvalid_1;
+
 `else
   assign ddr2_dq = {72{1'bz}};
   assign ddr2_dm = 9'b0;
@@ -1149,7 +1231,6 @@ module toplevel(
   wire [21:0] qdr0_usr_ad_rd;
 
 
-  wire [3:0] foo_debug;
   qdr_controller #(
     .CLK_FREQ(`QDR_CLK_FREQ)
   ) qdr_controller_0 (
@@ -1185,7 +1266,6 @@ module toplevel(
     .user_bwh_n(qdr0_usr_bwh_n),
     .user_ad_wr(qdr0_usr_ad_wr),
     .user_ad_rd(qdr0_usr_ad_rd)
-    ,.debug(foo_debug)
   );
   
   wire qdr0_usr_d_w;
@@ -1196,7 +1276,7 @@ module toplevel(
   assign qdr0_usr_r_n    = !qdr0_usr_r;
 
   qdr_cpu_interface qdr_cpu_interface_inst_0(
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     //register wb slave IF
     .reg_wb_we_i(wb_we_o),
     .reg_wb_cyc_i(wb_cyc_o[QDR0CONF_SLI]), .reg_wb_stb_i(wb_stb_o[QDR0CONF_SLI]),
@@ -1231,7 +1311,6 @@ module toplevel(
     .qdr_rd_data({qdr0_usr_qrh, qdr0_usr_qrl}),
     .qdr_rd_valid(qdr0_usr_qr_valid),
     .qdr_rd_en(qdr0_usr_r)
-    ,.debug(foo_debug)
   );
 
 `else
@@ -1315,7 +1394,7 @@ module toplevel(
   assign qdr1_usr_r_n    = !qdr1_usr_r;
 
   qdr_cpu_interface qdr_cpu_interface_inst_1(
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     //memory wb slave IF
     .reg_wb_we_i(wb_we_o),
     .reg_wb_cyc_i(wb_cyc_o[QDR1CONF_SLI]), .reg_wb_stb_i(wb_stb_o[QDR1CONF_SLI]),
@@ -1376,7 +1455,7 @@ module toplevel(
   bram_controller #(
     .RAM_SIZE_K(4)
   ) bram_controller_bootrom (
-    .wb_clk_i(sys_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[BLOCKRAMS_SLI]), .wb_stb_i(wb_stb_o[BLOCKRAMS_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
@@ -1488,7 +1567,7 @@ module toplevel(
 
   iadc_controller iadc_controller_inst_0(
     /* Wishbone Interface */
-    .wb_clk_i(sys_clk),
+    .wb_clk_i(wb_clk),
     .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[ADC0_SLI]), .wb_stb_i(wb_stb_o[ADC0_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
@@ -1619,7 +1698,7 @@ module toplevel(
 
   iadc_controller iadc_controller_inst_1(
     /* Wishbone Interface */
-    .wb_clk_i(sys_clk),
+    .wb_clk_i(wb_clk),
     .wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[ADC1_SLI]), .wb_stb_i(wb_stb_o[ADC1_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
@@ -1650,14 +1729,51 @@ module toplevel(
 
 `endif
 
-  /* Other Slave assignments */
 
   /******************* Testing ***********************/
+  /* Fabric DRAM interface */
+  wire  [2:0] ddr_af_cmd_1;
+  wire [30:0] ddr_af_addr_1;
+  wire ddr_af_wren_1;
+  wire ddr_af_afull_1;
+  wire [143:0] ddr_df_data_1;
+  wire  [17:0] ddr_df_mask_1;
+  wire ddr_df_wren_1;
+  wire ddr_df_afull_1;
+  wire [143:0] ddr_rd_data_1;
+  wire ddr_rd_dvalid_1;
+  wire ddr_clk_0, ddr_clk_90, ddr_clk_div;
 
-  assign wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI] = 16'b0;
-  assign wb_ack_i[TESTING_SLI] = 1'b0;
+  wire ddr_rst_0, ddr_rst_90, ddr_rst_div;
+
+  wire ddr_rd_wr_n_o;
+  assign ddr_af_cmd_1 = ddr_rd_wr_n_o ? 3'b001 : 3'b000;
+
+  ddr2_test_harness ddr2_test_harness_inst(
+    .clk            (ddr_clk_0),
+    .reset          (sys_reset),
+    .ddr_rd_wr_n_o  (ddr_rd_wr_n_o),
+    .ddr_addr_o     (ddr_af_addr_1),
+    .ddr_data_o     (ddr_df_data_1),
+    .ddr_mask_o     (ddr_df_mask_1),
+    .ddr_af_we_o    (ddr_af_wren_1),
+    .ddr_df_we_o    (ddr_df_wren_1),
+    .ddr_af_afull_i (ddr_af_afull_1),
+    .ddr_df_afull_i (ddr_df_afull_1),
+    .ddr_data_i     (ddr_rd_data_1),
+    .ddr_dvalid_i   (ddr_rd_dvalid_1),
+    .ddr_phy_rdy_i  (ddr_phy_ready),
+
+    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[TESTING_SLI]), .wb_stb_i(wb_stb_o[TESTING_SLI]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI]),
+    .wb_ack_o(wb_ack_i[TESTING_SLI])
+  );
 
   /********************* Incomplete *****************/
+  /* Other Slave assignments */
 
 
   assign wb_dat_i[16*(REGISTERS_SLI + 1) - 1: 16*REGISTERS_SLI] = 16'b0;
@@ -1674,6 +1790,11 @@ module toplevel(
 
   /******** Single Ended **********/
   assign se_gpio_a_oen_n = 1'b1;
+
+  assign se_gpio_a[2:0] = {3{1'bz}};
+  assign serial_in      = se_gpio_a[3];
+  assign se_gpio_a[7:4] = {4{1'bz}};
+
   assign se_gpio_b_oen_n = 1'b0;
 
   assign se_gpio_b[0] = 1'b0;
@@ -1685,17 +1806,14 @@ module toplevel(
   assign se_gpio_b[6] = 1'b0;
   assign se_gpio_b[7] = 1'b0;
 
-  assign se_gpio_a[2:0] = {3{1'bz}};
-  assign serial_in      = se_gpio_a[3];
-  assign se_gpio_a[7:4] = {4{1'bz}};
 
   /******** Differential **********/
-  assign diff_gpio_a_n = {19{1'bz}};
-  assign diff_gpio_a_p = {19{1'bz}};
+  assign diff_gpio_a_n     = {19{1'bz}};
+  assign diff_gpio_a_p     = {19{1'bz}};
   assign diff_gpio_a_clk_n = 1'bz;
   assign diff_gpio_a_clk_p = 1'bz;
-  assign diff_gpio_b_n = {19{1'bz}};
-  assign diff_gpio_b_p = {19{1'bz}};
+  assign diff_gpio_b_n     = {19{1'bz}};
+  assign diff_gpio_b_p     = {19{1'bz}};
   assign diff_gpio_b_clk_n = 1'bz;
   assign diff_gpio_b_clk_p = 1'bz;
 
@@ -1705,15 +1823,15 @@ module toplevel(
   
   assign led_n = ~{1'b1, counter[0][27], counter[1][27], counter[2][27]};
 
-  always @(posedge sys_clk) begin
+  always @(posedge wb_clk) begin
     counter[0] <= counter[0] + 1;
   end
 
-  always @(posedge adc0_clk_0) begin
+  always @(posedge sys_clk) begin
     counter[1] <= counter[1] + 1;
   end
 
-  always @(posedge adc1_clk_0) begin
+  always @(posedge mgt_clk) begin
     counter[2] <= counter[2] + 1;
   end
 

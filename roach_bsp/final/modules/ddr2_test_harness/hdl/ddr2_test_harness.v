@@ -14,8 +14,12 @@ module ddr2_test_harness(
     ddr_dvalid_i,
     ddr_phy_rdy_i,
 
-    harness_status,
-    harness_control
+    ddr_request_o, ddr_granted_i,
+
+    wb_clk_i, wb_rst_i,
+    wb_cyc_i, wb_stb_i, wb_we_i , wb_sel_i,
+    wb_adr_i, wb_dat_i, wb_dat_o,
+    wb_ack_o
   );
 
   // Module Definitions
@@ -38,8 +42,19 @@ module ddr2_test_harness(
   input  ddr_dvalid_i;                     //read data valid
   input  ddr_phy_rdy_i;                    //pysical interface to mem ready and calibrated
 
-  output [31:0] harness_status;  //test harness control and status
-  input  [31:0] harness_control;
+  output ddr_request_o;
+  input  ddr_granted_i,
+
+  input  wb_clk_i, wb_rst_i;
+  input  wb_cyc_i, wb_stb_i, wb_we_i;
+  input   [1:0] wb_sel_i;
+  input  [31:0] wb_adr_i;
+  input  [15:0] wb_dat_i;
+  output [15:0] wb_dat_o;
+  output wb_ack_o;
+
+  wire [31:0] harness_status;  //test harness control and status
+  wire [31:0] harness_control;
   // harness_control fuctions (active high):
   // 0 - Start test
 
