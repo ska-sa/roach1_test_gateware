@@ -1731,27 +1731,13 @@ module toplevel(
 
 
   /******************* Testing ***********************/
-  /* Fabric DRAM interface */
-  wire  [2:0] ddr_af_cmd_1;
-  wire [30:0] ddr_af_addr_1;
-  wire ddr_af_wren_1;
-  wire ddr_af_afull_1;
-  wire [143:0] ddr_df_data_1;
-  wire  [17:0] ddr_df_mask_1;
-  wire ddr_df_wren_1;
-  wire ddr_df_afull_1;
-  wire [143:0] ddr_rd_data_1;
-  wire ddr_rd_dvalid_1;
-  wire ddr_clk_0, ddr_clk_90, ddr_clk_div;
-
-  wire ddr_rst_0, ddr_rst_90, ddr_rst_div;
 
   wire ddr_rd_wr_n_o;
   assign ddr_af_cmd_1 = ddr_rd_wr_n_o ? 3'b001 : 3'b000;
 
   ddr2_test_harness ddr2_test_harness_inst(
     .clk            (ddr_clk_0),
-    .reset          (sys_reset),
+    .reset          (sys_reset | ddr_usr_rst),
     .ddr_rd_wr_n_o  (ddr_rd_wr_n_o),
     .ddr_addr_o     (ddr_af_addr_1),
     .ddr_data_o     (ddr_df_data_1),
@@ -1763,8 +1749,10 @@ module toplevel(
     .ddr_data_i     (ddr_rd_data_1),
     .ddr_dvalid_i   (ddr_rd_dvalid_1),
     .ddr_phy_rdy_i  (ddr_phy_ready),
+    .ddr_request_o  (ddr_arb_rqst_1),
+    .ddr_granted_i  (ddr_arb_grant_1),
 
-    .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
+    .wb_clk_i(wb_clk),.wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[TESTING_SLI]), .wb_stb_i(wb_stb_o[TESTING_SLI]),
     .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
     .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),

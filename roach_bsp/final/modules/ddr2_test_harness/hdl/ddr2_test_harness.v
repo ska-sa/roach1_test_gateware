@@ -53,24 +53,38 @@ module ddr2_test_harness(
   output [15:0] wb_dat_o;
   output wb_ack_o;
 
+  assign ddr_request_o = 1'b1;
+
   wire [31:0] harness_status;  //test harness control and status
   wire [31:0] harness_control;
+
+  dram_test_h_wb dram_test_h_wb_inst(
+    //memory wb slave IF
+    .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
+    .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i),
+    .wb_sel_i(wb_sel_i),
+    .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
+    .wb_ack_o(wb_ack_o),
+    .harness_status(harness_status),
+    .harness_control(harness_control)
+  );
+
   // harness_control fuctions (active high):
   // 0 - Start test
 
   // Internal variables
    
-	  // State machine registers
-	  reg [2:0] test_state;
-	  // Test state machine states
-	  localparam TEST_IDLE      = 3'd000;
-	  localparam WR_TEST_PATT_0 = 3'd001;
-	  localparam WR_TEST_PATT_1 = 3'd010;
-	  localparam TEST_WAIT      = 3'd011;
-	  // localparam TEST_RD_PATT = 2'd11;
+  // State machine registers
+  reg [2:0] test_state;
+  // Test state machine states
+  localparam TEST_IDLE      = 3'd000;
+  localparam WR_TEST_PATT_0 = 3'd001;
+  localparam WR_TEST_PATT_1 = 3'd010;
+  localparam TEST_WAIT      = 3'd011;
+  // localparam TEST_RD_PATT = 2'd11;
   
-      // Address Counter
-	  reg [30:2] ddr_addr;
+  // Address Counter
+  reg [30:2] ddr_addr;
   
   // Code starts here
   

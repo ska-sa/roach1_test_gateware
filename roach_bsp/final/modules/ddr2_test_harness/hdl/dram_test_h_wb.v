@@ -1,6 +1,6 @@
 `include "ddr2_test_harness.vh"
 
-module reg_wb_attach(
+module dram_test_h_wb(
     //memory wb slave IF
     wb_clk_i, wb_rst_i,
     wb_we_i, wb_cyc_i, wb_stb_i, wb_sel_i,
