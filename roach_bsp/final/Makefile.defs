@@ -57,9 +57,9 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/ddr2_controller/hdl/usr_top.v \
     ./modules/ddr2_controller/hdl/usr_wr.v \
     ./modules/ddr2_cpu_interface/hdl/ddr2_cpu_interface.v \
-    ./modules/ddr2_cpu_interface/hdl/mem_rd_cache.v \
-    ./modules/ddr2_cpu_interface/hdl/mem_wr_cache.v \
     ./modules/ddr2_cpu_interface/hdl/reg_wb_attach.v \
+    ./modules/ddr2_test_harness/hdl/ddr2_test_harness.v \
+    ./modules/ddr2_test_harness/hdl/dram_test_h_wb.v \
     ./modules/ddr2_infrastructure/hdl/ddr2_infrastructure.v \
     ./modules/qdr_controller/hdl/top_ctrl_sm.v \
     ./modules/qdr_controller/hdl/top_wrdata_bw_fifo.v \
