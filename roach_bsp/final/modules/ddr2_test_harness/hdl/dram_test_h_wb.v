@@ -6,6 +6,7 @@ module dram_test_h_wb(
     wb_we_i, wb_cyc_i, wb_stb_i, wb_sel_i,
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
+    status_addr,
     harness_status,
     harness_control
   );
@@ -23,20 +24,21 @@ module dram_test_h_wb(
   output [15:0] wb_dat_o;
   output wb_ack_o;
 
-  input  [15:0] harness_status [0:STATUS_DEPTH];  //test harness control and status
+  output [3:0] status_addr;
+  input  [15:0] harness_status;  //test harness control and status
   output [45:0] harness_control;
 
-  reg [31:0] harness_control;
+  reg [45:0] harness_control;
 
   reg wb_ack_o;
   reg [20:0] wb_dat_o_src;
-//  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_TH_STATUS_0 ? harness_status [15:0 ] :
-//                    wb_dat_o_src == `REG_DDR2_TH_STATUS_1 ? harness_status [31:16] :
-//                    wb_dat_o_src == `REG_DDR2_TH_CTRL_0   ? harness_control[15:0 ] :
-//                    wb_dat_o_src == `REG_DDR2_TH_CTRL_1   ? harness_control[31:16] :
-//                    16'd0;
+  
+  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_TH_CTRL_0   ? harness_control[15:0 ] :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_1   ? harness_control[31:16] :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_2   ? {2'b00,harness_control[45:32]} :
+                    harness_status;
                   
-  assign wb_dat_o = harness_status[wb_dat_o_src];
+  assign status_addr = wb_dat_o_src[3:0]; 
 
   always @(posedge wb_clk_i) begin
     // strobes

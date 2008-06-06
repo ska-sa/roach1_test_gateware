@@ -26,7 +26,8 @@ module ddr2_test_harness(
   parameter  DATA_WIDTH         = 64;
   parameter  DATA_BITS_PER_MASK = 8;
   localparam MASK_WIDTH         = DATA_WIDTH/8;
-  parameter  STATUS_DEPTH       = 16-1;
+  parameter  STATUS_MEM_DEPTH   = 16;
+  parameter  STATUS_ADDR_WIDTH  = 4;
 
   // Inputs & Outputs
   input  clk, reset;
@@ -83,26 +84,35 @@ module ddr2_test_harness(
     
     // Test harness communications
 
-      wire [15:0] harness_status [0:STATUS_DEPTH];  //test harness control and status
+      wire [STATUS_ADDR_WIDTH - 1:0] status_addr;
+      wire [15:0] harness_status;  //test harness control and status
       wire [45:0] harness_control;
       wire [29:0] ctrl_ddr_size;
-
+      reg [29:0] afull_addr;
       wire ctrl_reset;
       wire ctrl_start;
-      
       reg test_done;
       reg test_fault;
-      wire [127:0] data_fault_read;
+      reg afull_event;
+      reg [DATA_WIDTH*2 - 1:0] data_fault_read;
+      wire [15:0] status_mem [3:STATUS_MEM_DEPTH - 1 + 3];
 
-  dram_test_h_wb #(
-    STATUS_DEPTH(STATUS_DEPTH)
-  ) dram_test_h_wb_inst(
+  //Wishbone map:
+  //  Control:
+  //    400000: bit 0 = start; bit 1 = reset
+  //    400002: lower byte of ddr test size (
+  //    400004: upper byte of ddr test size
+  //  Status:
+  //    400006: bit 0 = test done; bit 1 = test fault
+  
+  dram_test_h_wb dram_test_h_wb_inst(
     //memory wb slave IF
     .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
     .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i),
     .wb_sel_i(wb_sel_i),
     .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
     .wb_ack_o(wb_ack_o),
+    .status_addr(status_addr),
     .harness_status(harness_status),
     .harness_control(harness_control)
   );
@@ -116,8 +126,33 @@ module ddr2_test_harness(
   assign ctrl_start = harness_control[0];
   assign ctrl_reset = harness_control[1];
   assign ctrl_ddr_size = harness_control[45:16];
+ 
+  always @(posedge clk) begin
+    if (module_rst) begin
+      afull_event <= 0;
+      afull_addr <= {30'b0};
+    end else if (af_df_afull && !afull_event) begin
+      afull_event <= 1;
+      afull_addr <= ddr_addr;
+    end
+  end
+
+
+
+  genvar i;
+  generate
+    for (i = 0; i < 8; i = i + 1) begin : fucknuckle
+      assign status_mem[i + 1 + 3] = data_fault_read[((i*16) + 15):(i*16)];
+    end
+  endgenerate
   
-  assign data_fault_read = harness_status[1:8];
+  assign status_mem[9+3] = afull_addr[15:0];
+  assign status_mem[10+3] = {2'b00,afull_addr[29:16]};
+
+  assign status_mem[3][0] = test_done;
+  assign status_mem[3][1] = test_fault;
+  assign status_mem[3][2] = afull_event;
+  assign harness_status = status_mem[status_addr];
 
   // Detect rising edge on harness_control bit 1. This is a module reset
   always @(posedge clk) begin
@@ -181,6 +216,7 @@ module ddr2_test_harness(
           end else begin
             test_state <= WR_BACKOFF;
           end
+        end
         TEST_WAIT : begin
           test_state <= RD_TEST_PATT;
         end 
@@ -199,6 +235,7 @@ module ddr2_test_harness(
           end else begin
             test_state <= RD_BACKOFF;
           end
+        end
         WAIT_FOR_DATA : begin
           if (ddr_dvalid_fe) begin                       //ToDo: add code to ensure full memory have been read
             test_state <= TEST_IDLE;
@@ -252,6 +289,7 @@ module ddr2_test_harness(
   always @(posedge clk) begin
     if ((test_state == WR_TEST_PATT_0) || module_rst) begin
       test_fault <= 0;
+      data_fault_read <= {128'b0};
     end else if(ddr_dvalid_i) begin
       if (ddr_data_i != {ddr_data_cnt,ddr_data_cnt}) begin
         test_fault <= 1; 
