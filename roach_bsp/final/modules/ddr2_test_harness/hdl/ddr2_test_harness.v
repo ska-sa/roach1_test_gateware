@@ -26,7 +26,7 @@ module ddr2_test_harness(
   parameter  DATA_WIDTH         = 64;
   parameter  DATA_BITS_PER_MASK = 8;
   localparam MASK_WIDTH         = DATA_WIDTH/8;
-  parameter  DDR2_SIZE          = 8;//(256 * 1024 * 1024)/4;
+  parameter  STATUS_DEPTH       = 16-1;
 
   // Inputs & Outputs
   input  clk, reset;
@@ -60,12 +60,14 @@ module ddr2_test_harness(
     // State machine registers
       reg [2:0] test_state;
     // Test state machine states
-      localparam TEST_IDLE      = 3'd000;
-      localparam WR_TEST_PATT_0 = 3'd001;
-      localparam WR_TEST_PATT_1 = 3'd010;
-      localparam TEST_WAIT      = 3'd011;
-      localparam RD_TEST_PATT   = 3'd100;
-      localparam WAIT_FOR_DATA  = 3'd101;
+      localparam TEST_IDLE      = 3'b000;
+      localparam WR_TEST_PATT_0 = 3'b001;
+      localparam WR_TEST_PATT_1 = 3'b010;
+      localparam TEST_WAIT      = 3'b011;
+      localparam RD_TEST_PATT   = 3'b100;
+      localparam WAIT_FOR_DATA  = 3'b101;
+      localparam RD_BACKOFF     = 3'b110;
+      localparam WR_BACKOFF     = 3'b111;
     // Address Counter
       reg [30:2] ddr_addr;
       reg [63:0] ddr_data_cnt;
@@ -74,13 +76,27 @@ module ddr2_test_harness(
       reg test_start_re0;
       wire ddr_dvalid_fe; 
       reg ddr_dvalid_fe0; 
+      wire module_rst;
+      reg module_rst_re;
+      wire af_df_afull;
+      wire burst_edge;
+    
+    // Test harness communications
+
+      wire [15:0] harness_status [0:STATUS_DEPTH];  //test harness control and status
+      wire [45:0] harness_control;
+      wire [29:0] ctrl_ddr_size;
+
+      wire ctrl_reset;
+      wire ctrl_start;
+      
       reg test_done;
       reg test_fault;
+      wire [127:0] data_fault_read;
 
-      wire [31:0] harness_status;  //test harness control and status
-      wire [31:0] harness_control;
-
-  dram_test_h_wb dram_test_h_wb_inst(
+  dram_test_h_wb #(
+    STATUS_DEPTH(STATUS_DEPTH)
+  ) dram_test_h_wb_inst(
     //memory wb slave IF
     .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
     .wb_cyc_i(wb_cyc_i), .wb_stb_i(wb_stb_i), .wb_we_i(wb_we_i),
@@ -94,20 +110,39 @@ module ddr2_test_harness(
 
   // Code starts here
   
+  // General assignments and control assignments
+   
+  assign af_df_afull = ddr_af_afull_i || ddr_df_afull_i;
+  assign ctrl_start = harness_control[0];
+  assign ctrl_reset = harness_control[1];
+  assign ctrl_ddr_size = harness_control[45:16];
+  
+  assign data_fault_read = harness_status[1:8];
+
+  // Detect rising edge on harness_control bit 1. This is a module reset
+  always @(posedge clk) begin
+    if (reset) begin
+      module_rst_re <= 1;
+    end else begin
+      module_rst_re <= ctrl_reset;
+    end
+  end
+  assign module_rst = (ctrl_reset && !module_rst_re) || reset || !ddr_phy_rdy_i;
+
   // Detect rising edge on harness_control bit 0. This indicates start of test
   // run
   always @(posedge clk) begin
-    if (reset) begin
+    if (module_rst) begin
       test_start_re0 <= 1;
     end else begin
-      test_start_re0 <= harness_control[0];
+      test_start_re0 <= ctrl_start;
     end
   end
- assign test_start_re = harness_control[0] && !test_start_re0;
+ assign test_start_re = ctrl_start && !test_start_re0;
   
   // Detect negative edge on ddr_dvalid_i
   always @(posedge clk) begin
-    if (reset) begin
+    if (module_rst) begin
       ddr_dvalid_fe0 <= 0;
     end else begin
       ddr_dvalid_fe0 <= ddr_dvalid_i;
@@ -117,7 +152,7 @@ module ddr2_test_harness(
   
   // Main state machine
   always @(posedge clk) begin
-    if (reset) begin
+    if (module_rst) begin
       test_state <= TEST_IDLE;
     end else begin
       case (test_state)
@@ -132,24 +167,40 @@ module ddr2_test_harness(
           test_state <= WR_TEST_PATT_1; 
         end
         WR_TEST_PATT_1 : begin
-          if (ddr_addr == DDR2_SIZE) begin
+          if (ddr_addr == ctrl_ddr_size) begin
             test_state <= TEST_WAIT;
+          end else if (burst_edge && af_df_afull) begin  //Check almost full flag at end of 4 burst write
+            test_state <= WR_BACKOFF;
           end else begin
             test_state <= WR_TEST_PATT_0; 
           end
         end
+        WR_BACKOFF : begin
+          if (!af_df_afull) begin
+            test_state <= WR_TEST_PATT_0;
+          end else begin
+            test_state <= WR_BACKOFF;
+          end
         TEST_WAIT : begin
           test_state <= RD_TEST_PATT;
         end 
         RD_TEST_PATT : begin
-          if (ddr_addr == DDR2_SIZE) begin
+          if (ddr_addr == ctrl_ddr_size) begin
             test_state <= WAIT_FOR_DATA;
+          end else if (burst_edge && af_df_afull) begin  //Check almost full flag at end of 4 burst write
+            test_state <= RD_BACKOFF;
           end else begin
             test_state <= RD_TEST_PATT;
           end
         end
+        RD_BACKOFF : begin
+          if (!af_df_afull) begin
+            test_state <= RD_TEST_PATT;
+          end else begin
+            test_state <= RD_BACKOFF;
+          end
         WAIT_FOR_DATA : begin
-          if (ddr_dvalid_fe) begin
+          if (ddr_dvalid_fe) begin                       //ToDo: add code to ensure full memory have been read
             test_state <= TEST_IDLE;
           end else begin
             test_state <= WAIT_FOR_DATA;
@@ -165,14 +216,14 @@ module ddr2_test_harness(
   assign ddr_af_we_o   = ((test_state == WR_TEST_PATT_0) || (test_state == RD_TEST_PATT)) ? 1'b1 : 1'b0;
   assign ddr_df_we_o   = ((test_state == WR_TEST_PATT_0) || (test_state == WR_TEST_PATT_1)) ? 1'b1 : 1'b0;
 
-  always @(ddr_dvalid_fe or test_start_re or reset) begin
-    if (ddr_dvalid_fe) begin
+  // Check when test is done
+  always @(ddr_dvalid_fe or test_start_re or module_rst) begin
+    if (ddr_dvalid_fe && (test_state == WAIT_FOR_DATA)) begin
       test_done <= 1;
-    end else if (test_start_re || reset ) begin
+    end else if (test_start_re || module_rst ) begin
       test_done <= 0;
     end
   end
-  assign harness_status[0] = test_done;
 
   // Adress Generator
   
@@ -184,6 +235,7 @@ module ddr2_test_harness(
     end
   end  
   assign ddr_addr_o = {ddr_addr,2'b0};
+  assign burst_edge = ddr_addr % 4;
   
   // Data Generator
   always @(posedge clk) begin
@@ -198,15 +250,15 @@ module ddr2_test_harness(
 
   // Data Comparator
   always @(posedge clk) begin
-    if (test_state == WR_TEST_PATT_0) begin
+    if ((test_state == WR_TEST_PATT_0) || module_rst) begin
       test_fault <= 0;
     end else if(ddr_dvalid_i) begin
       if (ddr_data_i != {ddr_data_cnt,ddr_data_cnt}) begin
         test_fault <= 1; 
+        data_fault_read <= ddr_data_i;
       end
     end
   end
-  assign harness_status[1] = test_fault;
 
 endmodule
 
