@@ -24,21 +24,22 @@ module dram_test_h_wb(
   output [15:0] wb_dat_o;
   output wb_ack_o;
 
-  output [3:0] status_addr;
+  output [20:0] status_addr;
   input  [15:0] harness_status;  //test harness control and status
-  output [45:0] harness_control;
+  output [79:0] harness_control;
 
-  reg [45:0] harness_control;
-
+  reg [79:0] harness_control;
   reg wb_ack_o;
   reg [20:0] wb_dat_o_src;
   
   assign wb_dat_o = wb_dat_o_src == `REG_DDR2_TH_CTRL_0   ? harness_control[15:0 ] :
                     wb_dat_o_src == `REG_DDR2_TH_CTRL_1   ? harness_control[31:16] :
-                    wb_dat_o_src == `REG_DDR2_TH_CTRL_2   ? {2'b00,harness_control[45:32]} :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_2   ? harness_control[47:32] :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_3   ? harness_control[63:48] :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_4   ? harness_control[79:64] :
                     harness_status;
                   
-  assign status_addr = wb_dat_o_src[3:0]; 
+  assign status_addr = wb_dat_o_src[20:0]; 
 
   always @(posedge wb_clk_i) begin
     // strobes
@@ -70,9 +71,27 @@ module dram_test_h_wb(
               if (wb_sel_i[0])
                 harness_control[39:32] <= wb_dat_i[7:0];
               if (wb_sel_i[1])
-                harness_control[45:40] <= wb_dat_i[13:8];
+                harness_control[47:40] <= wb_dat_i[15:8];
             end
           end
+          `REG_DDR2_TH_CTRL_3: begin
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                harness_control[55:48] <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                harness_control[63:56] <= wb_dat_i[15:8];
+            end
+          end
+          `REG_DDR2_TH_CTRL_4: begin
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                harness_control[71:64] <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                harness_control[79:72] <= wb_dat_i[15:8];
+            end
+          end
+          default:
+            // do nothing
         endcase
       end
     end

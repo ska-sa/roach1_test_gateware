@@ -1,5 +1,7 @@
-
+`define TEST_START 20
+`define RESET_WAIT 20
 `define HALF_CLKPERIOD 5 
+`define SIM_LENGTH 200
 
 module TB_ddr2_test_harness;
 
@@ -20,7 +22,7 @@ module TB_ddr2_test_harness;
 	reg [1:0] wb_sel_i;
 	reg [31:0] wb_adr_i;
 	reg [15:0] wb_dat_i;
-	reg [45:0] harness_control_test;
+	reg [79:0] harness_control_test;
 
 	// Outputs
 	wire ddr_rd_wr_n_o;
@@ -68,7 +70,7 @@ module TB_ddr2_test_harness;
 initial begin
 
   clk = 0;
-  reset = 0;
+  reset = 1;
   ddr_af_afull_i = 0;                   //address fifo almost full
   ddr_df_afull_i = 0;                   //data fifo almost full
   ddr_data_i = {128{1'b1}};  //read data       -- latch on ddr_dvalid_i( and cycle afterwards
@@ -85,12 +87,21 @@ initial begin
   wb_adr_i = {32{1'b1}};
   wb_dat_i = {16{1'b1}};
 
-  harness_control_test  = {46{1'b1}};
+  harness_control_test[79:64]  = 32'h0000_0000;
+  harness_control_test[63:32]  = 32'h0000_0006;
+  harness_control_test[31:00]  = 32'h0000_0000;
 
 end
 
 always
   #`HALF_CLKPERIOD clk = !clk;
+
+always begin
+  #`RESET_WAIT reset = 0;
+  #5 ddr_phy_rdy_i = 1;
+  #`TEST_START harness_control_test[0] = 1;
+
+end
 
 initial  begin
   $dumpfile ("ddr2_test_harness.vcd"); 
@@ -98,7 +109,7 @@ initial  begin
 end
 	  
 initial 
- #5000  $finish; 
+ #`SIM_LENGTH  $finish; 
 
 
 //initial begin
