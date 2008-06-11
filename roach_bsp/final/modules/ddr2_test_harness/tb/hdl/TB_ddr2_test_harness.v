@@ -1,7 +1,7 @@
 `define TEST_START 20
 `define RESET_WAIT 20
 `define HALF_CLKPERIOD 5 
-`define SIM_LENGTH 200
+`define SIM_LENGTH 2000
 
 module TB_ddr2_test_harness;
 
@@ -73,7 +73,7 @@ initial begin
   reset = 1;
   ddr_af_afull_i = 0;                   //address fifo almost full
   ddr_df_afull_i = 0;                   //data fifo almost full
-  ddr_data_i = {128{1'b1}};  //read data       -- latch on ddr_dvalid_i( and cycle afterwards
+  ddr_data_i = {128'h0008_0007_0006_0005_0004_0003_0002_0001};  //read data       -- latch on ddr_dvalid_i( and cycle afterwards
   ddr_dvalid_i = 0;                     //read data valid
   ddr_phy_rdy_i = 0;                    //pysical interface to mem ready and calibrated
   
@@ -87,20 +87,37 @@ initial begin
   wb_adr_i = {32{1'b1}};
   wb_dat_i = {16{1'b1}};
 
-  harness_control_test[79:64]  = 32'h0000_0000;
-  harness_control_test[63:32]  = 32'h0000_0006;
-  harness_control_test[31:00]  = 32'h0000_0000;
+  harness_control_test[79:48]  = 32'h0000_0008;
+  harness_control_test[47:16]  = 32'h0000_0004;
+  harness_control_test[15:00]  = 16'h0000;
+
 
 end
 
 always
   #`HALF_CLKPERIOD clk = !clk;
 
+always @(posedge clk) begin
+  if (!ddr_df_we_o && ddr_af_we_o) begin
+    #50 ddr_dvalid_i = 1;
+    #101 ddr_dvalid_i = 0;
+  end
+end
+
 always begin
   #`RESET_WAIT reset = 0;
   #5 ddr_phy_rdy_i = 1;
   #`TEST_START harness_control_test[0] = 1;
+end
 
+integer i;
+
+always begin
+  #1000;
+  for (i = 0; i < 80; i = i + 1) begin 
+    harness_control_test[79:64]  = i;
+    #20;
+  end  
 end
 
 initial  begin

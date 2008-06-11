@@ -1,3 +1,5 @@
+// `define TEST_BENCH
+
 module ddr2_test_harness(
     clk,
     reset,
@@ -19,30 +21,34 @@ module ddr2_test_harness(
     wb_clk_i, wb_rst_i,
     wb_cyc_i, wb_stb_i, wb_we_i , wb_sel_i,
     wb_adr_i, wb_dat_i, wb_dat_o,
-    wb_ack_o,
-
-    harness_control_test
+    wb_ack_o
+`ifdef TEST_BENCH ,harness_control_test `endif
   );
 
   // Module Definitions
   parameter  DATA_WIDTH         = 64;
+  parameter  DATA_BYTES         = DATA_WIDTH/8;
   parameter  DATA_BITS_PER_MASK = 8;
+  parameter  ADDR_WIDTH         = 31;
   localparam MASK_WIDTH         = DATA_WIDTH/8;
   
-  parameter  STATUS_START_ADDR  = 5;
-  parameter  FAULT_VAL_ADDR     = STATUS_START_ADDR + 1;  // Status register size = 1
-  parameter  FIFO_AFULL_ADDR    = FAULT_VAL_ADDR + 8;     // Fault register size = 8
-  parameter  RDBLK_START_ADDR   = FIFO_AFULL_ADDR + 2;    // Fifo almost full register size = 2
-  parameter  RDBLK_SIZE_BITS    = 3;                      // Read block addressing bits
-  parameter  RDBLK_SIZE         = 1 << RDBLK_SIZE_BITS;   // 128 bit word locations
-  parameter  STATUS_MEM_DEPTH   = RDBLK_START_ADDR + (RDBLK_SIZE * 8);
-    // parameter  STATUS_ADDR_WIDTH  = 4;
-    //
+  parameter  FAULTMEM_SIZE_BITS   = 2;
+  parameter  FAULTMEM_SIZE        = 1 << FAULTMEM_SIZE_BITS;
+  parameter  RDBLK_SIZE_BITS      = 2;                      // Read block addressing bits
+  parameter  RDBLK_SIZE           = 1 << RDBLK_SIZE_BITS;   // 128 bit word locations
+
+  parameter  STATUS_START_ADDR    = 5;
+  parameter  FIFO_AFULL_ADDR      = STATUS_START_ADDR + 1;  // Status register size = 1
+  parameter  DATAFAULT_START_ADDR = FIFO_AFULL_ADDR + 2;    // Fifo almost full register size = 2
+  parameter  ADDRFAULT_START_ADDR = DATAFAULT_START_ADDR + (FAULTMEM_SIZE*DATA_BYTES); //8 x 16 bit words per data fault
+  parameter  RDBLK_START_ADDR     = ADDRFAULT_START_ADDR + (FAULTMEM_SIZE*2); //2 x 16 bit words per address fault  
+  parameter  RDBLKADDR_START_ADDR = RDBLK_START_ADDR + (RDBLK_SIZE*DATA_BYTES);
+  parameter  STATUS_MEM_DEPTH     = RDBLKADDR_START_ADDR + (RDBLK_SIZE*2); //8 x 16 bit words per read
 
   // Inputs & Outputs
   input  clk, reset;
   output ddr_rd_wr_n_o;                    //read/not-write  -- latched on ddr_af_we_o 
-  output [30:0] ddr_addr_o;                //address         -- latched on ddr_af_we_o
+  output [ADDR_WIDTH - 1:0] ddr_addr_o;    //address         -- latched on ddr_af_we_o
   output [DATA_WIDTH*2 - 1:0] ddr_data_o;  //write data      -- latched on ddr_df_we_o
   output [MASK_WIDTH*2 - 1:0] ddr_mask_n_o;  //write data mask -- latched on ddr_df_we_o
   output ddr_af_we_o;                      //address fifo write enable
@@ -63,8 +69,11 @@ module ddr2_test_harness(
   input  [15:0] wb_dat_i;
   output [15:0] wb_dat_o;
   output wb_ack_o;
-  
+
+`ifdef TEST_BENCH  
   input [79:0] harness_control_test;
+  wire [15:0] status_addr_temp;
+`endif
 
   assign ddr_request_o = 1'b1;
 
@@ -82,8 +91,8 @@ module ddr2_test_harness(
       localparam RD_BACKOFF     = 3'b110;
       localparam WR_BACKOFF     = 3'b111;
     // Address Counter
-      reg [30:2] ddr_addr;
-      reg [63:0] ddr_data_cnt;
+      reg [ADDR_WIDTH - 1:2] ddr_addr;
+      reg [DATA_WIDTH - 1:0] ddr_data_cnt;
     // General
       wire test_start_re;
       reg test_start_re0;
@@ -93,25 +102,28 @@ module ddr2_test_harness(
       reg module_rst_re;
       wire af_df_afull;
       wire burst_edge;
-      reg [31:0] data_rdblk_cnt;
+      reg [ADDR_WIDTH - 1:0] data_rdblk_cnt;
       reg assign_rdblk;
+      reg [FAULTMEM_SIZE_BITS:0] fault_cnt;
+      reg [DATA_WIDTH*2 - 1:0] datafault_mem [0:FAULTMEM_SIZE - 1];
+      reg [ADDR_WIDTH - 1:0] addrfault_mem [0:FAULTMEM_SIZE - 1];
       reg [RDBLK_SIZE_BITS - 1:0] addr_rdblk_cnt;
-      reg [15:0] rdblk_mem [0 : RDBLK_SIZE - 1];
+      reg [DATA_WIDTH*2 - 1:0] rdblk_mem [0 : RDBLK_SIZE - 1];
+      reg [ADDR_WIDTH - 1:0] rdblk_addr_mem [0:FAULTMEM_SIZE - 1];
 
     // Test harness communications
 
       wire [20:0] status_addr;
       wire [15:0] harness_status;  //test harness control and status
       wire [79:0] harness_control;
-      wire [29:0] ctrl_ddr_size;
-      wire [31:0] ctrl_rdblk_addr;
-      reg  [29:0] afull_addr;
+      wire [ADDR_WIDTH - 3:0] ctrl_ddr_size;
+      wire [ADDR_WIDTH - 1:0] ctrl_rdblk_addr;
+      reg  [ADDR_WIDTH - 3:0] afull_addr;
       reg  ctrl_reset;
       reg  ctrl_start;
       reg test_done;
       reg test_fault;
       reg afull_event;
-      reg [DATA_WIDTH*2 - 1:0] data_fault_read;
       wire [15:0] status_mem [STATUS_START_ADDR:STATUS_MEM_DEPTH];
 
   //Wishbone map:
@@ -140,39 +152,47 @@ module ddr2_test_harness(
   // General assignments and control assignments
    
   assign af_df_afull = ddr_af_afull_i || ddr_df_afull_i;
+ 
+`ifdef TEST_BENCH
   always @(posedge clk) begin
     ctrl_start <= harness_control_test[0];
     ctrl_reset <= harness_control_test[1];
   end
-  assign ctrl_ddr_size = harness_control_test[45:16];
-  assign ctrl_rdblk_addr = harness_control_test[79:48];
- 
+  assign ctrl_ddr_size = {harness_control_test[44:16] - 1;
+  assign ctrl_rdblk_addr = {15'h0000,harness_control_test[63:48]};
+`else
+  always @(posedge clk) begin
+    ctrl_start <= harness_control[0];
+    ctrl_reset <= harness_control[1];
+  end
+  assign ctrl_ddr_size = 1024*16 - 1;// harness_control[44:16] - 1;
+  assign ctrl_rdblk_addr = {15'h0000,harness_control[63:48]};
+`endif
+
   always @(posedge clk) begin
     if (module_rst) begin
       afull_event <= 0;
-      afull_addr <= {30'b0};
+      afull_addr  <= {(ADDR_WIDTH - 2){1'b0}};
     end else if (af_df_afull && !afull_event) begin
       afull_event <= 1;
-      afull_addr <= ddr_addr;
+      afull_addr  <= ddr_addr;
     end
   end
 
-
-
-  genvar i;
-  generate
-    for (i = 0; i < 8; i = i + 1) begin : fucknuckle
-      assign status_mem[i + FAULT_VAL_ADDR] = data_fault_read[((i*16) + 15):(i*16)];
-    end
-  endgenerate
-  
   assign status_mem[FIFO_AFULL_ADDR] = afull_addr[15:0];
-  assign status_mem[FIFO_AFULL_ADDR + 1] = {2'b00,afull_addr[29:16]};
+  assign status_mem[FIFO_AFULL_ADDR + 1] = {3'b000,afull_addr[28:16]};
 
   assign status_mem[STATUS_START_ADDR][0] = test_done;
   assign status_mem[STATUS_START_ADDR][1] = test_fault;
   assign status_mem[STATUS_START_ADDR][2] = afull_event;
+  assign status_mem[STATUS_START_ADDR][15:3] = {13'b0};
+
+`ifdef TEST_BENCH
+  assign status_addr_temp = harness_control_test[79:64]; 
+  assign harness_status = status_mem[status_addr_temp];
+`else
   assign harness_status = status_mem[status_addr];
+`endif
 
   // Detect rising edge on harness_control bit 1. This is a module reset
   always @(posedge clk) begin
@@ -286,8 +306,9 @@ module ddr2_test_harness(
   
   always @(posedge clk) begin
     if ((test_state == TEST_IDLE) || (test_state == TEST_WAIT)) begin
-      ddr_addr <= 29'b0;
-    end else if ((test_state == WR_TEST_PATT_1) || (test_state == RD_TEST_PATT)) begin
+      ddr_addr <= {(ADDR_WIDTH - 2){1'b0}};
+      burst_cnt <= 0;
+    end else if ((test_state == WR_TEST_PATT_1) || inc_rd_addr) begin
       ddr_addr <= ddr_addr + 1;
     end
   end  
@@ -297,7 +318,7 @@ module ddr2_test_harness(
   // Data Generator
   always @(posedge clk) begin
     if ((test_state == TEST_IDLE) || (test_state == TEST_WAIT)) begin
-      ddr_data_cnt <= 64'b0;
+      ddr_data_cnt <= {DATA_WIDTH{1'b0}};
     end else if ((test_state == WR_TEST_PATT_1) || (test_state == WR_TEST_PATT_0) || (ddr_dvalid_i)) begin
       ddr_data_cnt <= ddr_data_cnt + 1;
     end
@@ -309,11 +330,15 @@ module ddr2_test_harness(
   always @(posedge clk) begin
     if ((test_state == WR_TEST_PATT_0) || module_rst) begin
       test_fault <= 0;
-      data_fault_read <= {128'b0};
+      fault_cnt <= 0;
     end else if(ddr_dvalid_i) begin
       if (ddr_data_i != {ddr_data_cnt,ddr_data_cnt}) begin
         test_fault <= 1; 
-        data_fault_read <= ddr_data_i;
+        if (fault_cnt < FAULTMEM_SIZE) begin
+          fault_cnt <= fault_cnt + 1;
+          datafault_mem[fault_cnt] <= ddr_data_i;
+          addrfault_mem[fault_cnt] <= ddr_data_cnt[ADDR_WIDTH - 1:0];
+        end  
       end
     end
   end
@@ -324,18 +349,51 @@ module ddr2_test_harness(
       data_rdblk_cnt <= 0;
       assign_rdblk   <= 0;
       addr_rdblk_cnt <= 0;
+     /* generate 
+      for (i = 0; i < RDBLK_SIZE, i = i + 1) begin : init_rdblk_mem
+        rdblk_mem[k] <= 128'b0;
+      end 
+      endgenerate*/
     end else if(ddr_dvalid_i) begin
       data_rdblk_cnt <= data_rdblk_cnt + 2;
-      if ((data_rdblk_cnt >= ctrl_rdblk_addr) && (data_rdblk_cnt <= ctrl_rdblk_addr + RDBLK_SIZE)) begin
+      if ((data_rdblk_cnt >= ctrl_rdblk_addr) && (data_rdblk_cnt <= ctrl_rdblk_addr + RDBLK_SIZE*2-1)) begin
         rdblk_mem[addr_rdblk_cnt] <= ddr_data_i;
         addr_rdblk_cnt            <= addr_rdblk_cnt + 1;
+        rdblk_addr_mem[addr_rdblk_cnt] <= ddr_data_cnt[ADDR_WIDTH - 1:0];
       end
     end
   end
 
+  genvar j;
+  genvar i;
+
+  generate 
+    for (i = 0; i < FAULTMEM_SIZE; i = i + 1) begin : faultdata_generate
+      for (j = 0; j < DATA_BYTES; j = j + 1) begin : assign_faultdata_generate
+        assign status_mem[DATAFAULT_START_ADDR + (i*DATA_BYTES) + j ] = datafault_mem[i][15 + (j*16):(j*16)];
+      end
+    end
+  endgenerate
+
+  generate 
+    for (i = 0; i < FAULTMEM_SIZE; i = i + 1) begin : faultaddr_generate
+      assign status_mem[ADDRFAULT_START_ADDR + (i*2)] = addrfault_mem[i][15:0];
+      assign status_mem[ADDRFAULT_START_ADDR + (i*2) + 1] = {1'b1,addrfault_mem[i][ADDR_WIDTH - 1:16]};
+    end
+  endgenerate
+
   generate 
     for (i = 0; i < RDBLK_SIZE; i = i + 1) begin : readblock_generate
-      assign status_mem[RDBLK_START_ADDR + i] = rdblk_mem[i];
+      for (j = 0; j < 8; j = j + 1) begin : assign_status_mem_generat
+        assign status_mem[RDBLK_START_ADDR + (i*DATA_BYTES) + j ] = rdblk_mem[i][15 + (j*16):(j*16)];
+      end
+    end
+  endgenerate
+
+  generate 
+    for (i = 0; i < RDBLK_SIZE; i = i + 1) begin : readblock_addr_generayte
+      assign status_mem[RDBLKADDR_START_ADDR + (i*2)] = rdblk_addr_mem[i][15:0];
+      assign status_mem[RDBLKADDR_START_ADDR + (i*2) + 1] = {1'b1,rdblk_addr_mem[i][ADDR_WIDTH - 1:16]};
     end
   endgenerate
 

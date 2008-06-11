@@ -90,8 +90,6 @@ module dram_test_h_wb(
                 harness_control[79:72] <= wb_dat_i[15:8];
             end
           end
-          default:
-            // do nothing
         endcase
       end
     end
