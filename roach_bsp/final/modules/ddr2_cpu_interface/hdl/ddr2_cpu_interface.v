@@ -152,7 +152,7 @@ module ddr2_cpu_interface(
           end
           7'd3: begin
             if (mem_wb_we_i) begin
-              addr_buffer[30:16] <= mem_wb_dat_i;
+              addr_buffer[30:16] <= mem_wb_dat_i[14:0];
             end else begin
               mem_wb_dat_o <= {1'b0, addr_buffer[30:16]};
             end
