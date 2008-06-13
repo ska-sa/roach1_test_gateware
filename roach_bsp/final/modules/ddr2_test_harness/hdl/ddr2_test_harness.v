@@ -100,8 +100,6 @@ module ddr2_test_harness(
       reg  ddr_dvalid_0;
       reg  ddr_dvalid_1;
       reg  ddr_dvalid_2;
-      reg  ddr_dvalid_3;
-      wire compare_dvalid;
       reg  compare_data;
       wire gen_data;
       wire cmp_data;
@@ -234,10 +232,10 @@ module ddr2_test_harness(
     if (module_rst) begin
       ddr_dvalid_fe0 <= 0;
     end else begin
-      ddr_dvalid_fe0 <= ddr_dvalid_3;
+      ddr_dvalid_fe0 <= ddr_dvalid_2;
     end
   end
-  assign ddr_dvalid_fe = !ddr_dvalid_3 && ddr_dvalid_fe0;
+  assign ddr_dvalid_fe = !ddr_dvalid_2 && ddr_dvalid_fe0;
   
   // Main state machine
   always @(posedge clk) begin
@@ -369,20 +367,19 @@ module ddr2_test_harness(
     ddr_dvalid_0 <= ddr_dvalid_i;
     ddr_dvalid_1 <= ddr_dvalid_0;
     ddr_dvalid_2 <= ddr_dvalid_1;
-    ddr_dvalid_3 <= ddr_dvalid_2;
   end
 
-  assign compare_dvalid = ddr_dvalid_2 || ddr_dvalid_3; // compare_data and compare_dvalid is used to control the data comparator and data generator
+  // compare_data and ddr_dvalid_2 is used to control the data comparator and data generator
 
   always @(posedge clk) begin
-    if (!compare_dvalid) begin
+    if (!ddr_dvalid_2) begin
       compare_data <= 0;
     end else begin
       compare_data <= !compare_data;
     end
   end 
-  assign gen_data = compare_data && compare_dvalid;
-  assign cmp_data = !compare_data && compare_dvalid;
+  assign gen_data = compare_data && ddr_dvalid_2;
+  assign cmp_data = !compare_data && ddr_dvalid_2;
 
   // Check data generator
   always @(posedge clk) begin
