@@ -30,10 +30,12 @@
 //
 
 `define ENABLE_DDR2
+`define ENABLE_DDR2_TH
 
-//`define ENABLE_QDR0
-//`define ENABLE_QDR1
-//`define ENABLE_QDR_INFRASTRUCTURE
+`define ENABLE_QDR0
+`define ENABLE_QDR0_TH
+`define ENABLE_QDR1
+`define ENABLE_QDR_INFRASTRUCTURE
 
 //`define ENABLE_IADC_0
 //`define ENABLE_IADC_1
@@ -41,5 +43,10 @@
 
 `define DDR2_CLK_FREQ 200
 `define QDR_CLK_FREQ  250
+  
+
+`define QDR_DATA_WIDTH 18
+`define QDR_BW_WIDTH   2
+`define QDR_ADDR_WIDTH 22
 
 `endif
