@@ -31,8 +31,8 @@ module i2c_slave(
   
   reg sda_oen;
   assign scl_oen = 1'b1; //leave clock alone
-  assign sda_o   = 1'b1; //let oens do the work
-  assign scl_o   = 1'b1;
+  assign sda_o   = 1'b0; //let oens do the work
+  assign scl_o   = 1'b0;
   /************** Byte Interaction ***********/
   reg ostrb, istrb, cstrb;
   reg [7:0] odata;
@@ -149,20 +149,15 @@ module i2c_slave(
   reg [2:0] bit_index;
 
   always @(posedge clk) begin
+    istrb<=1'b0;
+    ostrb<=1'b0;
+    cstrb<=1'b0;
+    get_bit_strb  <= 1'b0;
+    send_bit_strb <= 1'b0;
     if (reset | stop_con | start_con) begin
-      get_bit_strb  <= 1'b0;
-      send_bit_strb <= 1'b0;
       bit_state <= `BIT_STATE_CONTROL_READ;
       bit_index <= 3'b0;
-      istrb<=1'b0;
-      ostrb<=1'b0;
-      cstrb<=1'b0;
     end else if (busy) begin
-      istrb<=1'b0;
-      ostrb<=1'b0;
-      cstrb<=1'b0;
-      get_bit_strb  <= 1'b0;
-      send_bit_strb <= 1'b0;
       case (bit_state)
         `BIT_STATE_IDLE: begin
         end
@@ -321,11 +316,10 @@ module i2c_slave(
   reg [15:0] ibit_counter;
 
   always @(posedge clk) begin
+    got_bit_strb<=1'b0;
     if (reset | start_con | stop_con) begin
-      got_bit_strb<=1'b0;
       ibit_state<=`IBIT_STATE_IDLE;
     end else begin
-      got_bit_strb<=1'b0;
       case (ibit_state) 
         `IBIT_STATE_IDLE: begin
           if (get_bit_strb) begin

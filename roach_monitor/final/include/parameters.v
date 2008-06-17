@@ -18,7 +18,7 @@
 `define XPORT_SERIAL_BAUD 115200
 `define DEBUG_SERIAL_BAUD 115200
 
-`define I2C_CLOCK_RATE    100_000
+`define I2C_CLOCK_RATE    400_000
 `define I2C_SLAVE_ADDRESS 7'b0001111
 
 /************ Power Manager Parameters ************/

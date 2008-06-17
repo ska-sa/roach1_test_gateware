@@ -93,12 +93,12 @@ module toplevel(
 
   /* Reset Control */
   reset_block #(
-    .DELAY(1000),
-    .WIDTH(32'h200_0000)
+    .DELAY(10000),
+    .WIDTH(32'h400_0000)
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(~pll_lock),
-    .reset_i(!chs_reset_n | (XPORT_GPIO == 3'b000)),
+    .reset_i(!chs_reset_n || (XPORT_GPIO == 3'b000)),
     .reset_o(hard_reset)
   );
 
@@ -227,6 +227,7 @@ module toplevel(
   wire ctrl_sda_i, ctrl_sda_o, ctrl_sda_oen;
   /* Controller I2C Infrastructure */
   
+  wire [1:0] temp_led;
   i2c_infrastructure i2c_infrastructure_controller(
     .sda_i(ctrl_sda_i), .sda_o(ctrl_sda_o), .sda_oen(ctrl_sda_oen),
     .scl_i(ctrl_scl_i), .scl_o(ctrl_scl_o), .scl_oen(ctrl_scl_oen),
@@ -586,7 +587,6 @@ module toplevel(
                     bad_power_down ? counter[24] :
                     1'b0;
   wire action_led = power_ok ? CONTROLLER_IRQ : counter[26];
-
   assign CHS_LED_N = ~{action_led, power_led};
 
   assign cold_start = ~sys_config_vector[0];
