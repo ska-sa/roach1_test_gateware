@@ -1247,6 +1247,7 @@ module toplevel(
     .user_ad_rd(qdr0_usr_ad_rd)
   );
   
+
   wire qdr0_usr_d_w;
   wire qdr0_usr_ad_w;
   wire qdr0_usr_r;
@@ -1291,6 +1292,18 @@ module toplevel(
     .qdr_rd_valid(qdr0_usr_qr_valid),
     .qdr_rd_en(qdr0_usr_r)
   );
+    
+    .qdr_rst_o(qdr0_usr_reset_th),
+    
+    .user_dwl_o(qdr0_usr_dwl_th),
+    .user_dwh_o(qdr0_usr_dwh_th),
+    .user_bwl_n_o(qdr0_usr_bwl_n_th),
+    .user_bwh_n_o(qdr0_usr_bwh_n_th),
+    .user_ad_wr_o(qdr0_usr_ad_wr_th),
+    .user_ad_rd_o(qdr0_usr_ad_rd_th)
+    .user_ad_w_n_o(qdr0_usr_ad_w_n_th), 
+    .user_d_w_n_o(qdr0_usr_d_w_n_th),
+    .user_r_n_o(qdr0_usr_r_n_th),
 
 `else
   assign qdr0_d  = {18{1'b0}};
@@ -1710,7 +1723,7 @@ module toplevel(
 
 
   /******************* Testing ***********************/
-
+  /****** DDR ******/
   wire ddr_rd_wr_n_o;
   assign ddr_af_cmd_1 = ddr_rd_wr_n_o ? 3'b001 : 3'b000;
 
@@ -1738,7 +1751,39 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI]),
     .wb_ack_o(wb_ack_i[TESTING_SLI])
   );
+  
+  /****** QDR 0 ******/
+  qdr_test_harness qdr_test_harness_inst(
+    .reset_i(sys_reset),
+    .clk0(qdr_clk_0)
+    
+    .qdr_rst_o(qdr0_usr_reset_th),
+    
+    .cal_done_i(qdr0_cal_done),
 
+    .user_wr_full_i(qdr0_usr_wr_full),
+    .user_rd_full_i(qdr0_usr_rd_full),
+    .user_qr_valid_i(qdr0_usr_qr_valid),
+    .user_qrl_i(qdr0_usr_qrl),
+    .user_qrh_i(qdr0_usr_qrh),
+
+    .user_dwl_o(qdr0_usr_dwl_th),
+    .user_dwh_o(qdr0_usr_dwh_th),
+    .user_bwl_n_o(qdr0_usr_bwl_n_th),
+    .user_bwh_n_o(qdr0_usr_bwh_n_th),
+    .user_ad_wr_o(qdr0_usr_ad_wr_th),
+    .user_ad_rd_o(qdr0_usr_ad_rd_th)
+    .user_ad_w_n_o(qdr0_usr_ad_w_n_th), 
+    .user_d_w_n_o(qdr0_usr_d_w_n_th),
+    .user_r_n_o(qdr0_usr_r_n_th),
+    
+    .wb_clk_i(wb_clk),.wb_rst_i(sys_reset),
+    .wb_cyc_i(wb_cyc_o[TESTING_SLI]), .wb_stb_i(wb_stb_o[TESTING_SLI]),
+    .wb_we_i(wb_we_o), .wb_sel_i(wb_sel_o),
+    .wb_adr_i(wb_adr_o), .wb_dat_i(wb_dat_o),
+    .wb_dat_o(wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI]),
+    .wb_ack_o(wb_ack_i[TESTING_SLI])
+  );
   /********************* Incomplete *****************/
   /* Other Slave assignments */
 
