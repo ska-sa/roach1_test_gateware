@@ -85,6 +85,8 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/qdr_controller/hdl/qdr_controller.v \
     ./modules/qdr_controller/hdl/phy_write.v \
     ./modules/qdr_controller/hdl/top_rd_interface.v \
+    ./modules/qdr_test_harness/hdl/qdr_test_harness.v \
+    ./modules/qdr_test_harness/hdl/qdr_test_h_wb.v \
     ./modules/qdr_infrastructure/hdl/qdr_infrastructure.v \
     ./modules/qdr_cpu_interface/hdl/qdr_cpu_interface.v \
     ./modules/qdr_cpu_interface/hdl/reg_wb_attach.v \

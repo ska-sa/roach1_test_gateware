@@ -1201,35 +1201,36 @@ module toplevel(
   wire qdr0_usr_wr_full;
   wire qdr0_usr_rd_full;
   wire qdr0_usr_qr_valid;
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_dwl;
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_dwh;
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_qrl;
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_qrh;
-  wire [QDR_BW_WIDTH - 1:0] qdr0_usr_bwl_n;
-  wire [QDR_BW_WIDTH - 1:0] qdr0_usr_bwh_n;
-  wire [QDR_ADDR_WIDTH - 1:0] qdr0_usr_ad_wr;
-  wire [QDR_ADDR_WIDTH - 1:0] qdr0_usr_ad_rd;
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_dwl;
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_dwh;
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_qrl;
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_qrh;
+  wire [`QDR_BW_WIDTH - 1:0] qdr0_usr_bwl_n;
+  wire [`QDR_BW_WIDTH - 1:0] qdr0_usr_bwh_n;
+  wire [`QDR_ADDR_WIDTH - 1:0] qdr0_usr_ad_wr;
+  wire [`QDR_ADDR_WIDTH - 1:0] qdr0_usr_ad_rd;
   
   wire qdr_arb_grant_th;
+  wire qdr_arb_rqst_th;
 
   wire qdr0_usr_reset_th; 
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_dwl_th; 
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_dwh_th; 
-  wire [QDR_BW_WIDTH - 1:0] qqdr0_usr_bwl_n_th; 
-  wire [QDR_BW_WIDTH - 1:0] qqdr0_usr_bwh_n_th; 
-  wire [QDR_ADDR_WIDTH - 1:0] qqdr0_usr_ad_wr_th; 
-  wire [QDR_ADDR_WIDTH - 1:0] qqdr0_usr_ad_rd_th; 
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_dwl_th; 
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_dwh_th; 
+  wire [`QDR_BW_WIDTH - 1:0] qdr0_usr_bwl_n_th; 
+  wire [`QDR_BW_WIDTH - 1:0] qdr0_usr_bwh_n_th; 
+  wire [`QDR_ADDR_WIDTH - 1:0] qdr0_usr_ad_wr_th; 
+  wire [`QDR_ADDR_WIDTH - 1:0] qdr0_usr_ad_rd_th; 
   wire qdr0_usr_ad_w_n_th; 
   wire qdr0_usr_d_w_n_th; 
   wire qdr0_usr_r_n_th; 
 
   wire qdr0_usr_reset_cpu;
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_dwl_cpu;
-  wire [QDR_DATA_WIDTH - 1:0] qdr0_usr_dwh_cpu;
-  wire [QDR_BW_WIDTH - 1:0] qdr0_usr_bwl_n_cpu;
-  wire [QDR_BW_WIDTH - 1:0] qdr0_usr_bwh_n_cpu;
-  wire [QDR_ADDR_WIDTH - 1:0] qqdr0_usr_ad_wr_cpu;
-  wire [QDR_ADDR_WIDTH - 1:0] qqdr0_usr_ad_rd_cpu;
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_dwl_cpu;
+  wire [`QDR_DATA_WIDTH - 1:0] qdr0_usr_dwh_cpu;
+  wire [`QDR_BW_WIDTH - 1:0] qdr0_usr_bwl_n_cpu;
+  wire [`QDR_BW_WIDTH - 1:0] qdr0_usr_bwh_n_cpu;
+  wire [`QDR_ADDR_WIDTH - 1:0] qqdr0_usr_ad_wr_cpu;
+  wire [`QDR_ADDR_WIDTH - 1:0] qqdr0_usr_ad_rd_cpu;
   wire qdr0_usr_ad_w_n_cpu;
   wire qdr0_usr_d_w_n_cpu;
   wire qdr0_usr_r_n_cpu;
@@ -1318,16 +1319,18 @@ module toplevel(
     .qdr_rd_en(qdr0_usr_r)
   );
     
-  assign  qdr0_usr_reset  = qdr_arb_grant_th ? qdr0_usr_reset_th : qdr0_usr_reset_cpu;
-  assign  qdr0_usr_dwl    = qdr_arb_grant_th ? qdr0_usr_dwl_th : qdr0_usr_dwl_cpu;
-  assign  qdr0_usr_dwh    = qdr_arb_grant_th ? qdr0_usr_dwh_th : qdr0_usr_dwh_cpu;
-  assign  qdr0_usr_bwl_n  = qdr_arb_grant_th ? qdr0_usr_bwl_n_th : qdr0_usr_bwl_n_cpu;
-  assign  qdr0_usr_bwh_n  = qdr_arb_grant_th ? qdr0_usr_bwh_n_th : qdr0_usr_bwh_n_cpu;
-  assign  qdr0_usr_ad_wr  = qdr_arb_grant_th ? qdr0_usr_ad_wr_th : qdr0_usr_ad_wr_cpu;
-  assign  qdr0_usr_ad_rd  = qdr_arb_grant_th ? qdr0_usr_ad_rd_th : qdr0_usr_ad_rd_cpu;
-  assign  qdr0_usr_ad_w_n = qdr_arb_grant_th ? qdr0_usr_ad_w_n_th : qdr0_usr_ad_w_n_cpu;
-  assign  qdr0_usr_d_w_n  = qdr_arb_grant_th ? qdr0_usr_d_w_n_th : qdr0_usr_d_w_n_cpu;
-  assign  qdr0_usr_r_n    = qdr_arb_grant_th ? qdr0_usr_r_n_th : qdr0_usr_r_n_cpu;
+  assign  qdr0_usr_reset  = qdr_arb_rqst_th ? qdr0_usr_reset_th : qdr0_usr_reset_cpu;
+  assign  qdr0_usr_dwl    = qdr_arb_rqst_th ? qdr0_usr_dwl_th : qdr0_usr_dwl_cpu;
+  assign  qdr0_usr_dwh    = qdr_arb_rqst_th ? qdr0_usr_dwh_th : qdr0_usr_dwh_cpu;
+  assign  qdr0_usr_bwl_n  = qdr_arb_rqst_th ? qdr0_usr_bwl_n_th : qdr0_usr_bwl_n_cpu;
+  assign  qdr0_usr_bwh_n  = qdr_arb_rqst_th ? qdr0_usr_bwh_n_th : qdr0_usr_bwh_n_cpu;
+  assign  qdr0_usr_ad_wr  = qdr_arb_rqst_th ? qdr0_usr_ad_wr_th : qdr0_usr_ad_wr_cpu;
+  assign  qdr0_usr_ad_rd  = qdr_arb_rqst_th ? qdr0_usr_ad_rd_th : qdr0_usr_ad_rd_cpu;
+  assign  qdr0_usr_ad_w_n = qdr_arb_rqst_th ? qdr0_usr_ad_w_n_th : qdr0_usr_ad_w_n_cpu;
+  assign  qdr0_usr_d_w_n  = qdr_arb_rqst_th ? qdr0_usr_d_w_n_th : qdr0_usr_d_w_n_cpu;
+  assign  qdr0_usr_r_n    = qdr_arb_rqst_th ? qdr0_usr_r_n_th : qdr0_usr_r_n_cpu;
+  
+  assign  qdr_arb_rqst_th = qdr_arb_rqst_th;
 
 `else
   assign qdr0_d  = {18{1'b0}};
@@ -1747,6 +1750,7 @@ module toplevel(
 
 
   /******************* Testing ***********************/
+`ifdef ENABLE_DDR2_TH
   /****** DDR ******/
   wire ddr_rd_wr_n_o;
   assign ddr_af_cmd_1 = ddr_rd_wr_n_o ? 3'b001 : 3'b000;
@@ -1775,33 +1779,49 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI]),
     .wb_ack_o(wb_ack_i[TESTING_SLI])
   );
-
+`else
+  assign ddr_af_cmd_1 = 3'b000;
+  assign ddr_af_addr_1 = 0;
+  assign ddr_df_data_1 = 0;
+  assign ddr_df_mask_1 = 0;
+  assign ddr_af_wren_1 = 0;
+  assign ddr_df_wren_1 = 0;
+  assign ddr_af_afull_1 = 0;
+  assign ddr_df_afull_1 = 0;
+  assign ddr_rd_data_1 = 0;
+  assign ddr_rd_dvalid_1 = 0;
+  assign ddr_arb_rqst_1 = 0;
+  assign ddr_arb_grant_1 = 0;
+`endif
 
 `ifdef ENABLE_QDR0_TH
   /****** QDR 0 ******/
   qdr_test_harness qdr_test_harness_inst(
-    .reset_i(sys_reset),
-    .clk0(qdr_clk_0)
+    .reset_i        (sys_reset),
+    .clk0           (qdr_clk_0),
     
-    .qdr_rst_o(qdr0_usr_reset_th),
-    
-    .cal_done_i(qdr0_cal_done),
+    .qdr_rst_o      (qdr0_usr_reset_th),
 
-    .user_wr_full_i(qdr0_usr_wr_full),
-    .user_rd_full_i(qdr0_usr_rd_full),
+    .cal_done_i     (qdr0_cal_done),
+
+    .user_wr_full_i (qdr0_usr_wr_full),
+    .user_rd_full_i (qdr0_usr_rd_full),
     .user_qr_valid_i(qdr0_usr_qr_valid),
-    .user_qrl_i(qdr0_usr_qrl),
-    .user_qrh_i(qdr0_usr_qrh),
+    .user_qrl_i     (qdr0_usr_qrl),
+    .user_qrh_i     (qdr0_usr_qrh),
 
-    .user_dwl_o(qdr0_usr_dwl_th),
-    .user_dwh_o(qdr0_usr_dwh_th),
-    .user_bwl_n_o(qdr0_usr_bwl_n_th),
-    .user_bwh_n_o(qdr0_usr_bwh_n_th),
-    .user_ad_wr_o(qdr0_usr_ad_wr_th),
-    .user_ad_rd_o(qdr0_usr_ad_rd_th)
-    .user_ad_w_n_o(qdr0_usr_ad_w_n_th), 
-    .user_d_w_n_o(qdr0_usr_d_w_n_th),
-    .user_r_n_o(qdr0_usr_r_n_th),
+    .user_dwl_o     (qdr0_usr_dwl_th),
+    .user_dwh_o     (qdr0_usr_dwh_th),
+    .user_bwl_n_o   (qdr0_usr_bwl_n_th),
+    .user_bwh_n_o   (qdr0_usr_bwh_n_th),
+    .user_ad_wr_o   (qdr0_usr_ad_wr_th),
+    .user_ad_rd_o   (qdr0_usr_ad_rd_th),
+    .user_ad_w_n_o  (qdr0_usr_ad_w_n_th), 
+    .user_d_w_n_o   (qdr0_usr_d_w_n_th),
+    .user_r_n_o     (qdr0_usr_r_n_th),
+    
+    .qdr_request_o  (qdr_arb_rqst_th),
+    .qdr_granted_i  (ddr_arb_grant_th),
     
     .wb_clk_i(wb_clk),.wb_rst_i(sys_reset),
     .wb_cyc_i(wb_cyc_o[TESTING_SLI]), .wb_stb_i(wb_stb_o[TESTING_SLI]),
