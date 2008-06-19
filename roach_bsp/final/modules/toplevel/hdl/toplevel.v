@@ -1794,6 +1794,7 @@ module toplevel(
   assign ddr_arb_grant_1 = 0;
 `endif
 
+  wire [7:0] qdr_gpio;
 `ifdef ENABLE_QDR0_TH
   /****** QDR 0 ******/
   qdr_test_harness qdr_test_harness_inst(
@@ -1801,6 +1802,7 @@ module toplevel(
     .clk0           (qdr_clk_0),
     
     .qdr_rst_o      (qdr0_usr_reset_th),
+    .gpio_o         (qdr_gpio),
 
     .cal_done_i     (qdr0_cal_done),
 
@@ -1857,14 +1859,14 @@ module toplevel(
 
   assign se_gpio_b_oen_n = 1'b0;
 
-  assign se_gpio_b[0] = 1'b0;
-  assign se_gpio_b[1] = 1'b0;
-  assign se_gpio_b[2] = 1'b0;
+  assign se_gpio_b[0] = qdr_gpio[0];
+  assign se_gpio_b[1] = qdr_gpio[1];
+  assign se_gpio_b[2] = qdr_gpio[2];
   assign se_gpio_b[3] = serial_out;
-  assign se_gpio_b[4] = 1'b0;
-  assign se_gpio_b[5] = 1'b0;
-  assign se_gpio_b[6] = 1'b0;
-  assign se_gpio_b[7] = 1'b0;
+  assign se_gpio_b[4] = qdr_gpio[4];
+  assign se_gpio_b[5] = qdr_gpio[5];
+  assign se_gpio_b[6] = sys_clk;
+  assign se_gpio_b[7] = qdr_clk_0;
 
 
   /******** Differential **********/

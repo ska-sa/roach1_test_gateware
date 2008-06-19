@@ -6,6 +6,7 @@ module qdr_test_harness(
     clk0,
     
     qdr_rst_o,
+    gpio_o,
 
     cal_done_i,
 
@@ -36,7 +37,7 @@ module qdr_test_harness(
 
   // Module Definitions
   parameter  DATA_WIDTH         = 18;
-  parameter  STATUS_WORDS       = 5; //(DATA_WIDTH*4)/16; Number 16 bit words in a status memory location
+  parameter  STATUS_WORDS       = 8; //(DATA_WIDTH*4)/16; Number 16 bit words in a status memory location
   parameter  ADDR_WIDTH         = 22;
   parameter  BW_WIDTH           = 2;
   
@@ -57,6 +58,7 @@ module qdr_test_harness(
   input  clk0, reset_i;
 
   output  qdr_rst_o;
+  output  [7:0] gpio_o;
 
   input  cal_done_i;
 
@@ -128,6 +130,7 @@ module qdr_test_harness(
       reg  [DATA_WIDTH - 1:0] check_data_2 ;
       reg  [DATA_WIDTH - 1:0] check_data_3;
       reg  [ADDR_WIDTH - 1:0] check_addr;
+      reg  [ADDR_WIDTH - 1:0] test_cnt;
     // General
       reg qdr_request;
       reg qdr_rst; 
@@ -156,6 +159,7 @@ module qdr_test_harness(
       reg  ctrl_start;
       reg  test_done;
       reg  test_fault;
+      reg  gpio_mux;
       reg  afull_event;
       wire [15:0] status_mem [STATUS_START_ADDR:STATUS_MEM_DEPTH];
 
@@ -205,6 +209,7 @@ module qdr_test_harness(
     qdr_rst       <= harness_control[3];
     user_bwl_n    <= harness_control[5:4];
     user_bwh_n    <= harness_control[7:6];
+    gpio_mux      <= harness_control[8];
   end
   assign user_bwl_n_o  = user_bwl_n;
   assign user_bwh_n_o  = user_bwh_n;
@@ -224,8 +229,8 @@ module qdr_test_harness(
     end
   end
 
-  assign status_mem[FIFO_AFULL_ADDR] = afull_addr[15:0];
-  assign status_mem[FIFO_AFULL_ADDR + 1] = {10'b0000000000,afull_addr[21:16]};
+  assign status_mem[FIFO_AFULL_ADDR] = test_cnt[15:0];//afull_addr[15:0];
+  assign status_mem[FIFO_AFULL_ADDR + 1] = {{(16*2 - ADDR_WIDTH){1'b0}},test_cnt[ADDR_WIDTH - 1:16]};//{10'b0000000000,afull_addr[21:16]};
 
   assign status_mem[STATUS_START_ADDR][0] = test_done;
   assign status_mem[STATUS_START_ADDR][1] = test_fault;
@@ -341,11 +346,13 @@ module qdr_test_harness(
   assign user_r_n_o    = (test_state == RD_TEST_PATT_1) ? 1'b0 : 1'b1; 
 
   // Check when test is done
-  always @(qdr_dvalid_fe or test_state or test_start_re or module_rst) begin
-    if (qdr_dvalid_fe && (test_state == WAIT_FOR_DATA)) begin
+  always @(posedge clk0) begin
+    if (qdr_dvalid_fe && (test_state == WAIT_FOR_DATA) && !test_done) begin
       test_done <= 1;
+      test_cnt  <= check_addr;
     end else if (test_start_re || module_rst ) begin
       test_done <= 0;
+      test_cnt  <= 0;
     end
   end
 
@@ -404,7 +411,7 @@ module qdr_test_harness(
     qdr_dvalid_1 <= qdr_dvalid_0;
     qdr_dvalid_2 <= qdr_dvalid_1;
   end
-
+  //
   // compare_data and qdr_dvalid_2 is used to control the data comparator and data generator
 
   always @(posedge clk0) begin
@@ -484,12 +491,9 @@ module qdr_test_harness(
 
   generate 
     for (i = 0; i < FAULTMEM_SIZE; i = i + 1) begin : faultdata_generate
-      for (j = 0; j < STATUS_WORDS; j = j + 1) begin : assign_faultdata_generate
-        if (j == STATUS_WORDS - 1) begin
-          assign status_mem[DATAFAULT_START_ADDR + (i*STATUS_WORDS) + j ] = datafault_mem[i][((DATA_WIDTH*4) - (j*16) - 1) + (j*16):(j*16)];
-        end else begin
-          assign status_mem[DATAFAULT_START_ADDR + (i*STATUS_WORDS) + j ] = datafault_mem[i][15 + (j*16):(j*16)];
-        end 
+      for (j = 0; j < STATUS_WORDS/2; j = j + 1) begin : assign_faultdata_generate
+        assign status_mem[DATAFAULT_START_ADDR + (i*STATUS_WORDS) + ((j*2))]  = datafault_mem[i][15 + (j*18):(j*18)];
+        assign status_mem[DATAFAULT_START_ADDR + (i*STATUS_WORDS) + ((j*2) + 1)] = {6'b0,datafault_mem[i][1 + ((j*18) + 16):((j*18) + 16)]};
       end
     end
   endgenerate
@@ -503,12 +507,9 @@ module qdr_test_harness(
 
   generate 
     for (i = 0; i < RDBLK_SIZE; i = i + 1) begin : readblock_generate
-      for (j = 0; j < STATUS_WORDS; j = j + 1) begin : assign_status_mem_generat
-        if (j == STATUS_WORDS - 1) begin
-          assign status_mem[RDBLK_START_ADDR + (i*STATUS_WORDS) + j ] = datafault_mem[i][((DATA_WIDTH*4) - (j*16) - 1) + (j*16):(j*16)];
-        end else begin
-          assign status_mem[RDBLK_START_ADDR + (i*STATUS_WORDS) + j ] = datafault_mem[i][15 + (j*16):(j*16)];
-        end 
+      for (j = 0; j < STATUS_WORDS/2; j = j + 1) begin : assign_status_mem_generat
+        assign status_mem[RDBLK_START_ADDR + (i*STATUS_WORDS) + ((j*2))]  = rdblk_mem[i][15 + (j*18):(j*18)];
+        assign status_mem[RDBLK_START_ADDR + (i*STATUS_WORDS) + ((j*2) + 1)] = {6'b0,rdblk_mem[i][1 + ((j*18) + 16):((j*18) + 16)]};
       end
     end
   endgenerate
@@ -520,5 +521,26 @@ module qdr_test_harness(
     end
   endgenerate
 
+
+  // GPIO assignments
+  assign gpio_o[0] = user_qr_valid_i;
+  assign gpio_o[1] = gpio_mux ? data_pipe[0] : check_data_0[0];
+  assign gpio_o[2] = gpio_mux ? data_pipe[1] : check_data_0[1];
+  assign gpio_o[3] = 0;
+  assign gpio_o[4] = gpio_mux ? data_pipe[2] : check_data_0[2];
+  assign gpio_o[5] = gpio_mux ? data_pipe[3] : check_data_0[3];
+  assign gpio_o[6] = gpio_mux ? data_pipe[4] : check_data_0[4];
+  assign gpio_o[7] = gpio_mux ? data_pipe[5] : check_data_0[5];
+  
+//  assign gpio_o[0] = clk0;
+//  assign gpio_o[1] = user_qr_valid_i;
+//  assign gpio_o[2] = gen_data;
+//  assign gpio_o[3] = 0;
+//  assign gpio_o[4] = cmp_data;
+//  assign gpio_o[5] = data_pipe[0];
+//  assign gpio_o[6] = data_pipe[1];
+//  assign gpio_o[7] = data_pipe[2];
+
 endmodule
+
 
