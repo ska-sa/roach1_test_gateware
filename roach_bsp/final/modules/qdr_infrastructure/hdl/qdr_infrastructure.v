@@ -36,11 +36,12 @@ module qdr_infrastructure(
                                          2;
 
 
-  localparam CLK_PERIOD = CLK_FREQ == 150 ? 6666/3 :
-                          CLK_FREQ == 200 ? 5000/2 :
-                          CLK_FREQ == 266 ? 3760/2 :
-                          CLK_FREQ == 333 ? 3003/2 :
-                                            3760/2;
+  localparam CLK_PERIOD = CLK_FREQ == 150 ? 6666.0/3.0 :
+                          CLK_FREQ == 200 ? 5000.0/2.0 :
+                          CLK_FREQ == 250 ? 4000.0/2.0 :
+                          CLK_FREQ == 266 ? 3760.0/2.0 :
+                          CLK_FREQ == 333 ? 3003.0/2.0 :
+                                            3760.0/2.0;
 
   wire fb_clk;
 
@@ -73,7 +74,7 @@ module qdr_infrastructure(
     .BANDWIDTH("OPTIMIZED"),
     .CLKFBOUT_MULT(1),
     .CLKFBOUT_PHASE(0.0),
-    .CLKIN_PERIOD(CLK_PERIOD/1000),
+    .CLKIN_PERIOD(CLK_PERIOD/1000.00),
 
     .CLKOUT0_DIVIDE(PLL_DIV),
     .CLKOUT0_DUTY_CYCLE(0.5),
