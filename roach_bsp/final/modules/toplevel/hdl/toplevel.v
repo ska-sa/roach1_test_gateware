@@ -1184,7 +1184,7 @@ module toplevel(
   qdr_infrastructure #(
     .CLK_FREQ(`QDR_CLK_FREQ)
   ) qdr_infrastructure_inst (
-    .clk_in(sys_clk), .reset(sys_reset),
+    .clk_in(dly_clk), .reset(sys_reset),
     .qdr_clk_0(qdr_clk_0), .qdr_clk_180(qdr_clk_180), .qdr_clk_270(qdr_clk_270),
     .pll_lock(qdr_pll_lock)
   );

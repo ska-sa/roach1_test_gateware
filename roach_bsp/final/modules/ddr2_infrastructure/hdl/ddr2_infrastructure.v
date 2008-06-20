@@ -1,6 +1,6 @@
 module ddr2_infrastructure(
     reset,
-    clk_in,
+    clk_in, //200MHz
     ddr_clk_0, ddr_clk_90, ddr_clk_div,
     ddr_rst_0, ddr_rst_90, ddr_rst_div,
     usr_rst, usr_clk
@@ -15,32 +15,23 @@ module ddr2_infrastructure(
   wire mem_clk;
   wire mem_clk_lock;
 
-  //scale DCM output clocks to > 400MHz and < 1000MHz for PLL
-  localparam FX_MULT = CLK_FREQ == 150 ?  3*3 :
-                       CLK_FREQ == 200 ?  2*2 :
-                       CLK_FREQ == 266 ?  8*2 :
-                       CLK_FREQ == 333 ? 10*2 :
-                                          8*2;
+  localparam FX_MULT = CLK_FREQ == 150 ?  3 :
+                       CLK_FREQ == 200 ?  2 :
+                       CLK_FREQ == 266 ?  8 :
+                       CLK_FREQ == 333 ? 10 :
+                                          8;
 
-  localparam FX_DIV  = CLK_FREQ == 150 ? 2 :
-                       CLK_FREQ == 200 ? 1 :
-                       CLK_FREQ == 266 ? 3 :
-                       CLK_FREQ == 333 ? 3 :
-                                         3;
-
-  //divide the clocks down to the intended value in the PLL
-  localparam PLL_DIV = CLK_FREQ == 150 ? 3 :
+  localparam FX_DIV  = CLK_FREQ == 150 ? 4 :
                        CLK_FREQ == 200 ? 2 :
-                       CLK_FREQ == 266 ? 2 :
-                       CLK_FREQ == 333 ? 2 :
-                                         2;
+                       CLK_FREQ == 266 ? 6 :
+                       CLK_FREQ == 333 ? 6 :
+                                         6;
 
-
-  localparam CLK_PERIOD = CLK_FREQ == 150 ? 6666/3 :
-                          CLK_FREQ == 200 ? 5000/2 :
-                          CLK_FREQ == 266 ? 3760/2 :
-                          CLK_FREQ == 333 ? 3003/2 :
-                                            3760/2;
+  localparam CLK_PERIOD = CLK_FREQ == 150 ? 6666 :
+                          CLK_FREQ == 200 ? 5000 :
+                          CLK_FREQ == 266 ? 3760 :
+                          CLK_FREQ == 333 ? 3003 :
+                                            3760;
 
 
   wire fb_clk;
@@ -72,19 +63,19 @@ module ddr2_infrastructure(
   wire ddr_clk_0_int, ddr_clk_90_int, ddr_clk_div_int;
   PLL_BASE #(
     .BANDWIDTH("OPTIMIZED"),
-    .CLKFBOUT_MULT(1),
+    .CLKFBOUT_MULT(3),
     .CLKFBOUT_PHASE(0.0),
     .CLKIN_PERIOD(CLK_PERIOD/1000),
 
-    .CLKOUT0_DIVIDE(PLL_DIV),
+    .CLKOUT0_DIVIDE(3),
     .CLKOUT0_DUTY_CYCLE(0.5),
     .CLKOUT0_PHASE(0.0),
 
-    .CLKOUT1_DIVIDE(PLL_DIV),
+    .CLKOUT1_DIVIDE(3),
     .CLKOUT1_DUTY_CYCLE(0.5),
     .CLKOUT1_PHASE(90),
 
-    .CLKOUT2_DIVIDE(PLL_DIV*2),
+    .CLKOUT2_DIVIDE(6),
     .CLKOUT2_DUTY_CYCLE(0.5),
     .CLKOUT2_PHASE(0),
 

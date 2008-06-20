@@ -50,8 +50,8 @@ XST_ARGS=run,\
 ######### Command Flags ###########
 NGDBUILD_FLAGS=-aul
 #MAP_FLAGS=-detail -ol high -w -global_opt on -register_duplication on -logic_opt on
-MAP_FLAGS=-detail -ol high -w
-PAR_FLAGS=-w -ol high
+MAP_FLAGS=-detail -ol std -w
+PAR_FLAGS=-w -ol std
 BITGEN_FLAGS=-w -g DriveDone:No -g DonePin:Pullup -g StartUpClk:JTAGCLK -g Security:NONE -m
 CPLDFIT_FLAGS=
 TRCE_FLAGS=-e 1000
