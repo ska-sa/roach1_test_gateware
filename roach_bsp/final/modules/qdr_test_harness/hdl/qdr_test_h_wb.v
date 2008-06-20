@@ -1,4 +1,4 @@
-`include "ddr2_test_harness.vh"
+`include "qdr_test_harness.vh"
 
 module qdr_test_h_wb(
     //memory wb slave IF
@@ -32,11 +32,11 @@ module qdr_test_h_wb(
   reg wb_ack_o;
   reg [20:0] wb_dat_o_src;
   
-  assign wb_dat_o = wb_dat_o_src == `REG_DDR2_TH_CTRL_0   ? harness_control[15:0 ] :
-                    wb_dat_o_src == `REG_DDR2_TH_CTRL_1   ? harness_control[31:16] :
-                    wb_dat_o_src == `REG_DDR2_TH_CTRL_2   ? harness_control[47:32] :
-                    wb_dat_o_src == `REG_DDR2_TH_CTRL_3   ? harness_control[63:48] :
-                    wb_dat_o_src == `REG_DDR2_TH_CTRL_4   ? harness_control[79:64] :
+  assign wb_dat_o = wb_dat_o_src == `REG_QDR_TH_CTRL_0   ? harness_control[15:0 ] :
+                    wb_dat_o_src == `REG_QDR_TH_CTRL_1   ? harness_control[31:16] :
+                    wb_dat_o_src == `REG_QDR_TH_CTRL_2   ? harness_control[47:32] :
+                    wb_dat_o_src == `REG_QDR_TH_CTRL_3   ? harness_control[63:48] :
+                    wb_dat_o_src == `REG_QDR_TH_CTRL_4   ? harness_control[79:64] :
                     harness_status;
                   
   assign status_addr = wb_dat_o_src[20:0]; 
@@ -50,7 +50,7 @@ module qdr_test_h_wb(
         wb_ack_o <= 1'b1;
         wb_dat_o_src <= wb_adr_i[21:1];
         case (wb_adr_i[21:1])
-          `REG_DDR2_TH_CTRL_0: begin
+          `REG_QDR_TH_CTRL_0: begin
             if (wb_we_i) begin
               if (wb_sel_i[0])
                 harness_control[7:0]  <= wb_dat_i[7:0];
@@ -58,7 +58,7 @@ module qdr_test_h_wb(
                 harness_control[15:8] <= wb_dat_i[15:8];
             end
           end
-          `REG_DDR2_TH_CTRL_1: begin
+          `REG_QDR_TH_CTRL_1: begin
             if (wb_we_i) begin
               if (wb_sel_i[0])
                 harness_control[23:16] <= wb_dat_i[7:0];
@@ -66,7 +66,7 @@ module qdr_test_h_wb(
                 harness_control[31:24] <= wb_dat_i[15:8];
             end
           end
-          `REG_DDR2_TH_CTRL_2: begin
+          `REG_QDR_TH_CTRL_2: begin
             if (wb_we_i) begin
               if (wb_sel_i[0])
                 harness_control[39:32] <= wb_dat_i[7:0];
@@ -74,7 +74,7 @@ module qdr_test_h_wb(
                 harness_control[47:40] <= wb_dat_i[15:8];
             end
           end
-          `REG_DDR2_TH_CTRL_3: begin
+          `REG_QDR_TH_CTRL_3: begin
             if (wb_we_i) begin
               if (wb_sel_i[0])
                 harness_control[55:48] <= wb_dat_i[7:0];
@@ -82,7 +82,7 @@ module qdr_test_h_wb(
                 harness_control[63:56] <= wb_dat_i[15:8];
             end
           end
-          `REG_DDR2_TH_CTRL_4: begin
+          `REG_QDR_TH_CTRL_4: begin
             if (wb_we_i) begin
               if (wb_sel_i[0])
                 harness_control[71:64] <= wb_dat_i[7:0];
