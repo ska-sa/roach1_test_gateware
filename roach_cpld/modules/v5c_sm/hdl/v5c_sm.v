@@ -8,6 +8,8 @@ module v5c_sm(
     wb_cyc_i, wb_stb_i, wb_we_i,
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
+    epb_clk,
+    sm_cs_n,
     v5c_rdwr_n, v5c_cs_n, v5c_prog_n,
     v5c_done, v5c_busy,
     v5c_init_n_i, v5c_init_n_o, v5c_init_n_oen,
@@ -20,6 +22,8 @@ module v5c_sm(
   input  [7:0] wb_dat_i;
   output [7:0] wb_dat_o;
   output wb_ack_o;
+  input epb_clk;
+  input sm_cs_n;
 
   output v5c_rdwr_n, v5c_cs_n, v5c_prog_n;
   output [2:0] v5c_mode;
@@ -32,7 +36,16 @@ module v5c_sm(
   reg v5c_rdwr_n, v5c_prog_n;
   reg v5c_init_n_o, v5c_init_n_oen;
 
+  //Slave selectMAP 
   assign v5c_mode = 3'b110;
+
+  //Select Map Strb
+  wire sm_strb;
+  reg prev_sm_cs_n;
+  always @(posedge epb_clk) begin
+    prev_sm_cs_n <= sm_cs_n;
+  end
+  assign sm_strb = !sm_cs_n && prev_sm_cs_n != sm_cs_n;
 
   assign wb_dat_o = wb_adr_i == `REG_SM_STATUS ? {4'b0, sm_busy, v5c_busy, v5c_done, v5c_init_n_i} :
                     wb_adr_i == `REG_SM_OREGS  ? {5'b0, v5c_rdwr_n, v5c_init_n_o, v5c_prog_n} :
@@ -41,9 +54,11 @@ module v5c_sm(
                                                  8'b0;
 
   wire wb_trans = wb_stb_i & wb_cyc_i;
-  assign v5c_cs_n = !(wb_trans && wb_we_i && wb_adr_i == `REG_SM_DATA);
+  //strobe the v5c_cs_n if wb access to data reg or is strobe on sm_cs
+  assign v5c_cs_n = !sm_strb;
 
   reg wb_ack_o;
+
 
   always @(posedge wb_clk_i) begin
     //strobes

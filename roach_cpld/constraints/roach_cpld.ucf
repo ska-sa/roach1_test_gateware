@@ -96,7 +96,7 @@ NET "epb_oen_n"   IOSTANDARD = LVCMOS33 | LOC = "34";
 NET "ppc_tmr_clk" IOSTANDARD = LVCMOS33 | LOC = "4";
 NET "ppc_syserr"  IOSTANDARD = LVCMOS33 | LOC = "7";
 
-NET "ppc_gpio"    IOSTANDARD = LVCMOS33 | LOC = "50";
+NET "ppc_sm_cs_n" IOSTANDARD = LVCMOS33 | LOC = "50";
 
 ################## System Configuration ################
 

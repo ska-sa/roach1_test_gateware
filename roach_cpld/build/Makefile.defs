@@ -1,15 +1,18 @@
 #################### Build Parameters ###########################
 #
 #xilinx apps
-XST=xst-9.1
-NGDBUILD=ngdbuild-9.1
-MAP=map-9.1
-PAR=par-9.1
-BITGEN=bitgen-9.1
-CPLDFIT=cpldfit-9.1
-HPREP6=hprep6-9.1
-IMPACT=impact-9.1
-TAEGINE=taengine-9.1
+
+ISE_VER=10.1
+
+XST=xst-10.1
+NGDBUILD=ngdbuild-10.1
+MAP=map-10.1
+PAR=par-10.1
+BITGEN=bitgen-10.1
+CPLDFIT=cpldfit-10.1
+HPREP6=hprep6-10.1
+IMPACT=impact-10.1
+TAEGINE=taengine-10.1
 #xilinx ENV vars
 XIL_PLACE_ALLOW_LOCAL_BUFG_ROUTING=0
 #XST script commands
@@ -25,22 +28,15 @@ XST_ARGS=run,\
 -iuc NO,\
 -keep_hierarchy NO,\
 -rtlview Yes,\
--read_cores YES,\
--cross_clock_analysis NO,\
 -hierarchy_separator /,\
 -bus_delimiter <>,\
 -case maintain,\
 -verilog2001 YES,\
 -fsm_extract YES -fsm_encoding Auto,\
 -safe_implementation No,\
--fsm_style lut,\
 -mux_extract YES,\
 -resource_sharing YES,\
 -iobuf YES,\
--optimize_primitives NO,\
--use_clock_enable Auto,\
--use_sync_set Auto,\
--use_sync_reset Auto,\
 -equivalent_register_removal YES,\
 -vlgincdir $(VINC)
 

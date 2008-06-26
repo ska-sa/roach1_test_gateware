@@ -18,7 +18,7 @@ module toplevel(
     epb_data, epb_addr,
     epb_cs_n, epb_we_n, epb_be_n, epb_oen_n,
     /* PPC misc signals */
-    ppc_tmr_clk, ppc_syserr, ppc_gpio,
+    ppc_tmr_clk, ppc_syserr, ppc_sm_cs_n,
     /* system configuration inputs */
     sys_config, user_dip, config_dip,
     /* system configuration outputs */
@@ -58,7 +58,7 @@ module toplevel(
 
   output ppc_tmr_clk;
   input  ppc_syserr;
-  input  ppc_gpio;
+  input  ppc_sm_cs_n;
 
   input  [7:0] sys_config;
   input  [3:0] user_dip;
@@ -80,17 +80,13 @@ module toplevel(
   //common signals
   wire por_force;      //power-on-reset force signal tied to a register
   wire por_force_int;  //power-on-reset force signal on master clk domain
-  wire sys_reset = !(reset_debug_n & reset_por_n & !reset_mon);
+  wire sys_reset = !(reset_por_n & !reset_mon);
   wire geth_reset_int; //gigabit ethernet reset tied to a register
 
   //output assignments
-  assign ppc_reset_n      = reset_debug_n & reset_por_n;
-  assign ppc_ddr2_reset_n = reset_debug_n & reset_por_n;
-  assign geth_reset_n     = reset_debug_n & reset_por_n;
-
-  //assign ppc_reset_n      = !sys_reset;
-  //assign ppc_ddr2_reset_n = !sys_reset;
-  //assign geth_reset_n     = !geth_reset_int & !sys_reset;
+  assign ppc_reset_n      = reset_debug_n & !sys_reset;
+  assign ppc_ddr2_reset_n = !sys_reset;
+  assign geth_reset_n     = !sys_reset & !geth_reset_int;
 
   /* Tri-state control for por_force_n output */
   OBUFT por_force_obuft(
@@ -112,7 +108,6 @@ module toplevel(
 
   /************************* LEDs *****************************/
 
-  wire ppc_gpio; //general purpose input for PPC
   wire [1:0] user_led_int;
 
   reg [25:0] counter [1:0];
@@ -133,12 +128,9 @@ module toplevel(
     end
   end
 
-  assign sys_led_n  = {counter[0][25], counter[1][25]};
-  //assign sys_led_n  = ~{!flash_busy_n, ppc_syserr};
+  assign sys_led_n  = ~{!flash_busy_n, ppc_syserr};
   
-  //assign user_led_n = ~user_led_int;
-  wire foo;
-  assign user_led_n = ~{foo, 1'b0};// ~user_led_int;
+  assign user_led_n = ~user_led_int;
 
 
   /******************* Fixed Assignments **********************/
@@ -148,7 +140,7 @@ module toplevel(
   assign tempsense_addr = 1'b0; //TODO: check this
   assign ppc_tmr_clk    = clk_aux;
 
-  assign boot_conf    = 3'b001; //TODO: this could be 000 to improve performance
+  assign boot_conf    = 3'b000; //TODO: this could be 000 to improve performance
   assign boot_conf_en = 1'b1;
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
@@ -187,7 +179,7 @@ module toplevel(
   wire [7:0] wb_dat_o;
   wire [7:0] wb_dat_i;
   wire wb_ack_i;
-  wire wb_clk_i = epb_clk;
+  wire wb_clk_i = !epb_clk; //hopefully improve timing
   wire wb_rst_i = sys_reset || !epb_reset_n;
 
   epb_wb_bridge #(
@@ -284,10 +276,8 @@ module toplevel(
   assign v5c_cclk_oen  = 1'b1;//serial_conf_busy;
 
   assign v5c_cclk_o_int = serial_conf_busy ? v5c_cclk_o_int_0 : v5c_cclk_o_int_1;
-  assign v5c_cclk_o_int_1 = !wb_clk_i;
+  assign v5c_cclk_o_int_1 = wb_clk_i;
   assign v5c_cclk_en_n  = 1'b1;//serial_conf_busy;
-
-  assign foo = serial_conf_busy;
 
   assign v5c_mode       = 3'b110;//serial_conf_busy ? v5c_mode_0     : v5c_mode_1;
   assign v5c_prog_n     = serial_conf_busy ? v5c_prog_n_0   : v5c_prog_n_1;  
@@ -319,6 +309,9 @@ module toplevel(
     .wb_cyc_i(wb_cyc_o_1), .wb_stb_i(wb_stb_o_1), .wb_we_i(wb_we_o),
     .wb_adr_i(wb_adr_o_1), .wb_dat_i(wb_dat_o), .wb_dat_o(wb_dat_i_1),
     .wb_ack_o(wb_ack_i_1),
+
+    .epb_clk(epb_clk),
+    .sm_cs_n(ppc_sm_cs_n),
 
     .v5c_rdwr_n(v5c_rdwr_n), .v5c_cs_n(v5c_cs_n), .v5c_prog_n(v5c_prog_n_1),
     .v5c_done(v5c_done), .v5c_busy(v5c_dout_busy),
