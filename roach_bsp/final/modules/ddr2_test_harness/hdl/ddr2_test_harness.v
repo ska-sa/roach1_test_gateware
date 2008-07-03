@@ -37,7 +37,7 @@ module ddr2_test_harness(
   parameter  RDBLK_SIZE_BITS      = 2;                      // Read block addressing bits
   parameter  RDBLK_SIZE           = 1 << RDBLK_SIZE_BITS;   // 128 bit word locations
 
-  parameter  STATUS_START_ADDR    = 5;
+  parameter  STATUS_START_ADDR    = 7;
   parameter  FIFO_AFULL_ADDR      = STATUS_START_ADDR + 1;  // Status register size = 1
   parameter  DATAFAULT_START_ADDR = FIFO_AFULL_ADDR + 2;    // Fifo almost full register size = 2
   parameter  ADDRFAULT_START_ADDR = DATAFAULT_START_ADDR + (FAULTMEM_SIZE*DATA_BYTES); // x 16 bit words per data fault
@@ -94,15 +94,24 @@ module ddr2_test_harness(
       reg  [ADDR_WIDTH - 1:2] ddr_addr;
       reg  [DATA_WIDTH - 1:0] ddr_data_0;
       reg  [DATA_WIDTH - 1:0] ddr_data_1;
+      reg  [DATA_WIDTH*2 - 1:0] data_1_0;
+      reg  [DATA_WIDTH*2 - 1:0] data_3_2;
+      reg  [DATA_WIDTH - 1:0] data_pipe_0;
+      reg  [DATA_WIDTH - 1:0] data_pipe_1;
+      reg  [DATA_WIDTH - 1:0] data_pipe_2;
+      reg  [DATA_WIDTH - 1:0] data_pipe_3;
       reg  data_index;
-      reg  [DATA_WIDTH*4 - 1:0] data_pipe_0;
-      reg  [DATA_WIDTH*4 - 1:0] data_pipe;
       reg  ddr_dvalid_0;
       reg  ddr_dvalid_1;
       reg  ddr_dvalid_2;
       reg  compare_data;
       wire gen_data;
       wire cmp_data;
+      reg test_fault_0;
+      reg test_fault_1;
+      reg test_fault_2;
+      reg test_fault_3;
+      wire test_fault_pulse;
       reg  [DATA_WIDTH - 1:0] check_data_0;
       reg  [DATA_WIDTH - 1:0] check_data_1;
       reg  [DATA_WIDTH - 1:0] check_data_2 ;
@@ -127,7 +136,8 @@ module ddr2_test_harness(
 
       wire [20:0] status_addr;
       wire [15:0] harness_status;  //test harness control and status
-      wire [79:0] harness_control;
+      wire [111:0] harness_control;
+      wire [ADDR_WIDTH - 3:0] ctrl_ddr_start;
       wire [ADDR_WIDTH - 3:0] ctrl_ddr_size;
       wire [ADDR_WIDTH - 1:0] ctrl_rdblk_addr;
       reg  [ADDR_WIDTH - 3:0] afull_addr;
@@ -177,8 +187,9 @@ module ddr2_test_harness(
     ctrl_start <= harness_control[0];
     ctrl_reset <= harness_control[1];
   end
-  assign ctrl_ddr_size = harness_control[44:16] - 1;
-  assign ctrl_rdblk_addr = {15'h0000,harness_control[63:48]};
+  assign ctrl_ddr_start  = harness_control[ADDR_WIDTH - 3 + 80:80];
+  assign ctrl_ddr_size   = harness_control[ADDR_WIDTH - 3 + 16:16] - 1;
+  assign ctrl_rdblk_addr = harness_control[ADDR_WIDTH - 1 + 48:48];
 `endif
 
   always @(posedge clk) begin
@@ -318,7 +329,7 @@ module ddr2_test_harness(
   
   always @(posedge clk) begin
     if ((test_state == TEST_IDLE) || (test_state == TEST_WAIT)) begin
-      ddr_addr <= {(ADDR_WIDTH - 2){1'b0}};
+      ddr_addr <= ctrl_ddr_start;
     end else if ((test_state == WR_TEST_PATT_1) || (test_state == RD_TEST_PATT)) begin
       ddr_addr <= ddr_addr + 1;
     end
@@ -350,16 +361,19 @@ module ddr2_test_harness(
   always @(posedge clk) begin
     if (ddr_dvalid_i) begin
       if (!data_index) begin
-        data_pipe_0[DATA_WIDTH*2 - 1:0] <= ddr_data_i;
+        data_1_0 <= ddr_data_i;
       end else begin
-        data_pipe_0[DATA_WIDTH*4 - 1:DATA_WIDTH*2] <= ddr_data_i;
+        data_3_2 <= ddr_data_i;
       end
     end
   end
 
   always @(posedge clk) begin
     if (!data_index) begin
-      data_pipe <= data_pipe_0;
+      data_pipe_0 <= data_1_0[DATA_WIDTH - 1:0];
+      data_pipe_1 <= data_1_0[DATA_WIDTH*2 - 1:DATA_WIDTH];
+      data_pipe_2 <= data_3_2[DATA_WIDTH - 1:0];
+      data_pipe_3 <= data_3_2[DATA_WIDTH*2 - 1:DATA_WIDTH];
     end
   end
 
@@ -399,7 +413,7 @@ module ddr2_test_harness(
   // Check address generator
   always @(posedge clk) begin
     if (test_state == TEST_WAIT) begin
-      check_addr <= 0;
+      check_addr <= {ctrl_ddr_start,2'b0};
     end else if (gen_data) begin
       check_addr <= check_addr + 4;
     end
@@ -407,22 +421,55 @@ module ddr2_test_harness(
 
   // Data Comparator
   always @(posedge clk) begin
+    if ((cmp_data) && (data_pipe_0 != check_data_0)) begin
+      test_fault_0 <= 1; 
+    end else begin
+      test_fault_0 <= 0;
+    end
+  end
+  always @(posedge clk) begin
+    if ((cmp_data) && (data_pipe_1 != check_data_1)) begin
+      test_fault_1 <= 1; 
+    end else begin
+      test_fault_1 <= 0;
+    end
+  end
+  always @(posedge clk) begin
+    if ((cmp_data) && (data_pipe_2 != check_data_2)) begin
+      test_fault_2 <= 1; 
+    end else begin
+      test_fault_2 <= 0;
+    end
+  end
+  always @(posedge clk) begin
+    if ((cmp_data) && (data_pipe_3 != check_data_3)) begin
+      test_fault_3 <= 1; 
+    end else begin
+      test_fault_3 <= 0;
+    end
+  end
+  
+  assign test_fault_pulse = test_fault_0 || test_fault_1 || test_fault_2 || test_fault_3;  
+  
+  always @(posedge clk) begin
     if ((test_state == WR_TEST_PATT_0) || module_rst) begin
-      test_fault       <= 0;
+      test_fault <= 0;
+    end else if (test_fault_pulse) begin
+      test_fault <= 1; 
+    end
+  end
+
+  always @(posedge clk) begin
+    if ((test_state == WR_TEST_PATT_0) || module_rst) begin
       fault_cnt        <= 0;
-      //datafault_mem    <= 0;
-      //addrfault_mem    <= 0;
-    end else if (cmp_data) begin
-      if (data_pipe != {check_data_3,check_data_2,check_data_1,check_data_0}) begin
-        test_fault <= 1; 
+    end else if (test_fault_pulse) begin
         if (fault_cnt == FAULTMEM_SIZE) begin
           fault_cnt <= FAULTMEM_SIZE;
         end else begin
           fault_cnt <= fault_cnt + 1;
-          datafault_mem[fault_cnt] <= data_pipe;
+          datafault_mem[fault_cnt] <= {data_pipe_3,data_pipe_2,data_pipe_1,data_pipe_0};
           addrfault_mem[fault_cnt] <= check_addr;
         end  
-      end
     end
   end
 
@@ -437,7 +484,7 @@ module ddr2_test_harness(
         rdblk_cnt <= RDBLK_SIZE;
       end else if ((check_addr == ctrl_rdblk_addr) || (rdblk_cnt != 0)) begin
         rdblk_cnt <= rdblk_cnt + 1;
-        rdblk_mem[rdblk_cnt] <= data_pipe;
+        rdblk_mem[rdblk_cnt] <= {data_pipe_3,data_pipe_2,data_pipe_1,data_pipe_0};
         rdblk_addr_mem[rdblk_cnt] <= check_addr;
       end
     end

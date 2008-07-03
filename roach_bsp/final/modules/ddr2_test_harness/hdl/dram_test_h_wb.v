@@ -26,9 +26,9 @@ module dram_test_h_wb(
 
   output [20:0] status_addr;
   input  [15:0] harness_status;  //test harness control and status
-  output [79:0] harness_control;
+  output [111:0] harness_control;
 
-  reg [79:0] harness_control;
+  reg [111:0] harness_control;
   reg wb_ack_o;
   reg [20:0] wb_dat_o_src;
   
@@ -37,6 +37,8 @@ module dram_test_h_wb(
                     wb_dat_o_src == `REG_DDR2_TH_CTRL_2   ? harness_control[47:32] :
                     wb_dat_o_src == `REG_DDR2_TH_CTRL_3   ? harness_control[63:48] :
                     wb_dat_o_src == `REG_DDR2_TH_CTRL_4   ? harness_control[79:64] :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_5   ? harness_control[95:80] :
+                    wb_dat_o_src == `REG_DDR2_TH_CTRL_6   ? harness_control[111:96] :
                     harness_status;
                   
   assign status_addr = wb_dat_o_src[20:0]; 
@@ -88,6 +90,22 @@ module dram_test_h_wb(
                 harness_control[71:64] <= wb_dat_i[7:0];
               if (wb_sel_i[1])
                 harness_control[79:72] <= wb_dat_i[15:8];
+            end
+          end
+          `REG_DDR2_TH_CTRL_5: begin
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                harness_control[87:80] <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                harness_control[95:88] <= wb_dat_i[15:8];
+            end
+          end
+          `REG_DDR2_TH_CTRL_6: begin
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                harness_control[103:96] <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                harness_control[111:104] <= wb_dat_i[15:8];
             end
           end
         endcase

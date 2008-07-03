@@ -982,7 +982,7 @@ module toplevel(
     .CLK_FREQ(`DDR2_CLK_FREQ)
   ) ddr2_infrastructure_inst (
     .reset(sys_reset | ~idelay_ready),
-    .clk_in(sys_clk),
+    .clk_in(dly_clk),
     .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90), .ddr_clk_div(ddr_clk_div),
     .ddr_rst_0(ddr_rst_0), .ddr_rst_90(ddr_rst_90), .ddr_rst_div(ddr_rst_div),
     .usr_clk(wb_clk), .usr_rst(ddr_usr_rst)
@@ -1008,6 +1008,17 @@ module toplevel(
                           `DDR2_CLK_FREQ == 266 ? 3759 :
                                                   3759;
   ddr2_controller #(
+    .CLK_WIDTH(3),
+    .CS_WIDTH(4),
+    .DQ_BITS(6),
+    .DQS_BITS(3),
+    .ODT_WIDTH(1),
+    .CAS_LAT(4),
+    .MULTI_BANK_EN(0),
+    .ODT_TYPE(0),
+    //.REDUCE_DRV(1),
+    .TRAS(45000),
+    .TWTR(7500),
     .CLK_PERIOD(DDR_PERIOD)
   ) ddr2_controller_inst (
     .clk0(ddr_clk_0),
@@ -1786,12 +1797,7 @@ module toplevel(
   assign ddr_df_mask_1 = 0;
   assign ddr_af_wren_1 = 0;
   assign ddr_df_wren_1 = 0;
-  assign ddr_af_afull_1 = 0;
-  assign ddr_df_afull_1 = 0;
-  assign ddr_rd_data_1 = 0;
-  assign ddr_rd_dvalid_1 = 0;
   assign ddr_arb_rqst_1 = 0;
-  assign ddr_arb_grant_1 = 0;
 `endif
 
   wire [7:0] qdr_gpio;
@@ -1832,6 +1838,19 @@ module toplevel(
     .wb_dat_o(wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI]),
     .wb_ack_o(wb_ack_i[TESTING_SLI])
   );
+`else
+    assign qdr0_usr_reset_th = 0;
+    assign qdr_gpio = 0;
+    assign qdr0_usr_dwl_th = 0;
+    assign qdr0_usr_dwh_th = 0;
+    assign qdr0_usr_bwl_n_th = 0;
+    assign qdr0_usr_bwh_n_th = 0;
+    assign qdr0_usr_ad_wr_th = 0;
+    assign qdr0_usr_ad_rd_th = 0;
+    assign qdr0_usr_ad_w_n_th = 0;
+    assign qdr0_usr_d_w_n_th = 0;
+    assign qdr0_usr_r_n_th = 0;
+    assign qdr_arb_rqst_th = 0;
 `endif
 
   /********************* Incomplete *****************/
@@ -1866,7 +1885,7 @@ module toplevel(
   assign se_gpio_b[4] = qdr_gpio[4];
   assign se_gpio_b[5] = qdr_gpio[5];
   assign se_gpio_b[6] = sys_clk;
-  assign se_gpio_b[7] = qdr_clk_0;
+  assign se_gpio_b[7] = ddr_clk_0;
 
 
   /******** Differential **********/
@@ -1885,7 +1904,7 @@ module toplevel(
   
   assign led_n = ~{1'b1, counter[0][27], counter[1][27], counter[2][27]};
 
-  always @(posedge wb_clk) begin
+  always @(posedge ddr_clk_0) begin //wb_clk) begin
     counter[0] <= counter[0] + 1;
   end
 
