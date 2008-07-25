@@ -3,11 +3,19 @@ include Makefile.defs
 default:
 	@echo ""
 	@echo "Invalid make option: select one of the following"
-	@echo "bits, sim, build_parameters, clean"
+	@echo "bits, build, sim, build_parameters, clean"
 	@echo ""
 
 sim: $(SRC)
 	@echo "not implemented"
+
+build:
+	@if svn st | grep -q "^[^?]" ; then \
+	   echo "error: svn not up-to-date"; \
+	   false; \
+	   fi
+	@make -C . bits
+	@cp $(GEN_DIR)/$(PROJECT).bit $(GEN_DIR)/$(PROJECT)_$(REV_RCS).bit
 
 bits: build_parameters $(SRC) $(PCFILE) Makefile.defs
 	@make -C build bits \
@@ -21,8 +29,9 @@ bits: build_parameters $(SRC) $(PCFILE) Makefile.defs
 build_parameters:
 	@make -C support build_parameters \
 	   PROJECT=$(PROJECT) REV_MAJOR=$(REV_MAJOR) REV_MINOR=$(REV_MINOR) \
-	   REV_RCS="12" \
-	   MODULE_ID=$(MODULE_ID) C_HEADER=../$(GEN_DIR)/$(PROJECT)_$(REV_MAJOR).h
+	   REV_RCS=$(REV_RCS) \
+	   INCLUDE=../$(VINC) \
+	   MODULE_ID=$(MODULE_ID)
 	
 clean:
 	make -C modules clean

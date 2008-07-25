@@ -1,4 +1,6 @@
 `include "parameters.v"
+`include "build_parameters.v"
+
 module toplevel(
     /* primary clock inputs */
     clk_master, clk_aux,
@@ -128,7 +130,7 @@ module toplevel(
     end
   end
 
-  assign sys_led_n  = ~{!flash_busy_n, ppc_syserr};
+  assign sys_led_n  = ~{!flash_busy_n, ppc_syserr ? counter[0][23] : v5c_done};
   
   assign user_led_n = ~user_led_int;
 
@@ -140,15 +142,14 @@ module toplevel(
   assign tempsense_addr = 1'b0; //TODO: check this
   assign ppc_tmr_clk    = clk_aux;
 
-  assign boot_conf    = 3'b111;//i2c address 0xa4
-//`ifdef BOOT_CONF_EEPROM
-//  assign boot_conf    = 3'b111;//i2c address 0xa4
-////  assign boot_conf    = 3'b101;//i2c address 0xa8
-//`elsif BOOT_CONF_FAST
-//  assign boot_conf    = 3'b010;
-//`else
-//  assign boot_conf    = 3'b001;
-//`endif
+  `ifdef BOOT_CONF_EEPROM
+    assign boot_conf    = 3'b111;//i2c address 0xa4
+  //  assign boot_conf    = 3'b101;//i2c address 0xa8
+  `elsif BOOT_CONF_FAST
+    assign boot_conf    = 3'b010;
+  `else
+    assign boot_conf    = 3'b001;
+  `endif
   assign boot_conf_en = 1'b1;
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
@@ -206,28 +207,52 @@ module toplevel(
   wire wb_stb_o_0 = wb_stb_o & wb_adr_o[4:3] == 2'b00;
   wire wb_stb_o_1 = wb_stb_o & wb_adr_o[4:3] == 2'b01;
   wire wb_stb_o_2 = wb_stb_o & wb_adr_o[4:3] == 2'b10;
+  wire wb_stb_o_3 = wb_stb_o & wb_adr_o[4:3] == 2'b11;
+
   wire wb_cyc_o_0 = wb_stb_o_0;
   wire wb_cyc_o_1 = wb_stb_o_1;
   wire wb_cyc_o_2 = wb_stb_o_2;
+  wire wb_cyc_o_3 = wb_stb_o_3;
 
   wire [2:0] wb_adr_o_0 = wb_adr_o[2:0];
   wire [2:0] wb_adr_o_1 = wb_adr_o[2:0];
   wire [2:0] wb_adr_o_2 = wb_adr_o[2:0];
+  wire [2:0] wb_adr_o_3 = wb_adr_o[2:0];
 
   wire [7:0] wb_dat_i_0;
   wire [7:0] wb_dat_i_1;
   wire [7:0] wb_dat_i_2;
+  wire [7:0] wb_dat_i_3;
 
   assign wb_dat_i = wb_adr_o[4:3] == 2'b00 ? wb_dat_i_0 :
                     wb_adr_o[4:3] == 2'b01 ? wb_dat_i_1 :
                     wb_adr_o[4:3] == 2'b10 ? wb_dat_i_2 :
+                    wb_adr_o[4:3] == 2'b11 ? wb_dat_i_3 :
                                              16'b0;
   wire wb_ack_i_0;
   wire wb_ack_i_1;
   wire wb_ack_i_2;
-  assign wb_ack_i = wb_ack_i_2 | wb_ack_i_1 | wb_ack_i_0;
+  wire wb_ack_i_3;
+  assign wb_ack_i = wb_ack_i_3 | wb_ack_i_2 | wb_ack_i_1 | wb_ack_i_0;
 
-  /******************* Misc Registers ************************************/
+  /*********************** Revision Control Info *************************/
+  
+  wire [15:0] rev_id  = `DESIGN_ID;
+  wire  [7:0] rev_maj = `REV_MAJOR;
+  wire  [7:0] rev_min = `REV_MINOR;
+  wire [15:0] rev_rcs = `REV_RCS;
+
+  assign wb_ack_i_3 = 1'b1; //as if it matters
+
+  assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'b000 ? rev_id [ 7:0] :
+                      wb_adr_o_3[2:0] == 3'b001 ? rev_id [15:8] :
+                      wb_adr_o_3[2:0] == 3'b010 ? rev_maj[ 7:0] :
+                      wb_adr_o_3[2:0] == 3'b011 ? rev_min[ 7:0] :
+                      wb_adr_o_3[2:0] == 3'b100 ? rev_rcs[ 7:0] :
+                      wb_adr_o_3[2:0] == 3'b101 ? rev_rcs[15:8] :
+                      8'b0;
+
+  /*************************** Misc Registers ****************************/
 
   misc misc_inst(
     .wb_clk_i(wb_clk_i),   .wb_rst_i(wb_rst_i),

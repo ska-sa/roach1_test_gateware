@@ -4,10 +4,11 @@
 #
 # Project name
 
-MODULE_ID=XCCF
 PROJECT=roach_cpld
-REV_MAJOR=0
-REV_MINOR=1
+REV_MAJOR=1
+REV_MINOR=0
+REV_RCS:=`svn info|grep Revision |cut -d ' ' -f 2`
+
 # Pin Constraints
 PCFILE=constraints/$(PROJECT).ucf
 # Enter your source files here space seperated
