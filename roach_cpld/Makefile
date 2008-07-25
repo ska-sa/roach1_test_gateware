@@ -3,19 +3,19 @@ include Makefile.defs
 default:
 	@echo ""
 	@echo "Invalid make option: select one of the following"
-	@echo "bits, build, sim, build_parameters, clean"
+	@echo "bits, obuild, sim, build_parameters, clean"
 	@echo ""
 
 sim: $(SRC)
 	@echo "not implemented"
 
-build:
+obuild:
 	@if svn st | grep -q "^[^?]" ; then \
 	   echo "error: svn not up-to-date"; \
 	   false; \
 	   fi
 	@make -C . bits
-	@cp $(GEN_DIR)/$(PROJECT).bit $(GEN_DIR)/$(PROJECT)_$(REV_RCS).bit
+	@cp $(GEN_DIR)/$(PROJECT).jed $(GEN_DIR)/$(PROJECT)_$(REV_RCS).jed
 
 bits: build_parameters $(SRC) $(PCFILE) Makefile.defs
 	@make -C build bits \
