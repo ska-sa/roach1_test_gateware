@@ -80,13 +80,13 @@ module toplevel(
   //common signals
   wire por_force;      //power-on-reset force signal tied to a register
   wire por_force_int;  //power-on-reset force signal on master clk domain
-  wire sys_reset = !(reset_por_n & !reset_mon);
+  wire sys_reset = !(reset_por_n && !reset_mon);
   wire geth_reset_int; //gigabit ethernet reset tied to a register
 
   //output assignments
-  assign ppc_reset_n      = reset_debug_n & !sys_reset;
+  assign ppc_reset_n      = reset_debug_n && !sys_reset;
   assign ppc_ddr2_reset_n = !sys_reset;
-  assign geth_reset_n     = !sys_reset & !geth_reset_int;
+  assign geth_reset_n     = !sys_reset && !geth_reset_int;
 
   /* Tri-state control for por_force_n output */
   OBUFT por_force_obuft(
@@ -140,7 +140,15 @@ module toplevel(
   assign tempsense_addr = 1'b0; //TODO: check this
   assign ppc_tmr_clk    = clk_aux;
 
-  assign boot_conf    = 3'b000; //TODO: this could be 000 to improve performance
+  assign boot_conf    = 3'b111;//i2c address 0xa4
+//`ifdef BOOT_CONF_EEPROM
+//  assign boot_conf    = 3'b111;//i2c address 0xa4
+////  assign boot_conf    = 3'b101;//i2c address 0xa8
+//`elsif BOOT_CONF_FAST
+//  assign boot_conf    = 3'b010;
+//`else
+//  assign boot_conf    = 3'b001;
+//`endif
   assign boot_conf_en = 1'b1;
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
