@@ -244,12 +244,12 @@ module toplevel(
 
   assign wb_ack_i_3 = 1'b1; //as if it matters
 
-  assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'b000 ? rev_id [ 7:0] :
-                      wb_adr_o_3[2:0] == 3'b001 ? rev_id [15:8] :
+  assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'b000 ? rev_id [15:8] :
+                      wb_adr_o_3[2:0] == 3'b001 ? rev_id [ 7:0] :
                       wb_adr_o_3[2:0] == 3'b010 ? rev_maj[ 7:0] :
                       wb_adr_o_3[2:0] == 3'b011 ? rev_min[ 7:0] :
-                      wb_adr_o_3[2:0] == 3'b100 ? rev_rcs[ 7:0] :
-                      wb_adr_o_3[2:0] == 3'b101 ? rev_rcs[15:8] :
+                      wb_adr_o_3[2:0] == 3'b100 ? rev_rcs[15:8] :
+                      wb_adr_o_3[2:0] == 3'b101 ? rev_rcs[ 7:0] :
                       8'b0;
 
   /*************************** Misc Registers ****************************/
