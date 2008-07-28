@@ -23,8 +23,6 @@ PROG_COMMANDS=open_design {$(PAR_F)} ; \
               export -format bts_stp \
               -feature prog_from \
               -feature prog_fpga \
-              -efm_program_instance_0 yes -efm_config_file_0 {$(FLASHMEM_EFC)} -efm_security_instance_0 none \
-              -efm_program_instance_1 yes -efm_config_file_1 {$(FLASHMEM_EFC)} -efm_security_instance_1 none \
               -from_config_file {$(FLASHROM_UFC)} \
               -number_of_devices 1 \
               -from_progfile_type single \
@@ -39,3 +37,22 @@ PROG_COMMANDS=open_design {$(PAR_F)} ; \
               save_design {$(PAR_F)};\
               close_design
 
+#PROG_COMMANDS=open_design {$(PAR_F)} ; \
+#              export -format bts_stp \
+#              -feature prog_from \
+#              -feature prog_fpga \
+#              -efm_program_instance_0 yes -efm_config_file_0 {$(FLASHMEM_EFC)} -efm_security_instance_0 none \
+#              -efm_program_instance_1 yes -efm_config_file_1 {$(FLASHMEM_EFC)} -efm_security_instance_1 none \
+#              -from_config_file {$(FLASHROM_UFC)} \
+#              -number_of_devices 1 \
+#              -from_progfile_type single \
+#              -target_programmer generic \
+#              -fpga_security_level write_protect \
+#              -from_security_level none \
+#              -security_permanent no \
+#              -from_program_pages \"0 1 2 3 4 5 6 7\" \
+#              -from_content ufc \
+#              -io_present Z\
+#              {$(BIT_FILE)}; \
+#              save_design {$(PAR_F)};\
+#              close_design

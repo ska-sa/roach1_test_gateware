@@ -28,11 +28,11 @@ module power_manager(
     G12V_EN, G5V_EN, G3V3_EN
   );
   parameter WATCHDOG_OVERFLOW_DEFAULT = 5'b00000; //no watchdog overflows
-  parameter MAX_UNACKED_CRASHES = 3'b011; // 3 crashes
-  parameter MAX_UNACKED_WD_OVERFLOWS = 3'b111; //  7 overflows
-  parameter SYS_HEALTH_POWERUP_MASK = 32'hffff_ffff; //all inputs must be valid
-  parameter POWER_DOWN_WAIT = 32'h003f_ffff; //100ms
-  parameter POST_POWERUP_WAIT = 32'h003f_ffff; //100ms
+  parameter MAX_UNACKED_CRASHES       = 3'b011; // 3 crashes
+  parameter MAX_UNACKED_WD_OVERFLOWS  = 3'b111; //  7 overflows
+  parameter SYS_HEALTH_POWERUP_MASK   = 32'hffff_ffff; //all inputs must be valid
+  parameter POWER_DOWN_WAIT           = 32'h003f_ffff; //100ms
+  parameter POST_POWERUP_WAIT         = 32'h003f_ffff; //100ms
 
   input  wb_clk_i, wb_rst_i;
   input  wb_cyc_i, wb_stb_i, wb_we_i;
@@ -58,9 +58,9 @@ module power_manager(
 
   /************* Common Signals *************/
   wire chs_powerdown_force; //the chs_powerdown signal was asserted for longer than 3 seconds
-  wire chs_powerdown_strb; //the chs_powerdown signal was asserted briefly
-  reg  power_down_strb; //tell the power-sequencer to startup
-  reg  power_up_strb;   //tell the power-sequencer to shutdown
+  wire chs_powerdown_strb;  //the chs_powerdown signal was asserted briefly
+  wire power_down;          //tell the power-sequencer to startup
+  wire power_up;            //tell the power-sequencer to shutdown
 
   wire power_up_done;   //the power-sequencer has finished powering up
 
@@ -80,7 +80,7 @@ module power_manager(
 
   sequencer sequencer_inst(
     .reset(wb_rst_i), .clk(wb_clk_i),
-    .power_up(power_up_strb), .power_down(power_down_strb),
+    .power_up(power_up), .power_down(power_down),
     .power_up_done(power_up_done), .power_down_done(),
     /* Power Control Signals */
     .ATX_PS_ON_N(ATX_PS_ON_N),
@@ -99,8 +99,11 @@ module power_manager(
   localparam STATE_POWERED_UP   = 3'd3;
   localparam STATE_NO_POWER     = 3'd4;
 
-  assign power_ok = power_state == STATE_POWERED_UP;
-  assign soft_reset = power_down_strb;
+  assign power_up   = power_state == STATE_POWERING_UP || power_state == STATE_CHECK || power_state == STATE_POWERED_UP;
+  assign power_down = !power_up;
+
+  assign power_ok   = power_state == STATE_POWERED_UP;
+  reg soft_reset;
 
   reg [31:0] powered_down_wait;
   reg crash;
@@ -113,14 +116,14 @@ module power_manager(
 
   always @(posedge wb_clk_i) begin
     //strobes
-    crash <= 1'b0;
-    power_up_strb <= 1'b0;
-    power_down_strb <= 1'b0;
+    crash      <= 1'b0;
+    soft_reset <= 1'b0;
 
     if (wb_rst_i) begin
       powered_down_wait <= POWER_DOWN_WAIT;
-      power_state <= STATE_POWERED_DOWN;
-      first <= 1'b1;
+      power_state       <= STATE_POWERED_DOWN;
+      first             <= 1'b1;
+      soft_reset        <= 1'b1;
     end else begin
       case (power_state)
         STATE_POWERED_DOWN: begin
@@ -133,66 +136,78 @@ module power_manager(
               no_power_cause <= 2'b00;
             end else begin
               power_state <= STATE_POWERING_UP;
-              power_up_strb <= 1'b1;
             end
+          end
+          if (chs_powerdown_force) begin
+            no_power_cause <= 2'b11;
+            power_state <= STATE_NO_POWER;
           end
         end
         STATE_POWERING_UP: begin
           if (power_up_done) begin
             power_state <= STATE_CHECK;
           end
+          if (chs_powerdown_force) begin
+            no_power_cause <= 2'b11;
+            power_state <= STATE_NO_POWER;
+          end
         end
         STATE_CHECK: begin
           if (post_check_fail) begin
-            power_down_strb <= 1'b1;
             crash <= 1'b1;
             if (unacked_crashes == MAX_UNACKED_CRASHES) begin
               power_state <= STATE_NO_POWER;
               no_power_cause <= 2'b01;
             end else begin
-              power_state <= STATE_POWERED_DOWN;
+              power_state       <= STATE_POWERED_DOWN;
+              powered_down_wait <= POWER_DOWN_WAIT;
+              soft_reset        <= 1'b1;
             end
           end else if (post_check_pass) begin
             power_state <= STATE_POWERED_UP;
           end
+          if (chs_powerdown_force) begin
+            no_power_cause <= 2'b11;
+            power_state <= STATE_NO_POWER;
+          end
         end
         STATE_POWERED_UP: begin
           if (wb_reset_strb) begin //lowest priority
-            power_down_strb <= 1'b1;
-            power_state <= STATE_POWERED_DOWN;
+            power_state       <= STATE_POWERED_DOWN;
             powered_down_wait <= POWER_DOWN_WAIT;
+            soft_reset        <= 1'b1;
           end
           if (watchdog_overflow) begin
-            power_down_strb <= 1'b1;
             if (unacked_wd_overflows == MAX_UNACKED_WD_OVERFLOWS) begin
               power_state <= STATE_NO_POWER;
               no_power_cause <= 2'b10;
             end else begin
-              power_state <= STATE_POWERED_DOWN;
+              power_state       <= STATE_POWERED_DOWN;
               powered_down_wait <= POWER_DOWN_WAIT;
+              soft_reset        <= 1'b1;
             end
           end 
           if (unsafe_sys_health) begin
-            power_down_strb <= 1'b1;
             crash <= 1'b1;
             if (unacked_crashes == MAX_UNACKED_CRASHES) begin
-              power_state <= STATE_NO_POWER;
+              power_state    <= STATE_NO_POWER;
               no_power_cause <= 2'b01;
             end else begin
-              power_state <= STATE_POWERED_DOWN;
+              power_state       <= STATE_POWERED_DOWN;
               powered_down_wait <= POWER_DOWN_WAIT;
+              soft_reset        <= 1'b1;
             end
           end
           if (chs_powerdown_force | chs_powerdown | wb_powerdown_strb) begin //highest priority
-            power_down_strb <= 1'b1;
-            power_state <= STATE_NO_POWER;
+            power_state    <= STATE_NO_POWER;
             no_power_cause <= 2'b11;
           end
         end
         STATE_NO_POWER: begin
           if (chs_powerdown_strb | wb_powerup_strb) begin
-            power_state <= STATE_POWERED_DOWN;
+            power_state       <= STATE_POWERED_DOWN;
             powered_down_wait <= POWER_DOWN_WAIT;
+            soft_reset        <= 1'b1;
           end
         end
       endcase

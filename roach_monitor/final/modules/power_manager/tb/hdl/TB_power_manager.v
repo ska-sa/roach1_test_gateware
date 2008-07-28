@@ -25,8 +25,8 @@ module TB_power_manager();
   wire G12V_EN, G5V_EN, G3V3_EN;
 
   power_manager #(
-    .POWER_DOWN_WAIT(32'd1000),
-    .POST_POWERUP_WAIT(32'd1000),
+    .POWER_DOWN_WAIT(32'd100),
+    .POST_POWERUP_WAIT(32'd100),
     .WATCHDOG_OVERFLOW_DEFAULT(5'd1)
   ) power_manager_inst (
     .wb_clk_i(clk), .wb_rst_i(reset),
@@ -53,6 +53,7 @@ module TB_power_manager();
     clk_counter<=8'b0;
     reset<=1'b1;
 `ifdef DEBUG
+    $dumpvars;
     $display("sim: starting sim");
 `endif
     #5
@@ -83,6 +84,14 @@ module TB_power_manager();
 
   reg [3:0] mode_done;
 
+  always @(posedge clk) begin
+    if (reset || soft_reset) begin
+      dma_done <= 1'b0;
+    end else begin
+      dma_done <= 1'b1;
+    end
+  end
+
   reg got_a_n_pwrok;
   always @(posedge clk) begin
     unsafe_sys_health <= 1'b0;
@@ -93,7 +102,6 @@ module TB_power_manager();
 
       sys_health <= {32{1'b0}};
       cold_start <= 1'b0;
-      dma_done <= 1'b0;
     end else begin
       case (mode)
         `MODE_START_CHECK: begin
@@ -101,7 +109,6 @@ module TB_power_manager();
           case (mode_progress)
             4'd0: begin
               if (mode_timer >= 32'd40) begin
-                dma_done <= 1'b1;
                 mode_timer <= 32'd0;
                 mode_progress <= 4'd1;
                 if (power_ok) begin
