@@ -29,8 +29,8 @@
 //`define ENABLE_XAUI_3
 //
 
-`define ENABLE_DDR2
-`define ENABLE_DDR2_TH
+//`define ENABLE_DDR2
+//`define ENABLE_DDR2_TH
 
 //`define ENABLE_QDR0
 //`define ENABLE_QDR0_TH

@@ -487,7 +487,7 @@ module toplevel(
   wire  [2:0] mgt_txdiffctrl    [3:0];
 
   xaui_infrastructure #(
-    .DIFF_BOOST("FALSE")
+    .DIFF_BOOST("TRUE")
     //.DIFF_BOOST(`MGT_DIFF_BOOST)
   ) xaui_infrastructure_inst (
     .reset(sys_reset),
@@ -1885,7 +1885,7 @@ module toplevel(
   assign se_gpio_b[4] = qdr_gpio[4];
   assign se_gpio_b[5] = qdr_gpio[5];
   assign se_gpio_b[6] = sys_clk;
-  assign se_gpio_b[7] = ddr_clk_0;
+  assign se_gpio_b[7] = 1'b0;
 
 
   /******** Differential **********/
@@ -1901,10 +1901,19 @@ module toplevel(
   /************************* LEDs ************************/
 
   reg [27:0] counter [2:0];
-  
-  assign led_n = ~{1'b1, counter[0][27], counter[1][27], counter[2][27]};
+  reg foo;
+  reg prev;
 
-  always @(posedge ddr_clk_0) begin //wb_clk) begin
+  always @(posedge epb_clk) begin
+    prev <= epb_cs_n;
+    if (prev != epb_cs_n && !epb_cs_n) begin
+      foo <= !foo;
+    end
+  end
+  
+  assign led_n = ~{foo, counter[0][27], counter[1][27], counter[2][27]};
+
+  always @(posedge epb_clk) begin //wb_clk) begin
     counter[0] <= counter[0] + 1;
   end
 
