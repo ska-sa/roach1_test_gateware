@@ -94,48 +94,22 @@ module iadc_infrastructure(
     .O(adc_clk_int)
   );
 
-  /* 
-   * This BUFG is required to compensate for the delay introduced by the BUFG
-   * on the output of the PLL by introducing additional delay on the feedback
-   * line
-   */
-  wire pll_fb_bufg;
-  wire pll_fb;
-  BUFG bufg_pll_fb(
-    .I(pll_fb),
-    .O(pll_fb_bufg)
-  );
-
-  PLL_BASE #(
-    .BANDWIDTH("OPTIMIZED"),
-    .CLKFBOUT_MULT(1),
-    .CLKFBOUT_PHASE(0.0),
-    .CLKIN_PERIOD(ADC_CLK_PERIOD),
-
-    .CLKOUT0_DIVIDE(1),
-    .CLKOUT0_DUTY_CYCLE(0.5),
-    .CLKOUT0_PHASE(0.0),
-
-    .CLKOUT1_DIVIDE(1),
-    .CLKOUT1_DUTY_CYCLE(0.5),
-    .CLKOUT1_PHASE(90.0),
-
-    .COMPENSATION("SYSTEM_SYNCHRONOUS"),
-    .DIVCLK_DIVIDE(1),
-    .REF_JITTER(0.100),
-    .RESET_ON_LOSS_OF_LOCK("FALSE")
-  ) PLL_BASE_inst (
-   .CLKFBOUT(pll_fb),
-   .CLKOUT0(adc_clk_90_int),
-   .CLKOUT1(adc_clk_0_int),
-   .CLKOUT2(),
-   .CLKOUT3(),
-   .CLKOUT4(),
-   .CLKOUT5(),
-   .LOCKED(clk_lock),
-   .CLKFBIN(pll_fb_bufg),
-   .CLKIN(adc_clk_int),
-   .RST(reset)
+  DCM_BASE #(
+    .CLKIN_PERIOD(8.0)
+  ) DCM_BASE_inst (
+    .CLK0(adc_clk_0_int),
+    .CLK180(),
+    .CLK270(),
+    .CLK2X(),
+    .CLK2X180(),
+    .CLK90(adc_clk_90_int),
+    .CLKDV(),
+    .CLKFX(),
+    .CLKFX180(),
+    .LOCKED(clk_lock),
+    .CLKFB(adc_clk_0),
+    .CLKIN(adc_clk_int),
+    .RST(reset)
   );
 
   /* Global buffers */

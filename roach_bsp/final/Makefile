@@ -18,6 +18,7 @@ bits: build_parameters
 	   GEN_DIR=../$(GEN_DIR) \
 	   NETLIST_DIRS="$(addprefix  ../,$(NETLIST_DIRS))"
 	cp build/$(PROJECT).bit gen/$(PROJECT)_$(REV_MAJOR)_$(REV_MINOR).bit
+	cp build/$(PROJECT).bin gen/$(PROJECT)_$(REV_MAJOR)_$(REV_MINOR).bin
 
 build_parameters:
 	@make -C support build_parameters \

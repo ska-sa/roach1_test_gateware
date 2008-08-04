@@ -19,6 +19,7 @@ module ddr2_cpu_interface(
     ddr2_data_i, ddr2_dvalid_i,
     ddr_clk_0, ddr_clk_90
   );
+  parameter CLK_FREQ         = 0;
   parameter ECC_ENABLED_DIMM = 0;
   parameter SOFT_ADDR_BITS   = 8;
 
@@ -69,6 +70,7 @@ module ddr2_cpu_interface(
   wire ddr_reset_int;
 
   reg_wb_attach #(
+    .CLK_FREQ(CLK_FREQ),
     .SOFT_ADDR_BITS(SOFT_ADDR_BITS)
   ) reg_wb_attach_inst (
     //memory wb slave IF
@@ -274,7 +276,7 @@ module ddr2_cpu_interface(
               mem_wb_dat_o <= wr_buffer[16*(1+12) - 1:16*12];
             end
           end
-          7'd20: begin
+          7'D20: begin
             if (mem_wb_we_i) begin
               wr_buffer[16*(1+13) - 1:16*13] <= mem_wb_dat_i;
             end else begin

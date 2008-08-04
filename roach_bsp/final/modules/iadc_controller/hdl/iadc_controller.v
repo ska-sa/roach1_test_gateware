@@ -61,6 +61,13 @@ module iadc_controller(
   wire [3:0] fifo_status;
   reg fifo_enable;
 
+  /******************  ADC0 CLK test ***********************/
+  reg [31:0] adc_clk_counter;
+
+  always @(posedge adc_clk_0) begin
+    adc_clk_counter <= adc_clk_counter + 1;
+  end
+
   /**************** Wishbone Attachment ********************/ 
 
   wire twi_xfer_busy;
@@ -80,6 +87,8 @@ module iadc_controller(
                     wb_dat_src == `REG_IADC_FIFO_ADV    ? 16'b0                       :
                     wb_dat_src == `REG_IADC_FIFO_STATUS ? {12'b0, fifo_status}        :
                     wb_dat_src == `REG_IADC_FIFO_CTRL   ? {15'b0, fifo_enable}        :
+                    wb_dat_src == `REG_IADC_CLKTEST1    ? adc_clk_counter[31:16]      :
+                    wb_dat_src == `REG_IADC_CLKTEST0    ? adc_clk_counter[15:0]       :
                                                           16'b0;
 
   

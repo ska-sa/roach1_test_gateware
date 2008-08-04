@@ -28,9 +28,8 @@ module qdr_cpu_interface(
     qdr_rd_data,
     qdr_rd_valid,
     qdr_rd_en
-    ,debug
   );
-  input  [3:0] debug;
+  parameter CLK_FREQ = 0;
   /* Bus interface signals */
   input  wb_clk_i;
   input  wb_rst_i;
@@ -75,7 +74,9 @@ module qdr_cpu_interface(
 
   wire   qdr_reset_int;
 
-  qdr_reg_wb_attach reg_wb_attach_inst (
+  qdr_reg_wb_attach #(
+    .CLK_FREQ(CLK_FREQ)
+  ) reg_wb_attach_inst (
     //memory wb slave IF
     .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
     .wb_we_i(reg_wb_we_i), .wb_cyc_i(reg_wb_cyc_i), .wb_stb_i(reg_wb_stb_i), .wb_sel_i(reg_wb_sel_i),
@@ -83,7 +84,6 @@ module qdr_cpu_interface(
     .wb_ack_o(reg_wb_ack_o),
     .phy_ready(qdr_phy_rdy),
     .qdr_reset(qdr_reset_int)
-    ,.debug(debug)
   );
 
   /* stretch the reset pulse out */

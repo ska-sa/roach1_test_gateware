@@ -592,7 +592,7 @@ module toplevel(
     .mgt_enable_align(mgt_enable_align[0]),.mgt_en_chan_sync(mgt_enchansync[0]), 
     .mgt_code_valid(mgt_codevalid[0]), .mgt_code_comma(mgt_code_comma[0]),
     .mgt_rxlock(mgt_rxlock[0]), .mgt_syncok(mgt_syncok[0]),
-    .mgt_rxbufferr(mgt_rxbufferr[0]),
+    //.mgt_rxbufferr(mgt_rxbufferr[0]),
     .mgt_loopback(mgt_loopback[0]), .mgt_powerdown(mgt_powerdown[0]),
     .mgt_tx_reset(mgt_tx_reset[0]), .mgt_rx_reset(mgt_rx_reset[0]),
 
@@ -693,7 +693,7 @@ module toplevel(
     .mgt_enable_align(mgt_enable_align[1]),.mgt_en_chan_sync(mgt_enchansync[1]), 
     .mgt_code_valid(mgt_codevalid[1]), .mgt_code_comma(mgt_code_comma[1]),
     .mgt_rxlock(mgt_rxlock[1]), .mgt_syncok(mgt_syncok[1]),
-    .mgt_rxbufferr(mgt_rxbufferr[1]),
+    //.mgt_rxbufferr(mgt_rxbufferr[1]),
     .mgt_loopback(mgt_loopback[1]), .mgt_powerdown(mgt_powerdown[1]),
     .mgt_tx_reset(mgt_tx_reset[1]), .mgt_rx_reset(mgt_rx_reset[1]),
 
@@ -792,7 +792,7 @@ module toplevel(
     .mgt_enable_align(mgt_enable_align[2]),.mgt_en_chan_sync(mgt_enchansync[2]), 
     .mgt_code_valid(mgt_codevalid[2]), .mgt_code_comma(mgt_code_comma[2]),
     .mgt_rxlock(mgt_rxlock[2]), .mgt_syncok(mgt_syncok[2]),
-    .mgt_rxbufferr(mgt_rxbufferr[2]),
+    //.mgt_rxbufferr(mgt_rxbufferr[2]),
     .mgt_loopback(mgt_loopback[2]), .mgt_powerdown(mgt_powerdown[2]),
     .mgt_tx_reset(mgt_tx_reset[2]), .mgt_rx_reset(mgt_rx_reset[2]),
 
@@ -933,7 +933,7 @@ module toplevel(
     .mgt_enable_align(mgt_enable_align[3]),.mgt_en_chan_sync(mgt_enchansync[3]), 
     .mgt_code_valid(mgt_codevalid[3]), .mgt_code_comma(mgt_code_comma[3]),
     .mgt_rxlock(mgt_rxlock[3]), .mgt_syncok(mgt_syncok[3]),
-    .mgt_rxbufferr(mgt_rxbufferr[3]),
+//    .mgt_rxbufferr(mgt_rxbufferr[3]),
     .mgt_loopback(mgt_loopback[3]), .mgt_powerdown(mgt_powerdown[3]),
     .mgt_tx_reset(mgt_tx_reset[3]), .mgt_rx_reset(mgt_rx_reset[3]),
     .mgt_rxeqmix(mgt_rxeqmix[3]), .mgt_rxeqpole(mgt_rxeqpole[3]),
@@ -1090,6 +1090,7 @@ module toplevel(
   wire ddr_rd_dvalid_1;
 
   ddr2_cpu_interface #(
+    .CLK_FREQ(`DDR2_CLK_FREQ),
     .SOFT_ADDR_BITS(8)
   ) ddr2_cpu_interface_inst (
     .ddr_clk_0(ddr_clk_0), .ddr_clk_90(ddr_clk_90),
@@ -1292,7 +1293,9 @@ module toplevel(
   assign qdr0_usr_ad_w_n_cpu = !qdr0_usr_ad_w;
   assign qdr0_usr_r_n_cpu    = !qdr0_usr_r;
 
-  qdr_cpu_interface qdr_cpu_interface_inst_0(
+  qdr_cpu_interface #(
+    .CLK_FREQ(`QDR_CLK_FREQ)
+  )qdr_cpu_interface_inst_0(
     .wb_clk_i(wb_clk), .wb_rst_i(sys_reset),
     //register wb slave IF
     .reg_wb_we_i(wb_we_o),
@@ -1550,7 +1553,7 @@ module toplevel(
                                 zdok0_dp_p[1],  zdok0_dp_p[3],  zdok0_dp_p[5],  zdok0_dp_p[7]};
 
   /****** ADC internal signals ******/
-  wire adc0_clk_0, adc0_clk_90;
+  wire adc0_clk_90;
   wire adc0_sync;
   wire  [3:0] adc0_outofrange;
   wire [63:0] adc0_data;
@@ -1681,7 +1684,7 @@ module toplevel(
                                 zdok1_dp_p[1],  zdok1_dp_p[3],  zdok1_dp_p[5],  zdok1_dp_p[7]};
 
   /****** ADC internal signals ******/
-  wire adc1_clk_0, adc1_clk_90;
+  wire adc1_clk_90;
   wire adc1_sync;
   wire  [3:0] adc1_outofrange;
   wire [63:0] adc1_data;

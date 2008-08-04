@@ -14,5 +14,7 @@
 `define REG_IADC_FIFO_ADV    4'd10
 `define REG_IADC_FIFO_STATUS 4'd11
 `define REG_IADC_FIFO_CTRL   4'd12
+`define REG_IADC_CLKTEST1    4'd12
+`define REG_IADC_CLKTEST0    4'd13
 
 `endif

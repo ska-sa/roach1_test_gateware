@@ -444,22 +444,22 @@ module transceiver(
 
         //---------- RX Driver,OOB signalling,Coupling and Eq.,CDR ------------  
 
-        .AC_CAP_DIS_0               ("FALSE"),
+        .AC_CAP_DIS_0               ("TRUE"),
         .OOBDETECT_THRESHOLD_0      (3'b001),
         .PMA_CDR_SCAN_0             (27'h6c07640), 
         //.PMA_RX_CFG_0               (25'h09f0089),
         .PMA_RX_CFG_0               (25'h09f0088),
         .RCV_TERM_GND_0             ("FALSE"),
-        .RCV_TERM_MID_0             ("TRUE"),
+        .RCV_TERM_MID_0             ("FALSE"),
         .RCV_TERM_VTTRX_0           ("FALSE"),
         .TERMINATION_IMP_0          (50),
 
-        .AC_CAP_DIS_1               ("FALSE"),
+        .AC_CAP_DIS_1               ("TRUE"),
         .OOBDETECT_THRESHOLD_1      (3'b001),
         .PMA_CDR_SCAN_1             (27'h6c07640), 
         .PMA_RX_CFG_1               (25'h09f0088),  
         .RCV_TERM_GND_1             ("FALSE"),
-        .RCV_TERM_MID_1             ("TRUE"),
+        .RCV_TERM_MID_1             ("FALSE"),
         .RCV_TERM_VTTRX_1           ("FALSE"),
         .TERMINATION_IMP_1          (50),
 

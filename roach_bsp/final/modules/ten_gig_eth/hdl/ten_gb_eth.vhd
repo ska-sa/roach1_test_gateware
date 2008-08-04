@@ -99,7 +99,7 @@ entity ten_gb_eth is
                 mgt_code_valid        : in  std_logic_vector(7  downto 0);
                 mgt_code_comma        : in  std_logic_vector(7  downto 0);
                 mgt_rxlock            : in  std_logic_vector(3  downto 0);
-                mgt_rxbuffer          : in  std_logic_vector(3  downto 0);
+               -- mgt_rxbuffer          : in  std_logic_vector(3  downto 0);
                 mgt_loopback          : out std_logic;
                 mgt_syncok            : in  std_logic_vector(3  downto 0);
                 mgt_en_chan_sync      : out std_logic;
@@ -118,7 +118,6 @@ entity ten_gb_eth is
                 wb_dat_i              : in  std_logic_vector(15 downto 0);
                 wb_dat_o              : out std_logic_vector(15 downto 0);
                 wb_ack_o              : out std_logic
-                ;debug              : out std_logic_vector(3 downto 0)
 	);
 end entity ten_gb_eth;
 
@@ -357,7 +356,6 @@ architecture ten_gb_eth_arch of ten_gb_eth is
                         wb_dat_i              : in  std_logic_vector(15 downto 0);
                         wb_dat_o              : out std_logic_vector(15 downto 0);
                         wb_ack_o              : out std_logic
-                        ;debug              : out std_logic_vector(3 downto 0)
 		);
 	end component;
 
@@ -1329,7 +1327,6 @@ wb : wb_attach
 
                 -- phy status
 		phy_status            => phy_status_vector
-                ,debug => debug
 	);
 
 

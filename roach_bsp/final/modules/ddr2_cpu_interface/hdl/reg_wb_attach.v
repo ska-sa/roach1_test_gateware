@@ -12,6 +12,7 @@ module reg_wb_attach(
     ddr2_bus_rqst,
     ddr2_bus_grntd
   );
+  parameter CLK_FREQ       = 0;
   parameter SOFT_ADDR_BITS = 4;
   
   input  wb_clk_i;
@@ -45,6 +46,7 @@ module reg_wb_attach(
                     wb_dat_o_src == `REG_DDR2_RESET     ? 16'b0                   :
                     wb_dat_o_src == `REG_DDR2_BUS_RQST  ? {15'b0, ddr2_bus_rqst}  :
                     wb_dat_o_src == `REG_DDR2_BUS_GRNTD ? {15'b0, ddr2_bus_grntd} :
+                    wb_dat_o_src == `REG_DDR2_FREQ      ? CLK_FREQ                :
                     16'd0;
 
 

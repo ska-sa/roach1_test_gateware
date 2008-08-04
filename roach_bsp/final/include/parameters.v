@@ -19,26 +19,26 @@
 
 //`define EPB_FIXED_TIMING
 
-//`define ENABLE_TEN_GB_ETH_0
+`define ENABLE_TEN_GB_ETH_0
 //`define ENABLE_XAUI_0
-//`define ENABLE_TEN_GB_ETH_1
+`define ENABLE_TEN_GB_ETH_1
 //`define ENABLE_XAUI_1
-//`define ENABLE_TEN_GB_ETH_2
+`define ENABLE_TEN_GB_ETH_2
 //`define ENABLE_XAUI_2
-//`define ENABLE_TEN_GB_ETH_3
+`define ENABLE_TEN_GB_ETH_3
 //`define ENABLE_XAUI_3
 //
 
-//`define ENABLE_DDR2
+`define ENABLE_DDR2
 //`define ENABLE_DDR2_TH
 
-//`define ENABLE_QDR0
+`define ENABLE_QDR0
 //`define ENABLE_QDR0_TH
-//`define ENABLE_QDR1
+`define ENABLE_QDR1
 //`define ENABLE_QDR_INFRASTRUCTURE
 
-//`define ENABLE_IADC_0
-//`define ENABLE_IADC_1
+`define ENABLE_IADC_0
+`define ENABLE_IADC_1
 
 
 `define DDR2_CLK_FREQ 200

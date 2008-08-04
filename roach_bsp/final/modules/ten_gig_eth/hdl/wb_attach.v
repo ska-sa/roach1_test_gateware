@@ -36,10 +36,7 @@ module wb_attach(
     rx_cpu_buffer_size, rx_cpu_new_buffer, rx_cpu_buffer_cleared, rx_cpu_buffer_select,
     //ARP Cache
     arp_cache_data_in, arp_cache_address, arp_cache_we, arp_cache_data_out
-    , debug
   );
-  output [3:0] debug;
-  reg [3:0] debug;
   parameter DEFAULT_FABRIC_MAC     = 48'hffff_ffff_ffff;
   parameter DEFAULT_FABRIC_IP      = {8'd255, 8'd255, 8'd255, 8'd255};
   parameter DEFAULT_FABRIC_GATEWAY = 8'hff;
@@ -172,7 +169,6 @@ module wb_attach(
       if (arp_cache_selected) begin 
         if (wb_we_i) begin
         end else begin
-        debug[0] <= ~debug[0];
           use_arp_data <= 1'b1;
         end
       end
@@ -181,7 +177,6 @@ module wb_attach(
       if (rx_buffer_selected) begin
         if (wb_we_i) begin
         end else begin
-        debug[1] <= ~debug[1];
           use_rx_data <= 1'b1;
         end
       end
@@ -190,14 +185,12 @@ module wb_attach(
       if (tx_buffer_selected) begin
         if (wb_we_i) begin
         end else begin
-        debug[2] <= ~debug[2];
           use_tx_data <= 1'b1;
         end
       end
 
       // registers
       if (registers_selected) begin
-        debug[3] <= ~debug[3];
         wb_dat_o_src <= registers_addr[4:1];
         if (wb_we_i) begin
           case (registers_addr[4:1])
