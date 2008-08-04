@@ -8,8 +8,8 @@ TIMESPEC TS_mgt_clk = PERIOD mgt_clk 156.25 MHz;
 Net sys_clk TNM_NET = sys_clk;
 TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
 
-#Net dly_clk TNM_NET = dly_clk;
-#TIMESPEC TS_dly_clk = PERIOD dly_clk 200 MHz;
+Net dly_clk_n TNM_NET = dly_clk_n;
+TIMESPEC TS_dly_n_clk = PERIOD dly_clk_n 200 MHz;
 
 Net epb_clk TNM_NET = epb_clk;
 TIMESPEC TS_epb_clk = PERIOD epb_clk 88 MHz;
@@ -20,10 +20,6 @@ TIMESPEC TS_epb_clk = PERIOD epb_clk 88 MHz;
 #Net adc1_clk_0 TNM_NET = adc1_clk_0;
 #TIMESPEC TS_adc1_clk_0 = PERIOD adc1_clk_0 150 MHz;
 
-
-###################Local bufg routing [for roach V0]
-
-NET epb_clk_buf CLOCK_DEDICATED_ROUTE = FALSE;
 
 ###################ROACH constraints
 
@@ -51,25 +47,26 @@ NET "led_n<3>"    IOSTANDARD = LVCMOS18 | LOC = AL24;
 # PPC External Peripheral Bus [EPB]
 #
 
-NET "ppc_irq"      LOC = G23;
+NET "ppc_irq_n"      LOC = G23;
 
 # transparent endian change
+
 NET "epb_data<15>" LOC = AD19;
-NET "epb_data<14>" LOC = AF15;
-NET "epb_data<13>" LOC = AE19;
-NET "epb_data<12>" LOC = AE16;
-NET "epb_data<11>" LOC = AH19;
-NET "epb_data<10>" LOC = AF16;
-NET "epb_data<9>"  LOC = AD20;
-NET "epb_data<8>"  LOC = AE17;
-NET "epb_data<7>"  LOC = AH12;
-NET "epb_data<6>"  LOC = AH20;
-NET "epb_data<5>"  LOC = AG13;
-NET "epb_data<4>"  LOC = AE21;
-NET "epb_data<3>"  LOC = AG22;
-NET "epb_data<2>"  LOC = AH13;
+NET "epb_data<14>" LOC = AE19;
+NET "epb_data<13>" LOC = AE17;
+NET "epb_data<12>" LOC = AF16;
+NET "epb_data<11>" LOC = AD20;
+NET "epb_data<10>" LOC = AE21;
+NET "epb_data<9>"  LOC = AE16;
+NET "epb_data<8>"  LOC = AF15;
+NET "epb_data<7>"  LOC = AH13;
+NET "epb_data<6>"  LOC = AH14;
+NET "epb_data<5>"  LOC = AH19;
+NET "epb_data<4>"  LOC = AH20;
+NET "epb_data<3>"  LOC = AG13;
+NET "epb_data<2>"  LOC = AH12;
 NET "epb_data<1>"  LOC = AH22;
-NET "epb_data<0>"  LOC = AH14;
+NET "epb_data<0>"  LOC = AG22;
 
 # transparent endian change
 NET "epb_addr<0>"  LOC = AE23;
@@ -104,15 +101,16 @@ NET "epb_addr_gp<3>" LOC = K14; # DMA_REQ_3
 NET "epb_addr_gp<4>" LOC = L14; # DMA_ACK_3
 NET "epb_addr_gp<5>" LOC = J12; # EOT_TC_3
 
-NET "epb_cs_n"     LOC = K13;
-NET "epb_be_n<1>"  LOC = AF18;
-NET "epb_be_n<0>"  LOC = AF14;
-NET "epb_r_w_n"    LOC = AF20;
-NET "epb_oe_n"     LOC = AF21;
-NET "epb_blast_n"  LOC = H23;
-NET "epb_rdy"      LOC = K12;
+NET "epb_cs_alt_n<0>" LOC = AG17;
+NET "epb_cs_n"        LOC = K13;
+NET "epb_be_n<1>"     LOC = AF18;
+NET "epb_be_n<0>"     LOC = AF14;
+NET "epb_r_w_n"       LOC = AF20;
+NET "epb_oe_n"        LOC = AF21;
+NET "epb_blast_n"     LOC = H23;
+NET "epb_rdy"         LOC = K12;
 
-NET "epb_clk_buf"      LOC = H12;
+NET "epb_clk_buf"  LOC = AH18;
 
 # 
 # ZDOK Interfaces
@@ -674,15 +672,16 @@ NET "diff_gpio_b_clk_n" LOC = J19;
 # Single-ended GPIO
 #
 
-NET "se_gpio_a<7>"    IOSTANDARD = LVCMOS18 | LOC = B27;
-NET "se_gpio_a<6>"    IOSTANDARD = LVCMOS18 | LOC = D24;
-NET "se_gpio_a<5>"    IOSTANDARD = LVCMOS18 | LOC = E24;
-NET "se_gpio_a<4>"    IOSTANDARD = LVCMOS18 | LOC = A26;
-NET "se_gpio_a<3>"    LOC = AE14;
-NET "se_gpio_a<2>"    LOC = AE18;
-NET "se_gpio_a<1>"    LOC = AH18;
-NET "se_gpio_a<0>"    LOC = AG17;
-NET "se_gpio_a_oen_n" IOSTANDARD = LVCMOS18 | LOC = AP22;
+NET "se_gpio_a<7>"    IOSTANDARD = LVCMOS15 | LOC = B27;
+NET "se_gpio_a<6>"    IOSTANDARD = LVCMOS15 | LOC = D24;
+NET "se_gpio_a<5>"    IOSTANDARD = LVCMOS15 | LOC = E24;
+NET "se_gpio_a<4>"    IOSTANDARD = LVCMOS15 | LOC = A26;
+NET "se_gpio_a<3>"    IOSTANDARD = LVCMOS15 | LOC = J7;
+NET "se_gpio_a<2>"    IOSTANDARD = LVCMOS15 | LOC = H7;
+NET "se_gpio_a<1>"    IOSTANDARD = LVCMOS15 | LOC = J9;
+NET "se_gpio_a<0>"    IOSTANDARD = LVCMOS15 | LOC = J10;
+NET "se_gpio_a_oen_n" IOSTANDARD = LVCMOS33 | LOC = AE18;
+
 NET "se_gpio_b<7>"    LOC = M33;
 NET "se_gpio_b<6>"    LOC = L33;
 NET "se_gpio_b<5>"    LOC = P32;
@@ -691,7 +690,7 @@ NET "se_gpio_b<3>"    LOC = N33;
 NET "se_gpio_b<2>"    LOC = N34;
 NET "se_gpio_b<1>"    LOC = P34;
 NET "se_gpio_b<0>"    LOC = R33;
-NET "se_gpio_b_oen_n" LOC = M32;
+NET "se_gpio_b_oen_n" IOSTANDARD = LVCMOS33 | LOC = M32;
 
 #
 # MGT signals

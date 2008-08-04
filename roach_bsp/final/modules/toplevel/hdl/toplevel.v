@@ -10,7 +10,7 @@ module toplevel(
     aux_clk1_n, aux_clk1_p,
     led_n,
     // PPC External Peripheral Bus [EPB]
-    ppc_irq,
+    ppc_irq_n,
     epb_clk_buf,
     epb_data,
     epb_addr, epb_addr_gp,
@@ -80,7 +80,7 @@ module toplevel(
   input  aux_clk1_n, aux_clk1_p;
   output [3:0] led_n;
 
-  output ppc_irq;
+  output ppc_irq_n;
   input  epb_clk_buf;
   inout  [15:0] epb_data;
   input  [22:0] epb_addr;
@@ -262,7 +262,7 @@ module toplevel(
   );
 
   /******* PPC Master ********/
-  assign ppc_irq = 1'b0;
+  assign ppc_irq_n = 1'b1;
   
   wire epb_cs_n_dly, epb_r_w_n_dly, epb_oe_n_dly;
   wire  [1:0] epb_be_n_dly;
