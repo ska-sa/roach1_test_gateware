@@ -10,7 +10,7 @@ BOARD_ID=57005
 REV_MAJOR=1
 REV_MINOR=0
 # Pin Constraints
-PCFILE=constraints/$(PROJECT).ucf
+PCFILE=constraints/roach_v1-00_bsp.ucf
 # Enter your source files here space seperated
 #      Note: no spaces in filenames
 SRC=./modules/toplevel/hdl/toplevel.v \

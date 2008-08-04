@@ -13,9 +13,10 @@ module toplevel(
     ppc_irq_n,
     epb_clk_buf,
     epb_data,
-    epb_addr, epb_addr_gp,
+    epb_addr, epb_addr_gp, 
     epb_cs_n, epb_be_n, epb_r_w_n, epb_oe_n, epb_blast_n,
     epb_rdy,
+    epb_cs_alt_n,
     // ZDOK Interfaces
     zdok0_dp_n, zdok0_dp_p,
     zdok0_clk0_n, zdok0_clk0_p,
@@ -88,6 +89,7 @@ module toplevel(
   input  epb_cs_n, epb_r_w_n, epb_oe_n, epb_blast_n;
   input   [1:0] epb_be_n;
   output epb_rdy;
+  input  epb_cs_alt_n;
   
   inout  [37:0] zdok0_dp_n;
   inout  [37:0] zdok0_dp_p;
