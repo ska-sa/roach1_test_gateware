@@ -45,7 +45,8 @@ module v5c_sm(
   always @(posedge epb_clk) begin
     prev_sm_cs_n <= sm_cs_n;
   end
-  assign sm_strb = !sm_cs_n && prev_sm_cs_n != sm_cs_n;
+
+  assign sm_strb = sm_cs_n; //sm_cs_n must be one cycle long
 
   assign wb_dat_o = wb_adr_i == `REG_SM_STATUS ? {4'b0, sm_busy, v5c_busy, v5c_done, v5c_init_n_i} :
                     wb_adr_i == `REG_SM_OREGS  ? {5'b0, v5c_rdwr_n, v5c_init_n_o, v5c_prog_n} :

@@ -311,8 +311,10 @@ module toplevel(
   assign v5c_cclk_o_int = serial_conf_busy ? v5c_cclk_o_int_0 : v5c_cclk_o_int_1;
   assign v5c_cclk_o_int_1 = wb_clk_i;
   assign v5c_cclk_en_n  = 1'b1;//serial_conf_busy;
+ 
 
-  assign v5c_mode       = 3'b110;//serial_conf_busy ? v5c_mode_0     : v5c_mode_1;
+  assign v5c_mode = 3'b110;
+
   assign v5c_prog_n     = serial_conf_busy ? v5c_prog_n_0   : v5c_prog_n_1;  
   assign v5c_init_n_o   = serial_conf_busy ? v5c_init_n_o_0 : v5c_init_n_o_1;  
   assign v5c_init_n_oen = serial_conf_busy ? 1'b1           : v5c_init_n_oen_1;  
