@@ -1117,6 +1117,27 @@ module toplevel(
     .ddr2_df_afull_i(ddr_df_afull),
     .ddr2_data_i(ddr_rd_data), .ddr2_dvalid_i(ddr_rd_dvalid)
   );
+
+
+  ddr2_test_harness ddr2_test_harness_inst (
+    clk,
+    reset,
+    ddr_rd_we_n_o,
+    ddr_addr_o,
+    ddr_data_o,
+    ddr_mask_o,
+    ddr_af_we_o,
+    ddr_df_we_o,
+    ddr_af_afull_i,
+    ddr_df_afull_i,
+    ddr_data_i,
+    ddr_dvalid_i,
+    ddr_phy_rdy_i,
+    harness_status,
+    harness_control
+  );
+
+
 `else
   assign ddr2_dq = {72{1'bz}};
   assign ddr2_dm = 9'b0;

@@ -31,6 +31,7 @@ module ddr2_test_harness(
   parameter  DATA_BITS_PER_MASK = 8;
   parameter  ADDR_WIDTH         = 31;
   localparam MASK_WIDTH         = DATA_WIDTH/8;
+  parameter  BURST_LENGTH       = 4;
   
   parameter  FAULTMEM_SIZE_BITS   = 2;
   parameter  FAULTMEM_SIZE        = 1 << FAULTMEM_SIZE_BITS;
@@ -82,14 +83,18 @@ module ddr2_test_harness(
     // State machine registers
       reg [2:0] test_state;
     // Test state machine states
-      localparam TEST_IDLE      = 3'b000;
-      localparam WR_TEST_PATT_0 = 3'b001;
-      localparam WR_TEST_PATT_1 = 3'b010;
-      localparam TEST_WAIT      = 3'b011;
-      localparam RD_TEST_PATT   = 3'b100;
-      localparam WAIT_FOR_DATA  = 3'b101;
-      localparam RD_BACKOFF     = 3'b110;
-      localparam WR_BACKOFF     = 3'b111;
+      localparam TEST_IDLE      = 9'd0;
+      localparam PREPARE_DATA   = 9'd1;
+      localparam WR_TEST_PATT_0 = 9'd2;
+      localparam WR_TEST_PATT_1 = 9'd3;
+      localparam TEST_WAIT      = 9'd4;
+      localparam RD_TEST_PATT   = 9'd5;
+      localparam WAIT_FOR_DATA  = 9'd6;
+      localparam RD_BACKOFF     = 9'd7;
+      localparam WR_BACKOFF     = 9'd8;
+    // Test types
+      localparam CNT_TEST       = 2'b00;
+      localparam BITWALK_TEST   = 2'b01;
     // Address & Data Counters / Generators
       reg  [ADDR_WIDTH - 1:2] ddr_addr;
       reg  [DATA_WIDTH - 1:0] ddr_data_0;
@@ -100,7 +105,9 @@ module ddr2_test_harness(
       reg  [DATA_WIDTH - 1:0] data_pipe_1;
       reg  [DATA_WIDTH - 1:0] data_pipe_2;
       reg  [DATA_WIDTH - 1:0] data_pipe_3;
+      reg  [DATA_WIDTH - 1:0] bitwalk_reg;
       reg  data_index;
+      reg  run_test;
       reg  ddr_dvalid_0;
       reg  ddr_dvalid_1;
       reg  ddr_dvalid_2;
@@ -112,10 +119,14 @@ module ddr2_test_harness(
       reg test_fault_2;
       reg test_fault_3;
       wire test_fault_pulse;
-      reg  [DATA_WIDTH - 1:0] check_data_0;
-      reg  [DATA_WIDTH - 1:0] check_data_1;
-      reg  [DATA_WIDTH - 1:0] check_data_2 ;
-      reg  [DATA_WIDTH - 1:0] check_data_3;
+      wire [DATA_WIDTH - 1:0] check_data_0;
+      wire [DATA_WIDTH - 1:0] check_data_1;
+      wire [DATA_WIDTH - 1:0] check_data_2 ;
+      wire [DATA_WIDTH - 1:0] check_data_3;
+      reg  [DATA_WIDTH - 1:0] check_data_cnt_0;
+      reg  [DATA_WIDTH - 1:0] check_data_cnt_1;
+      reg  [DATA_WIDTH - 1:0] check_data_cnt_2 ;
+      reg  [DATA_WIDTH - 1:0] check_data_cnt_3;
       reg  [ADDR_WIDTH - 1:0] check_addr;
     // General
       wire test_start_re;
@@ -141,8 +152,12 @@ module ddr2_test_harness(
       wire [ADDR_WIDTH - 3:0] ctrl_ddr_size;
       wire [ADDR_WIDTH - 1:0] ctrl_rdblk_addr;
       reg  [ADDR_WIDTH - 3:0] afull_addr;
+      reg  [2:0] burst_cnt;
+      reg  [7:0] bitwalk_idx;
+      reg  [7:0] bitwalk_size;
       reg  ctrl_reset;
       reg  ctrl_start;
+      reg  [1:0] ctrl_test;
       reg  test_done;
       reg  test_fault;
       reg  afull_event;
@@ -186,6 +201,8 @@ module ddr2_test_harness(
   always @(posedge clk) begin
     ctrl_start <= harness_control[0];
     ctrl_reset <= harness_control[1];
+    ctrl_test  <= harness_control[5:4];
+    bitwalk_size <= harness_control[15:8];
   end
   assign ctrl_ddr_start  = harness_control[ADDR_WIDTH - 3 + 80:80];
   assign ctrl_ddr_size   = harness_control[ADDR_WIDTH - 3 + 16:16] - 1;
@@ -255,23 +272,30 @@ module ddr2_test_harness(
     end else begin
       case (test_state)
         TEST_IDLE: begin
-          if (test_start_re == 1) begin
-            test_state <= WR_TEST_PATT_0;
+          if (run_test == 1) begin
+            test_state <= PREPARE_DATA;
           end else begin
             test_state <= TEST_IDLE;
           end
         end
+        PREPARE_DATA: begin
+          test_state <= WR_TEST_PATT_0; 
+        end 
         WR_TEST_PATT_0 : begin
           test_state <= WR_TEST_PATT_1; 
         end
         WR_TEST_PATT_1 : begin
-          if (ddr_addr == ctrl_ddr_size) begin
-            test_state <= TEST_WAIT;
-          end else if (af_df_afull) begin  //Check almost full flag at end of 4 burst write
-            test_state <= WR_BACKOFF;
+          if (burst_cnt == BURST_LENGTH - 1) begin
+            if (ddr_addr == ctrl_ddr_size) begin
+              test_state <= TEST_WAIT;
+            end else if (af_df_afull) begin  //Check almost full flag at end of 4 burst write
+              test_state <= WR_BACKOFF;
+            end else begin
+              test_state <= WR_TEST_PATT_0; 
+            end
           end else begin
-            test_state <= WR_TEST_PATT_0; 
-          end
+            test_state <= WR_TEST_PATT_0;
+          end 
         end
         WR_BACKOFF : begin
           if (!af_df_afull) begin
@@ -316,12 +340,38 @@ module ddr2_test_harness(
   assign ddr_af_we_o   = ((test_state == WR_TEST_PATT_0) || (test_state == RD_TEST_PATT)) ? 1'b1 : 1'b0;
   assign ddr_df_we_o   = ((test_state == WR_TEST_PATT_0) || (test_state == WR_TEST_PATT_1)) ? 1'b1 : 1'b0;
 
-  // Check when test is done
-  always @(ddr_dvalid_fe or test_state or test_start_re or module_rst) begin
-    if (ddr_dvalid_fe && (test_state == WAIT_FOR_DATA)) begin
-      test_done <= 1;
-    end else if (test_start_re || module_rst ) begin
+  //**************************************//
+  //****** Testing control / status ******//
+  //**************************************//
+  always @(posedge clk) begin
+    if (module_rst ) begin
       test_done <= 0;
+      run_test  <= 0;
+    end else if (test_start_re) begin
+      test_done <= 0;
+      run_test  <= 1;
+    end else if (ddr_dvalid_fe && (test_state == WAIT_FOR_DATA)) begin
+      case (ctrl_test) 
+        CNT_TEST : begin
+          test_done <= 1;
+          run_test  <= 0;
+        end
+        BITWALK_TEST : begin
+          if (bitwalk_idx == DATA_WIDTH) begin
+            test_done <= 1;
+            run_test  <= 0;
+          end
+        end
+      endcase
+    end  
+  end
+
+  // Bitwalk test counter
+  always @(posedge clk) begin
+    if (module_rst) begin
+      bitwalk_idx <= 0;
+    end else if (test_state == PREPARE_DATA) begin
+      bitwalk_idx <= bitwalk_idx + 1;
     end
   end
 
@@ -329,14 +379,17 @@ module ddr2_test_harness(
   
   always @(posedge clk) begin
     if ((test_state == TEST_IDLE) || (test_state == TEST_WAIT)) begin
-      ddr_addr <= ctrl_ddr_start;
+      ddr_addr  <= ctrl_ddr_start;
+      burst_cnt <= 0;
     end else if ((test_state == WR_TEST_PATT_1) || (test_state == RD_TEST_PATT)) begin
-      ddr_addr <= ddr_addr + 1;
+      ddr_addr  <= ddr_addr + 1;
+      burst_cnt <= burst_cnt + 1;
     end
   end  
   assign ddr_addr_o = {ddr_addr,2'b0};
   
   // Write Data Generator
+  // Data Counter 
   always @(posedge clk) begin
     if (test_state == TEST_IDLE) begin
       ddr_data_0 <= 0;
@@ -346,8 +399,19 @@ module ddr2_test_harness(
       ddr_data_1 <= ddr_data_1 + 2;
     end
   end  
+
+  // Walking 1's test
+  always @(posedge clk) begin
+    if (test_state == TEST_IDLE) begin
+      bitwalk_reg <= 0;
+    end else if (test_state == PREPARE_DATA) begin
+      bitwalk_reg[bitwalk_idx] <= 1;
+    end
+  end
   
-  assign ddr_data_o = {ddr_data_1,ddr_data_0}; 
+  assign ddr_data_o = (ctrl_test == CNT_TEST) ? {ddr_data_1,ddr_data_0} : // Write counter to memory
+                      (ctrl_test == BITWALK_TEST) ? {bitwalk_reg,bitwalk_reg} : // Walking 1's test
+                      0;
 
   // Incomming data pipeline
   always @(posedge clk) begin
@@ -395,20 +459,33 @@ module ddr2_test_harness(
   assign gen_data = compare_data && ddr_dvalid_2;
   assign cmp_data = !compare_data && ddr_dvalid_2;
 
-  // Check data generator
+  // Check data count  generator
   always @(posedge clk) begin
     if (test_state == TEST_WAIT) begin
-      check_data_0 <= 0;
-      check_data_1 <= 1;
-      check_data_2 <= 2; 
-      check_data_3 <= 3;
+      check_data_cnt_0 <= 0;
+      check_data_cnt_1 <= 1;
+      check_data_cnt_2 <= 2; 
+      check_data_cnt_3 <= 3;
     end else if (gen_data) begin
-      check_data_0 <= check_data_0 + 4;
-      check_data_1 <= check_data_1 + 4;
-      check_data_2 <= check_data_2 + 4;
-      check_data_3 <= check_data_3 + 4;
+      check_data_cnt_0 <= check_data_cnt_0 + 4;
+      check_data_cnt_1 <= check_data_cnt_1 + 4;
+      check_data_cnt_2 <= check_data_cnt_2 + 4;
+      check_data_cnt_3 <= check_data_cnt_3 + 4;
     end
   end
+  
+  assign check_data_0 = (ctrl_test == CNT_TEST) ? check_data_cnt_0 : // Write counter to memory
+                        (ctrl_test == BITWALK_TEST) ? bitwalk_reg : // Walking 1's test
+                        0;
+  assign check_data_1 = (ctrl_test == CNT_TEST) ? check_data_cnt_1 : // Write counter to memory
+                        (ctrl_test == BITWALK_TEST) ? bitwalk_reg : // Walking 1's test
+                        0;
+  assign check_data_2 = (ctrl_test == CNT_TEST) ? check_data_cnt_2 : // Write counter to memory
+                        (ctrl_test == BITWALK_TEST) ? bitwalk_reg : // Walking 1's test
+                        0;
+  assign check_data_3 = (ctrl_test == CNT_TEST) ? check_data_cnt_3 : // Write counter to memory
+                        (ctrl_test == BITWALK_TEST) ? bitwalk_reg : // Walking 1's test
+                        0;
 
   // Check address generator
   always @(posedge clk) begin
@@ -452,7 +529,7 @@ module ddr2_test_harness(
   assign test_fault_pulse = test_fault_0 || test_fault_1 || test_fault_2 || test_fault_3;  
   
   always @(posedge clk) begin
-    if ((test_state == WR_TEST_PATT_0) || module_rst) begin
+    if (module_rst) begin
       test_fault <= 0;
     end else if (test_fault_pulse) begin
       test_fault <= 1; 
@@ -460,7 +537,7 @@ module ddr2_test_harness(
   end
 
   always @(posedge clk) begin
-    if ((test_state == WR_TEST_PATT_0) || module_rst) begin
+    if (module_rst) begin
       fault_cnt        <= 0;
     end else if (test_fault_pulse) begin
         if (fault_cnt == FAULTMEM_SIZE) begin
