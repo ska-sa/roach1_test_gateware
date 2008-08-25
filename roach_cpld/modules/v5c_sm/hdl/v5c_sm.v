@@ -56,7 +56,7 @@ module v5c_sm(
 
   wire wb_trans = wb_stb_i & wb_cyc_i;
   //strobe the v5c_cs_n if wb access to data reg or is strobe on sm_cs
-  assign v5c_cs_n = !sm_strb;
+  assign v5c_cs_n = sm_strb;
 
   reg wb_ack_o;
 
