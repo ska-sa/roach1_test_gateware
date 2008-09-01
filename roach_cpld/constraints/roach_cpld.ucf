@@ -34,18 +34,18 @@ NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
 
 ##################### MMC Signals #######################
 
-NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "116";
+NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "115";
 NET "mmc_cmd"     IOSTANDARD = LVCMOS33 | LOC = "113" | PULLUP;
-NET "mmc_data<7>" IOSTANDARD = LVCMOS33 | LOC = "118" | PULLUP;
-NET "mmc_data<6>" IOSTANDARD = LVCMOS33 | LOC = "117" | PULLUP;
-NET "mmc_data<5>" IOSTANDARD = LVCMOS33 | LOC = "114" | PULLUP;
-NET "mmc_data<4>" IOSTANDARD = LVCMOS33 | LOC = "112" | PULLUP;
-NET "mmc_data<3>" IOSTANDARD = LVCMOS33 | LOC = "111" | PULLUP;
-NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "110" | PULLUP;
-NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "120" | PULLUP;
-NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "119" | PULLUP;
+NET "mmc_data<7>" IOSTANDARD = LVCMOS33 | LOC = "112" | PULLUP;
+NET "mmc_data<6>" IOSTANDARD = LVCMOS33 | LOC = "114" | PULLUP;
+NET "mmc_data<5>" IOSTANDARD = LVCMOS33 | LOC = "117" | PULLUP;
+NET "mmc_data<4>" IOSTANDARD = LVCMOS33 | LOC = "118" | PULLUP;
+NET "mmc_data<3>" IOSTANDARD = LVCMOS33 | LOC = "119" | PULLUP;
+NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "120" | PULLUP;
+NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "110" | PULLUP;
+NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "111" | PULLUP;
 NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121";
-NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "115";
+NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "116" | PULLUP;
 
 ################### Virtex5 Config #######################
 

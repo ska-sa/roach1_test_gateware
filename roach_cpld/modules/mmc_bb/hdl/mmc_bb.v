@@ -46,6 +46,7 @@ module mmc_bb(
   reg [7:0] data_o;
   reg [7:0] data_i;
   reg data_oen;
+  reg ident_mode;
 
   wire mmc_clk;
   wire trans_done;
@@ -57,10 +58,10 @@ module mmc_bb(
 
 
   assign wb_dat_o = wb_adr_i == `REG_DAT_O    ? data_o :
-                    wb_adr_i == `REG_DAT_I    ? data_i :
+                    wb_adr_i == `REG_DAT_I    ? mmc_data_i :
                     wb_adr_i == `REG_CMD_O    ? {7'b0, cmd_o} :
-                    wb_adr_i == `REG_CMD_I    ? {7'b0, cmd_i} :
-                    wb_adr_i == `REG_OENS     ? {6'b0, data_oen, cmd_oen} :
+                    wb_adr_i == `REG_CMD_I    ? {7'b0, mmc_cmd_i} :
+                    wb_adr_i == `REG_OENS     ? {3'b0, ident_mode, 2'b0, data_oen, cmd_oen} :
                     wb_adr_i == `REG_STATUS   ? {3'b0, trans_done, 2'b0, mmc_wp, mmc_cdetect} :
                     wb_adr_i == `REG_ADV_TYPE ? {5'b0, advance_type} :
                     wb_adr_i == `REG_ADV_MAN  ? 8'b0 :
@@ -84,6 +85,7 @@ module mmc_bb(
       data_oen <= 1'b0;
       data_o <= 8'b1111_1111;
       cmd_o <= 1'b1;
+      ident_mode <= 1'b1;
     end else begin
       if (wb_trans)
         wb_ack_o <= 1'b1;
@@ -101,8 +103,9 @@ module mmc_bb(
           `REG_CMD_I: begin
           end
           `REG_OENS: begin
-            cmd_oen <= wb_dat_i[0];
-            data_oen <= wb_dat_i[1];
+            cmd_oen    <= wb_dat_i[0];
+            data_oen   <= wb_dat_i[1];
+            ident_mode <= wb_dat_i[4];
           end
           `REG_STATUS: begin
           end
@@ -116,27 +119,22 @@ module mmc_bb(
     end
   end
 
-  reg [1:0] mmc_clk_counter;
+  reg [7:0] mmc_clk_counter;
+  reg done;
 
-  assign mmc_clk = ~mmc_clk_counter[1];
-  assign trans_done = mmc_clk_counter == 2'b0;
+  assign mmc_clk    = ident_mode ? mmc_clk_counter[7] : mmc_clk_counter[1];
+  assign trans_done = mmc_clk_counter == 8'b0;
 
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
-      mmc_clk_counter <= 2'b0;
+      mmc_clk_counter <= 8'b0;
+      done <= 1'b1;
     end else begin
       if (mmc_clk_counter) begin
-        mmc_clk_counter <= mmc_clk_counter - 1;
+        mmc_clk_counter <= !ident_mode && mmc_clk_counter == 8'b11 ? 8'b00 : mmc_clk_counter + 1;
       end else if (advance) begin
-        mmc_clk_counter <= 2'b11;
+        mmc_clk_counter <= 8'b1;
       end
-    end
-  end
-
-  always @(posedge wb_clk_i) begin
-    if (mmc_clk_counter == 2'b1) begin //cycle after rising edge
-      data_i <= mmc_data_i;
-      cmd_i <= mmc_cmd_i;
     end
   end
 
