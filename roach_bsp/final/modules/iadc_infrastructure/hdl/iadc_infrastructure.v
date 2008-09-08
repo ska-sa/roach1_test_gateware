@@ -98,7 +98,11 @@ module iadc_infrastructure(
   );
 
   DCM_BASE #(
-    .CLKIN_PERIOD(8.0)
+    .CLKIN_PERIOD          (3.3),
+    .DESKEW_ADJUST         ("SYSTEM_SYNCHRONOUS"),
+    .DFS_FREQUENCY_MODE    ("HIGH"),
+    .DLL_FREQUENCY_MODE    ("HIGH"),
+    .DUTY_CYCLE_CORRECTION ("TRUE")
   ) DCM_BASE_inst (
     .CLK0(adc_clk_fb_int),
     .CLK2X(),
