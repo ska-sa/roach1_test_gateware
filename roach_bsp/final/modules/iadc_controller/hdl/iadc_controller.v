@@ -170,13 +170,21 @@ module iadc_controller(
   //adc three wire interface registers
   reg  [6:0] clk_counter;
   reg [18:0] shift_register;
+
+  reg  [2:0] xfer_state;
+  localparam STATE_IDLE   = 0; //nothing being sent
+  localparam STATE_WAIT   = 1; //waiting for clock negedge
+  localparam STATE_STRB0  = 2; //1 cycle with strobe inactive
+  localparam STATE_DATA   = 3; //19 cycles to xfer data
+  localparam STATE_COMMIT = 4; //1 cycle for commit bit commit 
+  localparam STATE_STRB1  = 5; //1 cycle for strb inactive
+  localparam STATE_SWAIT  = 6; //wait one cycle with previous strobe actived
+
   reg  [4:0] xfer_progress;
 
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
       clk_counter    <= 7'b0;
-      xfer_progress  <= 5'b0;
-      shift_register <= 19'b0;
     end else begin
       /* Let counter trickle over */
       if (clk_counter == 7'b111_1111) begin
@@ -184,38 +192,57 @@ module iadc_controller(
       end else begin
         clk_counter <= clk_counter + 1;
       end
+    end
+  end
 
-      if (adc_twi_tx_strb && xfer_progress == 5'b0) begin //old transfers get pre
-        xfer_progress  <= 5'b1;
+  always @(posedge wb_clk_i) begin
+    if (wb_rst_i) begin
+      xfer_progress  <= 5'b0;
+      shift_register <= 19'b0;
+      xfer_state     <= STATE_IDLE;
+    end else begin
+
+      if (adc_twi_tx_strb && xfer_state == STATE_IDLE) begin //old transfers get pre
         shift_register <= {adc_twi_addr, adc_twi_data};
+        xfer_state     <= STATE_WAIT;
+        xfer_progress  <= 5'b0;
       end
 
       if (clk_counter == 7'b111_1111) begin //on negedge clk
-        case (xfer_progress)
-          5'd0: begin //no transfer in progress
+        case (xfer_state)
+          STATE_IDLE:   begin
           end
-          5'd1: begin //wait a cycle to ensure new data gets a posedge
-            xfer_progress <= 5'd2;
+          STATE_WAIT:   begin
+            xfer_state <= STATE_STRB0;
           end
-          5'd21:  begin //extra for commit bit
-            xfer_progress <= 5'd22;
+          STATE_STRB0:  begin
+            xfer_state <= STATE_DATA;
           end
-          5'd22:  begin //extra for strobe deassertion bit
-            xfer_progress <= 5'b0;
-          end
-          default: begin
+          STATE_DATA:   begin
             shift_register <= {shift_register, 1'b0};
-            xfer_progress <= xfer_progress + 1;
+            xfer_progress  <= xfer_progress + 1;
+            if (xfer_progress == 18) begin
+              xfer_state <= STATE_COMMIT;
+            end
+          end
+          STATE_COMMIT: begin
+            xfer_state <= STATE_STRB1;
+          end
+          STATE_STRB1:  begin
+            xfer_state <= STATE_SWAIT;
+          end
+          STATE_SWAIT:  begin
+            xfer_state <= STATE_IDLE;
           end
         endcase
       end
     end
   end 
 
-  assign twi_xfer_busy     = xfer_progress != 5'd0;
+  assign twi_xfer_busy     = xfer_state != STATE_IDLE;
 
-  assign adc_ctrl_clk      = xfer_progress > 1 ? clk_counter[6] : 1'b1;
-  assign adc_ctrl_strobe_n = !(xfer_progress != 5'd0 && xfer_progress != 5'd22);
+  assign adc_ctrl_clk      = xfer_state == STATE_IDLE || xfer_state == STATE_WAIT ? 1'b0 : clk_counter[6];
+  assign adc_ctrl_strobe_n = !(xfer_state == STATE_DATA || xfer_state == STATE_COMMIT);
   assign adc_ctrl_data     = shift_register[18];
 
   /******************** ADC Fifo ***************************/

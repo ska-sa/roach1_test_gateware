@@ -2,7 +2,7 @@
 
 `timescale 1ns/10ps
 
-`define SIMLENGTH 64000
+`define SIMLENGTH 80000
 `define CLK_PERIOD 10
 
 `define TEST_CTRL_ADDRESS  3'b110
@@ -82,9 +82,12 @@ module TB_iadc_controller();
 
   reg [3:0] mode_done;
 
+  reg runtwice;
+
   always @(posedge clk) begin
     if (reset) begin
       mode <= MODE_CTRL_ADDR;
+      runtwice <= 0;
     end else begin
       case (mode)
         MODE_CTRL_ADDR: begin
@@ -117,8 +120,13 @@ module TB_iadc_controller();
               $display("FAILED: data validation failed - expected %x, got %x", {`TEST_CTRL_ADDRESS, `TEST_CTRL_DATA}, {ctrl_address, ctrl_data});
               $finish;
             end
-            $display("PASSED");
-            $finish;
+              if (!runtwice) begin
+                runtwice <= 1;
+                mode <= MODE_CTRL_ADDR;
+              end else begin
+                $display("PASSED");
+                $finish;
+              end
           end
         end
       endcase
@@ -129,7 +137,6 @@ module TB_iadc_controller();
   reg  [2:0] ctrl_address_buf;
   reg [15:0] ctrl_data_buf;
 
-  wire adc_ctrl_clk, adc_ctrl_data, adc_ctrl_strobe_n;
 
   reg adc_ctrl_state;
   localparam ADC_CTRL_STATE_IDLE = 1'd0;
