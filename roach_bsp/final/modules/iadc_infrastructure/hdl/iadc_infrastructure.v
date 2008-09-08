@@ -86,6 +86,9 @@ module iadc_infrastructure(
 
   /* diff input buffer */
   wire adc_clk_int;
+  wire adc_clk_fb_int;
+  wire adc_clk_fb;
+
   IBUFGDS #(
     .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
@@ -97,26 +100,26 @@ module iadc_infrastructure(
   DCM_BASE #(
     .CLKIN_PERIOD(8.0)
   ) DCM_BASE_inst (
-    .CLK0(adc_clk_0_int),
-    .CLK180(),
-    .CLK270(),
+    .CLK0(adc_clk_fb_int),
     .CLK2X(),
     .CLK2X180(),
-    .CLK90(adc_clk_90_int),
+    .CLK90(adc_clk_0_int),
+    .CLK180(adc_clk_90_int),
+    .CLK270(),
     .CLKDV(),
     .CLKFX(),
     .CLKFX180(),
     .LOCKED(clk_lock),
-    .CLKFB(adc_clk_0),
+    .CLKFB(adc_clk_fb),
     .CLKIN(adc_clk_int),
-    .RST(reset)
+    .RST(reset || adc_ddrb)
   );
 
   /* Global buffers */
 
-  BUFG bufg_adc_clk [1:0] (
-    .I({adc_clk_0_int, adc_clk_90_int}),
-    .O({adc_clk_0, adc_clk_90})
+  BUFG bufg_adc_clk [2:0] (
+    .I({adc_clk_fb_int, adc_clk_0_int, adc_clk_90_int}),
+    .O({adc_clk_fb,     adc_clk_0,     adc_clk_90})
   );
 
   /************ Sync Port *************/
@@ -198,8 +201,8 @@ module iadc_infrastructure(
     .CE(1'b1)
   );
 
-  assign adc_data = {adc_data_q_even_R, adc_data_q_odd_R, adc_data_q_even_F, adc_data_q_odd_F, 
-                     adc_data_i_even_R, adc_data_i_odd_R, adc_data_i_even_F, adc_data_i_odd_F}; 
+  assign adc_data = {adc_data_i_even_R, adc_data_i_odd_R, adc_data_i_even_F, adc_data_i_odd_F, 
+                     adc_data_q_even_R, adc_data_q_odd_R, adc_data_q_even_F, adc_data_q_odd_F}; 
 
   /************** Reset Output Buffer ****************/ 
 
