@@ -141,23 +141,24 @@ module toplevel(
   assign clk_master_sel = 1'b1;
   assign tempsense_addr = 1'b0; //TODO: check this
   assign ppc_tmr_clk    = clk_aux;
-
-  `ifdef BOOT_CONF_EEPROM
-    assign boot_conf    = 3'b111;//i2c address 0xa4
-  //  assign boot_conf    = 3'b101;//i2c address 0xa8
-  `elsif BOOT_CONF_FAST
-    assign boot_conf    = 3'b010;
-  `else
-    assign boot_conf    = 3'b001;
-  `endif
+  
+`ifdef BOOT_CONF_EEPROM
+  assign boot_conf    = 3'b111;//i2c boot: eeprom address 0xa4
+`elsif BOOT_CONF_FAST
+  assign boot_conf    = 3'b010;
+`else //default config
+  assign boot_conf    =     !conf_dip[0] ? 3'b010 :
+                        system_config[1] ? 3'b111 :
+                                           3'b010;
+`endif
   assign boot_conf_en = 1'b1;
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
 
   //assign eeprom_0_wp = user_dip[3] | eeprom_0_wp_int;
-  assign eeprom_0_wp = user_dip[3];
+  assign eeprom_0_wp = !user_dip[3];
   //assign eeprom_1_wp = user_dip[3] | eeprom_1_wp_int;
-  assign eeprom_1_wp = user_dip[3];
+  assign eeprom_1_wp = !user_dip[3];
   //assign flash_wp_n  = 1'b1        & !flash_wp_int;
   assign flash_wp_n  = 1'b1;
 
