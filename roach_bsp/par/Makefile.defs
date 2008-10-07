@@ -1,0 +1,27 @@
+#################### Build Parameters ###########################
+#
+#xilinx apps
+ISE_VER=10.1
+
+NGDBUILD=ngdbuild-$(ISE_VER)
+MAP=map-$(ISE_VER)
+PAR=par-$(ISE_VER)
+TRCE=trce-$(ISE_VER)
+BITGEN=bitgen-$(ISE_VER)
+CPLDFIT=cpldfit-$(ISE_VER)
+HPREP6=hprep6-$(ISE_VER)
+IMPACT=impact-$(ISE_VER)
+TAEGINE=taengine-$(ISE_VER)
+
+######### Command Flags ###########
+NGDBUILD_FLAGS=-aul
+MAP_FLAGS=-detail -ol std -w
+PAR_FLAGS=-w -ol high
+BITGEN_FLAGS=-w -g DriveDone:No -g DonePin:Pullup -g StartUpClk:CCLK -g Security:NONE -m -g binary:yes
+CPLDFIT_FLAGS=
+TRCE_FLAGS=-e 1000
+HPREP6_FLAGS=
+TAENGINE_FLAGS=
+
+################### Other Defines ###############################
+IS_CPLD=$(shell echo $(PARTNUM) | grep -i XC2C || echo $(PARTNUM) | grep -i XC95)
