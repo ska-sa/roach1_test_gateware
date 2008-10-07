@@ -147,9 +147,9 @@ module toplevel(
 `elsif BOOT_CONF_FAST
   assign boot_conf    = 3'b010;
 `else //default config
-  assign boot_conf    =     !conf_dip[0] ? 3'b010 :
-                        system_config[1] ? 3'b111 :
-                                           3'b010;
+  assign boot_conf    = !config_dip[0] ? 3'b010 :
+                         sys_config[1] ? 3'b111 :
+                                         3'b010;
 `endif
   assign boot_conf_en = 1'b1;
 
