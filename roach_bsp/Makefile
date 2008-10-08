@@ -18,7 +18,7 @@ build:
 sim: $(SRC)
 	@echo "not implemented"
 
-bits: netlist
+bits: synth
 	@make -C par bits \
 	   PROJ_FILE="../Makefile.defs" \
 	   PCFILE="$(addprefix ../,$(PCFILE))" \

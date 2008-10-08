@@ -87,7 +87,6 @@ module iadc_infrastructure(
 
   /* diff input buffer */
   wire adc_clk_int;
-  wire adc_clk_fb_int;
 
   IBUFGDS #(
     .IOSTANDARD("LVDS_25"),
@@ -153,8 +152,7 @@ module iadc_infrastructure(
   IDDR #(
     .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"),
     .INIT_Q1(1'b0),
-    .INIT_Q2(1'b0),
-    .SRTYPE(1'b1)
+    .INIT_Q2(1'b0)
   ) iddr_outofrange[1:0](
     .D(adc_outofrange_int),
     .S(1'b0), .R(1'b0),
@@ -194,8 +192,7 @@ module iadc_infrastructure(
   IDDR #(
     .DDR_CLK_EDGE("SAME_EDGE_PIPELINED"),
     .INIT_Q1(1'b0),
-    .INIT_Q2(1'b0),
-    .SRTYPE(1'b1)
+    .INIT_Q2(1'b0)
   ) iddr_data[31:0](
     .D({adc_data_i_even, adc_data_i_odd, adc_data_q_even, adc_data_q_odd}),
     .S(1'b0), .R(1'b0),

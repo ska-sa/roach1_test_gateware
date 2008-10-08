@@ -160,6 +160,8 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 -- #    #  #    #  #    #  #       #    #  #   ##  #       #   ##     #    #    #
 --  ####    ####   #    #  #        ####   #    #  ######  #    #     #     ####
 
+        attribute box_type : string;
+
 	-- 10 Gb Ethernet MAC (UCB)
 	component ten_gig_eth_mac_UCB
 		port (
@@ -204,6 +206,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 			doutb                           : out std_logic_vector(64 downto 0)
 		);
 	end component;
+        attribute box_type of packet_buffer: component is "black_box"; 
 
 	component packet_buffer_cpu
 		port (
@@ -219,6 +222,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 			doutb                           : out std_logic_vector(63 downto 0)
 		);
 	end component;
+        attribute box_type of packet_buffer_cpu: component is "black_box"; 
 
 	-- address_fifos
 	component addr_fifo
@@ -235,6 +239,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 			full                            : out std_logic
 		);
 	end component;
+        attribute box_type of addr_fifo: component is "black_box"; 
 
 	-- ARP cache
 	component arp_cache
@@ -251,6 +256,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 			doutb                           : out std_logic_vector(47 downto 0)
 		);
 	end component;
+        attribute box_type of arp_cache: component is "black_box"; 
 
 	-- retimer
 	component retimer
@@ -941,8 +947,8 @@ rx_read_address_retimer: retimer
 		src_clk       => clk,
 		src_data      => rx_buffer_read_address_minusone,
 		dest_clk      => xaui_clk,
-		dest_data     => rx_buffer_read_address_minusone_retimed,
-		dest_new_data => open
+		dest_data     => rx_buffer_read_address_minusone_retimed, 
+                dest_new_data => open
 	);
 
 -- *

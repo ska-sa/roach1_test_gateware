@@ -923,7 +923,7 @@ module toplevel(
     .led_tx          (tge_led_tx[2]),
 
      /* XAUI signals  */
-    .xaui_clk    (xaui_clk_1),
+    .xaui_clk    (mgt_clk_1),
     .xgmii_txd   (xaui_xgmii_txd_2),
     .xgmii_txc   (xaui_xgmii_txc_2),
     .xgmii_rxd   (xaui_xgmii_rxd_2),
@@ -1041,7 +1041,7 @@ module toplevel(
     .led_tx          (tge_led_tx[3]),
 
      /* XAUI signals  */
-    .xaui_clk    (xaui_clk_1),
+    .xaui_clk    (mgt_clk_1),
     .xgmii_txd   (xaui_xgmii_txd_3),
     .xgmii_txc   (xaui_xgmii_txc_3),
     .xgmii_rxd   (xaui_xgmii_rxd_3),
@@ -1163,13 +1163,11 @@ module toplevel(
     .CS_WIDTH      (4),
     .ODT_WIDTH     (1),
 
-    .CAS_LAT       (4),
-    .ROW_WIDTH     (13),
+    .CAS_LAT       (5),
+    .ROW_WIDTH     (14),
     .COL_WIDTH     (10),
     .TWO_T_TIME_EN (1'b0), /* set to 1 for unbuffered DIMMs */
 
-    .ODT_TYPE      (0),
-    .REDUCE_DRV    (0),
     .MULTI_BANK_EN (0),
 
     .TRAS          (45000),
@@ -1199,9 +1197,6 @@ module toplevel(
     .app_rd_data   (dram_rd_data_master),
     .app_rd_valid  (dram_rd_valid_master),
 
-    .app_af_afull  (),
-    .app_df_afull  (),
-    
     .dram_ck    ({dram_ck_2_p, dram_ck_1_p, dram_ck_0_p}),
     .dram_ck_n  ({dram_ck_2_n, dram_ck_1_n, dram_ck_0_n}),
     .dram_a     (dram_a),
@@ -1234,7 +1229,8 @@ module toplevel(
   wire dram_rd_valid_cpu;
 
   dram_cpu_interface #(
-    .CLK_FREQ(`DRAM_CLK_FREQ)
+    .CLK_FREQ(`DRAM_CLK_FREQ),
+    .DQ_WIDTH(72)
   ) dram_cpu_interface_inst (
     //memory wb slave IF
     .wb_clk_i (wb_clk),
@@ -1321,7 +1317,7 @@ module toplevel(
    .Out_Cmd_Ack     (dram_cmd_ack_master),
    .Out_Rd_Dout     (dram_wr_data_master),
    .Out_Rd_Tag      (dram_rd_tag_master),
-   .Out_Rd_Ack      (dram_rd_valid_master),
+   .Out_Rd_Ack      (dram_rd_ack_master),
    .Out_Rd_Valid    (dram_rd_valid_master),
    .Out_Wr_Din      (dram_wr_data_master),
    .Out_Wr_BE       (dram_wr_be_master)
@@ -2070,7 +2066,7 @@ module toplevel(
 
   reg [27:0] counter [3:0];
 
-  assign led_n = ~{4'b1000};
+  assign led_n = ~{tge_led_up[0] && tge_led_up[1] && tge_led_up[2] && tge_led_up[3], dram_phy_ready, qdr0_phy_rdy && !qdr0_cal_fail, qdr1_phy_rdy && !qdr1_cal_fail};
 
   always @(posedge sys_clk) begin
     counter[0] <= counter[0] + 1;

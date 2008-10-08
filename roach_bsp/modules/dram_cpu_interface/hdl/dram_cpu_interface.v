@@ -66,17 +66,23 @@ module dram_cpu_interface(
   input  [DQ_WIDTH*2 - 1:0] dram_rd_data;
   input  dram_rd_valid;
 
-
   wire   dram_reset_int;
 
   dram_reg_wb_attach #(
     .CLK_FREQ(CLK_FREQ)
   ) reg_wb_attach_inst (
     //memory wb slave IF
-    .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
-    .wb_we_i(reg_wb_we_i), .wb_cyc_i(reg_wb_cyc_i), .wb_stb_i(reg_wb_stb_i), .wb_sel_i(reg_wb_sel_i),
-    .wb_adr_i(reg_wb_adr_i), .wb_dat_i(reg_wb_dat_i), .wb_dat_o(reg_wb_dat_o),
-    .wb_ack_o(reg_wb_ack_o),
+    .wb_clk_i (wb_clk_i),
+    .wb_rst_i (wb_rst_i),
+    .wb_cyc_i (reg_wb_cyc_i),
+    .wb_stb_i (reg_wb_stb_i),
+    .wb_sel_i (reg_wb_sel_i),
+    .wb_we_i  (reg_wb_we_i),
+    .wb_adr_i (reg_wb_adr_i),
+    .wb_dat_i (reg_wb_dat_i),
+    .wb_dat_o (reg_wb_dat_o),
+    .wb_ack_o (reg_wb_ack_o),
+
     .phy_ready (dram_phy_rdy),
     .cal_fail  (dram_cal_fail),
     .dram_reset (dram_reset_int)
@@ -118,30 +124,22 @@ module dram_cpu_interface(
   // synthesis attribute ASYNC_REG of wr_ack_reg is true 
   // synthesis attribute ASYNC_REG of rd_ack_reg is true 
 
-  localparam ADDR_BITS   = 32;
-  localparam DATA_BITS   = DQ_WIDTH;
-  localparam MASK_BITS   = DQ_WIDTH/8;
-  localparam BURST_WIDTH = 4;
+  reg  [32   - 1:0] addr_buffer;
+  reg  [72*4 - 1:0] rd_buffer;
+  wire [72*4 - 1:0] wr_buffer;
+  reg    [48 - 1:0] mask_buffer;
 
-  
-  reg  [ADDR_BITS-1:0] addr_buffer;
-  reg  [BURST_WIDTH*DATA_BITS - 1:0] rd_buffer;
-  wire [BURST_WIDTH*DATA_BITS - 1:0] wr_buffer;
-  reg  [47:0] mask_buffer;
-
-  reg  [15:0] wr_buffer_arr [BURST_WIDTH*DATA_BITS/16 - 1:0];
-  wire [15:0] rd_buffer_arr [BURST_WIDTH*DATA_BITS/16 - 1:0];
+  reg  [15:0] wr_buffer_arr [(72*4)/16 - 1:0];
+  wire [15:0] rd_buffer_arr [(72*4)/16 - 1:0];
 
 genvar geni;
-generate for (geni=0; geni < BURST_WIDTH*DATA_BITS/16; geni=geni+1) begin : rd_buffer_arr_gen
+generate for (geni=0; geni < (72*4)/16; geni=geni+1) begin : rd_buffer_arr_gen
+
   assign rd_buffer_arr[geni] = rd_buffer[16*(geni+1) - 1:16*geni];
-end endgenerate
 
-genvar genj;
-generate for (genj=0; genj < BURST_WIDTH*DATA_BITS/16; genj=genj+1) begin : wr_buffer_arr_gen
-  assign wr_buffer[16*(genj+1) - 1:16*genj] = wr_buffer_arr[genj];
-end endgenerate
+  assign wr_buffer[16*(geni+1) - 1:16*geni] = wr_buffer_arr[geni];
 
+end endgenerate
 
   reg [15:0] mem_wb_dat_o;
   reg mem_wb_ack_o;
@@ -183,9 +181,9 @@ end endgenerate
         /* Address */
         if (mem_wb_adr_i[7:1] == 7'd2) begin
           if (mem_wb_we_i) begin
-            addr_buffer[ADDR_BITS - 1:16] <= mem_wb_dat_i;
+            addr_buffer[31:16] <= mem_wb_dat_i;
           end else begin
-            mem_wb_dat_o <= addr_buffer[ADDR_BITS - 1:16];
+            mem_wb_dat_o <= addr_buffer[31:16];
           end
         end
         if (mem_wb_adr_i[7:1] == 7'd3) begin
@@ -222,18 +220,18 @@ end endgenerate
         end
 
         /* Wr Data */
-        if (mem_wb_adr_i[7:1] >= 8 && mem_wb_adr_i[7:1] < (8 + (BURST_WIDTH*DATA_BITS)/16)) begin
+        if (mem_wb_adr_i[7:1] >= 8 && mem_wb_adr_i[7:1] < (8 + 18)) begin
           if (mem_wb_we_i) begin
-            wr_buffer_arr[mem_wb_adr_i[7:1] - 6] <= mem_wb_dat_i;
+            wr_buffer_arr[mem_wb_adr_i[7:1] - 8] <= mem_wb_dat_i;
           end else begin
-            mem_wb_dat_o <= wr_buffer_arr[mem_wb_adr_i[7:1] - 6];
+            mem_wb_dat_o <= wr_buffer_arr[mem_wb_adr_i[7:1] - 8];
           end
         end
         /* Rd Data */
-        if (mem_wb_adr_i[7:1] >= (8 + (BURST_WIDTH*DATA_BITS)/16) && mem_wb_adr_i[7:1] < (8 + 2*(BURST_WIDTH*DATA_BITS)/16)) begin
+        if (mem_wb_adr_i[7:1] >= (8 + 18) && mem_wb_adr_i[7:1] < (8 + 18 + 18)) begin
           if (mem_wb_we_i) begin
           end else begin
-            mem_wb_dat_o <= rd_buffer_arr[mem_wb_adr_i[7:1] - 22];
+            mem_wb_dat_o <= rd_buffer_arr[mem_wb_adr_i[7:1] - (8 + 18)];
           end
         end
         /* */
@@ -286,10 +284,10 @@ end endgenerate
       rd_busy <= 1'b0;
     end else begin
       if (dram_rd_valid && !rd_busy) begin
-        rd_buffer[DATA_BITS*2 - 1:0]   <= dram_rd_data;
+        rd_buffer[DQ_WIDTH*2 - 1:0]   <= dram_rd_data;
         rd_busy <= 1'b1;
       end else if (rd_busy) begin
-        rd_buffer[DATA_BITS*4 - 1:DATA_BITS*2] <= dram_rd_data;
+        rd_buffer[DQ_WIDTH*4 - 1:DQ_WIDTH*2] <= dram_rd_data;
         rd_busy <= 1'b0;
       end
     end
@@ -298,8 +296,9 @@ end endgenerate
   assign dram_cmd_valid = wr_strb || rd_strb;
   assign dram_cmd_rnw   = rd_strb; //default write
 
-  assign dram_wr_data   = wr_strb ?   wr_buffer[2*DATA_BITS - 1:0] :   wr_buffer[4*DATA_BITS - 1:2*DATA_BITS];
-  assign dram_wr_be     = wr_strb ? mask_buffer[2*MASK_BITS - 1:0] : mask_buffer[4*MASK_BITS - 1:2*MASK_BITS];
+  assign dram_wr_data   = wr_strb ?   wr_buffer[2*DQ_WIDTH - 1:0] :   wr_buffer[4*DQ_WIDTH - 1:2*DQ_WIDTH];
+  assign dram_wr_be     = wr_strb ? mask_buffer[2*BE_WIDTH - 1:0] : mask_buffer[4*BE_WIDTH - 1:2*BE_WIDTH];
 
   assign dram_cmd_addr  = addr_buffer;
+
 endmodule
