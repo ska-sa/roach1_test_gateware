@@ -367,20 +367,6 @@ module transceiver(
     assign  serialloopback0_i           =   !loopback0_i[0] && loopback0_i[1] && !loopback0_i[2];
     assign  serialloopback1_i           =   !loopback1_i[0] && loopback1_i[1] && !loopback1_i[2];
 
-    reg [3:0] foo;
-    reg [3:0] poo;
-
-    always @(posedge mgt_clk) begin
-      if (rx_reset) begin
-        foo <= foo + 1;
-      end
-    end
-    always @(posedge mgt_clk_mult_2) begin
-      if (rx_reset) begin
-        poo <= poo + 1;
-      end
-    end
-
     wire recclk;
 
     //------------------------- GT11 Instantiations  --------------------------   

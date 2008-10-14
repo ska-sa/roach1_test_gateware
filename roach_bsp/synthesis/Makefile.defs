@@ -14,7 +14,7 @@ XST_ARGS=run,\
 -top  $(TOPLEVEL_MODULE),\
 -p $(PARTNUM),\
 -iuc NO,\
--keep_hierarchy Yes,\
+-keep_hierarchy No,\
 -rtlview Yes,\
 -read_cores YES,\
 -cross_clock_analysis NO,\

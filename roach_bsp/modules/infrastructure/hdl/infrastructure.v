@@ -36,7 +36,7 @@ module infrastructure(
     .I(epb_clk_int), .O(epb_clk)
   );
 
-  wire [2:0] foo;
+  wire [2:0] bufg_arr_int;
 
   IBUFGDS #(
     .IOSTANDARD("LVDS_25"),
@@ -44,15 +44,15 @@ module infrastructure(
   ) ibufgd_arr [2:0](
     .I ({sys_clk_p, aux_clk1_p, aux_clk0_p}),
     .IB({sys_clk_n, aux_clk1_n, aux_clk0_n}),
-    .O (foo)
+    .O (bufg_arr_int)
   );
 
-  BUFG foop[2:0](
-    .I(foo), .O({sys_clk, aux_clk_1, aux_clk_0})
+  BUFG bufg_arr[2:0](
+    .I(bufg_arr_int), .O({sys_clk, aux_clk_1, aux_clk_0})
   );
 
   wire dly_clk_int;
-  IBUFDS ibufds_foo(
+  IBUFDS ibufds_dly_clk(
     .I(dly_clk_p),
     .IB(dly_clk_n),
     .O(dly_clk_int)

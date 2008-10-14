@@ -38,7 +38,9 @@ module dram_infrastructure(
   DCM_BASE #(
     .CLKFX_DIVIDE(FX_DIV),
     .CLKFX_MULTIPLY(FX_MULT),
-    .CLKIN_PERIOD(10.0)
+    .CLKIN_PERIOD(5.0),
+    .DFS_FREQUENCY_MODE("HIGH"),
+    .DLL_FREQUENCY_MODE("HIGH")
   ) DCM_BASE_inst (
     .CLK0(fb_clk),
     .CLK180(),

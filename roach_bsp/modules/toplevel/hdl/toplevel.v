@@ -1156,23 +1156,23 @@ module toplevel(
   wire dram_cal_fail;
   
   dram_controller #(
-    .DQ_WIDTH      (72),
-    .DM_WIDTH      (9),
-    .DQS_WIDTH     (9),
+    .DQ_WIDTH      (64),
+    .DM_WIDTH      (8),
+    .DQS_WIDTH     (8),
     .CLK_WIDTH     (3),
-    .CS_WIDTH      (4),
-    .ODT_WIDTH     (1),
-
-    .CAS_LAT       (5),
-    .ROW_WIDTH     (14),
+    .ODT_WIDTH     (2),
     .COL_WIDTH     (10),
-    .TWO_T_TIME_EN (1'b0), /* set to 1 for unbuffered DIMMs */
+    .ROW_WIDTH     (13),
+    .BANK_WIDTH    (2),
 
-    .MULTI_BANK_EN (0),
+    .CAS_LAT       (4),
+    .ADDITIVE_LAT  (0),
 
-    .TRAS          (45000),
-    .TWTR          (7500),
+    .TWO_T_TIME_EN (1'b1), /* set to 1 for unbuffered DIMMs */
+    .REG_ENABLE    (1'b0),
+    .ODT_TYPE      (1),    // ODT (=0(none),=1(75),=2(150),=3(50))
 
+    .MULTI_BANK_EN (1),
     .DQ_BITS       (7),
     .DQS_BITS      (4),
 
@@ -1262,6 +1262,7 @@ module toplevel(
     .dram_cal_fail (dram_cal_fail),
 
     //dram application interface
+    /*
     .dram_cmd_valid (dram_cmd_valid_cpu),
     .dram_cmd_rnw   (dram_cmd_rnw_cpu),
     .dram_cmd_addr  (dram_cmd_addr_cpu),
@@ -1269,8 +1270,16 @@ module toplevel(
     .dram_wr_be     (dram_wr_be_cpu),
     .dram_rd_data   (dram_rd_data_cpu),
     .dram_rd_valid  (dram_rd_valid_cpu)
+    */
+    .dram_cmd_valid (dram_cmd_valid_master),
+    .dram_cmd_rnw   (dram_cmd_rnw_master),
+    .dram_cmd_addr  (dram_cmd_addr_master),
+    .dram_wr_data   (dram_wr_data_master),
+    .dram_wr_be     (dram_wr_be_master),
+    .dram_rd_data   (dram_rd_data_master),
+    .dram_rd_valid  (dram_rd_valid_master)
   );
-
+/*
   multiport_dram #(
     .C_NUM_PORTS    (2),
     .C_PORTS_WIDTH  (1),
@@ -1322,7 +1331,7 @@ module toplevel(
    .Out_Wr_Din      (dram_wr_data_master),
    .Out_Wr_BE       (dram_wr_be_master)
  );
-
+*/
 `else
   /* Tie off the external signals */
   assign dram_dq = {72{1'bz}};
@@ -2042,15 +2051,14 @@ module toplevel(
 
   assign se_gpio_b_oen_n = 1'b0;
 
-  assign se_gpio_b[0] = 1'b0;
-  assign se_gpio_b[1] = 1'b0;
-  assign se_gpio_b[2] = 1'b0;
+  assign se_gpio_b[0] = dram_cmd_valid_master;
+  assign se_gpio_b[1] = dram_cmd_rnw_master;
+  assign se_gpio_b[2] = |dram_wr_be_master;
   assign se_gpio_b[3] = serial_out;
   assign se_gpio_b[4] = 1'b0;
   assign se_gpio_b[5] = 1'b0;
   assign se_gpio_b[6] = 1'b0;
-  assign se_gpio_b[7] = 1'b0;
-
+  assign se_gpio_b[7] = dram_rd_valid_master;
 
   /******** Differential **********/
   assign diff_gpio_a_n     = {19{1'bz}};

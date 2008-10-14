@@ -145,8 +145,8 @@ module phy_dqs_iob #
   // for behavioral simulation. Make sure to select a delay number smaller
   // than half clock cycle (otherwise output will not track input changes
   // because of inertial delay). Duplicate to avoid delta delay issues.
-  assign #(DQS_NET_DELAY) i_delayed_dqs = dqs_bufio;
-  assign #(DQS_NET_DELAY) delayed_dqs   = dqs_bufio;
+  assign i_delayed_dqs = dqs_bufio;
+  assign delayed_dqs   = dqs_bufio;
 
   //***************************************************************************
   // DQS gate circuit (not supported for all controllers)

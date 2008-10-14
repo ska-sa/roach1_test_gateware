@@ -9,9 +9,7 @@ module qdr_wb_attach(
     phy_ready,
     cal_fail,
     qdr_reset
-    ,debug
   );
-  output reg [7:0] debug;
   parameter CLK_FREQ = 0;
   input  wb_clk_i;
   input  wb_rst_i;
@@ -36,7 +34,6 @@ module qdr_wb_attach(
   assign wb_dat_o = wb_dat_o_src == `REG_QDR_PHY_READY ? {8'h0, 3'b0, cal_fail, 3'b0, phy_ready} :
                     wb_dat_o_src == `REG_QDR_RESET     ? 16'b0              :
                     wb_dat_o_src == `REG_QDR_FREQ      ? CLK_FREQ :
-                    wb_dat_o_src == 3 ? {8'b0, debug} :
                     16'd0;
 
   always @(posedge wb_clk_i) begin
@@ -60,11 +57,6 @@ module qdr_wb_attach(
             end
           end
           `REG_QDR_FREQ: begin
-          end
-          3: begin
-            if (wb_we_i) begin
-              debug <= wb_dat_i[7:0];
-            end
           end
         endcase
       end

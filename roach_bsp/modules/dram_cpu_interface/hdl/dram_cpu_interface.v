@@ -141,6 +141,11 @@ generate for (geni=0; geni < (72*4)/16; geni=geni+1) begin : rd_buffer_arr_gen
 
 end endgenerate
 
+  wire wr_reg_sel = mem_wb_adr_i[7:1] >= 8  && mem_wb_adr_i[7:1] < 26;
+  wire rd_reg_sel = mem_wb_adr_i[7:1] >= 26 && mem_wb_adr_i[7:1] < 44;
+  wire [31:0] wr_adr_offset = mem_wb_adr_i[7:1] - 8;
+  wire [31:0] rd_adr_offset = mem_wb_adr_i[7:1] - 26;
+
   reg [15:0] mem_wb_dat_o;
   reg mem_wb_ack_o;
 
@@ -220,18 +225,18 @@ end endgenerate
         end
 
         /* Wr Data */
-        if (mem_wb_adr_i[7:1] >= 8 && mem_wb_adr_i[7:1] < (8 + 18)) begin
+        if (wr_reg_sel) begin
           if (mem_wb_we_i) begin
-            wr_buffer_arr[mem_wb_adr_i[7:1] - 8] <= mem_wb_dat_i;
+            wr_buffer_arr[wr_adr_offset] <= mem_wb_dat_i;
           end else begin
-            mem_wb_dat_o <= wr_buffer_arr[mem_wb_adr_i[7:1] - 8];
+            mem_wb_dat_o <= wr_buffer_arr[wr_adr_offset];
           end
         end
         /* Rd Data */
-        if (mem_wb_adr_i[7:1] >= (8 + 18) && mem_wb_adr_i[7:1] < (8 + 18 + 18)) begin
+        if (rd_reg_sel) begin
           if (mem_wb_we_i) begin
           end else begin
-            mem_wb_dat_o <= rd_buffer_arr[mem_wb_adr_i[7:1] - (8 + 18)];
+            mem_wb_dat_o <= rd_buffer_arr[rd_adr_offset];
           end
         end
         /* */
@@ -279,7 +284,7 @@ end endgenerate
 
   reg rd_busy;
 
-  always @(posedge dram_clk90) begin
+  always @(posedge dram_clk0) begin
     if (wb_rst_i) begin
       rd_busy <= 1'b0;
     end else begin
