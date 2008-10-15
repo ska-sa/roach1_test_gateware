@@ -1156,28 +1156,7 @@ module toplevel(
   wire dram_cal_fail;
   
   dram_controller #(
-    .DQ_WIDTH      (64),
-    .DM_WIDTH      (8),
-    .DQS_WIDTH     (8),
-    .CLK_WIDTH     (3),
-    .ODT_WIDTH     (2),
-    .COL_WIDTH     (10),
-    .ROW_WIDTH     (13),
-    .BANK_WIDTH    (2),
-
-    .CAS_LAT       (4),
-    .ADDITIVE_LAT  (0),
-
-    .TWO_T_TIME_EN (1'b1), /* set to 1 for unbuffered DIMMs */
-    .REG_ENABLE    (1'b0),
-    .ODT_TYPE      (1),    // ODT (=0(none),=1(75),=2(150),=3(50))
-
-    .MULTI_BANK_EN (1),
-    .DQ_BITS       (7),
-    .DQS_BITS      (4),
-
     .CLK_FREQ      (`DRAM_CLK_FREQ)
-
   ) dram_controller_inst (
     .clk0    (dram_clk_0),
     .clk90   (dram_clk_90),

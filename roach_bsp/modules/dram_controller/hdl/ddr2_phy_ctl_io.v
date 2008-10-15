@@ -44,10 +44,10 @@
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: phy_ctl_io.v
-// /___/   /\     Date Last Modified: $Date: 2007/12/07 02:21:14 $
+//  /   /         Filename: ddr2_phy_ctl_io.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/29 15:24:03 $
 // \   \  /  \    Date Created: Thu Aug 24 2006
 //  \___\/\___\
 //
@@ -63,7 +63,7 @@
 
 `timescale 1ns/1ps
 
-module phy_ctl_io #
+module ddr2_phy_ctl_io #
   (
    // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
    // board design). Actual values may be different. Actual parameters values 
@@ -98,7 +98,7 @@ module phy_ctl_io #
    input [CS_NUM-1:0]      phy_init_cs_n,
    input [CKE_WIDTH-1:0]   phy_init_cke,
    input                   phy_init_data_sel,
-   input                   odt,
+   input [CS_NUM-1:0]      odt,
    output [ROW_WIDTH-1:0]  ddr_addr,
    output [BANK_WIDTH-1:0] ddr_ba,
    output                  ddr_ras_n,
@@ -296,7 +296,7 @@ module phy_ctl_io #
            .C   (clk0),
            .CE  (1'b1),
            .CLR (rst0),
-           .D   (odt),
+	   .D   (odt[(odt_i*CS_NUM)/ODT_WIDTH]),
            .PRE (1'b0)
            ) /* synthesis syn_useioff = 1 */;
       end

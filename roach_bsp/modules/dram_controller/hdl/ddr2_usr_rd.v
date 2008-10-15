@@ -44,10 +44,10 @@
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: usr_rd.v
-// /___/   /\     Date Last Modified: $Date: 2007/11/28 13:20:56 $
+//  /   /         Filename: ddr2_usr_rd.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/02 14:03:08 $
 // \   \  /  \    Date Created: Tue Aug 29 2006
 //  \___\/\___\
 //
@@ -63,7 +63,7 @@
 
 `timescale 1ns/1ps
 
-module usr_rd #
+module ddr2_usr_rd #
   (
    // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
    // board design). Actual values may be different. Actual parameters values 
@@ -134,11 +134,14 @@ module usr_rd #
   genvar rd_i;
   generate
     for (rd_i = 0; rd_i < DQS_WIDTH; rd_i = rd_i+1) begin: gen_rden_sel_mux
-      FD u_ff_rden_sel_mux
+      FDRSE u_ff_rden_sel_mux
         (
-         .Q (rden_sel_mux[rd_i]),
-         .C (clk0),
-         .D (ctrl_rden_sel[rd_i])
+         .Q   (rden_sel_mux[rd_i]),
+         .C   (clk0),
+         .CE  (1'b1),
+         .D   (ctrl_rden_sel[rd_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve=1 */;
     end
   endgenerate
@@ -225,7 +228,7 @@ module usr_rd #
             (
              .ALMOSTEMPTY (),
              .ALMOSTFULL  (),
-             .DBITERR     (db_ecc_error[rdf_i]),
+             .DBITERR     (db_ecc_error[rdf_i + rdf_i]),
              .DO          (rd_data_out_rise_temp[(64*(rdf_i+1))-1:
                                                  (64 *rdf_i)]),
              .DOP         (),
@@ -234,7 +237,7 @@ module usr_rd #
              .FULL        (),
              .RDCOUNT     (),
              .RDERR       (),
-             .SBITERR     (sb_ecc_error[rdf_i]),
+             .SBITERR     (sb_ecc_error[rdf_i + rdf_i]),
              .WRCOUNT     (),
              .WRERR       (),
              .DI          (rise_data_r[((64*(rdf_i+1)) + (rdf_i*8))-1:
@@ -262,7 +265,7 @@ module usr_rd #
             (
              .ALMOSTEMPTY (),
              .ALMOSTFULL  (),
-             .DBITERR     (db_ecc_error[rdf_i+1]),
+             .DBITERR     (db_ecc_error[(rdf_i+1) + rdf_i]),
              .DO          (rd_data_out_fall_temp[(64*(rdf_i+1))-1:
                                                  (64 *rdf_i)]),
              .DOP         (),
@@ -271,7 +274,7 @@ module usr_rd #
              .FULL        (),
              .RDCOUNT     (),
              .RDERR       (),
-             .SBITERR     (sb_ecc_error[rdf_i+1]),
+             .SBITERR     (sb_ecc_error[(rdf_i+1) + rdf_i]),
              .WRCOUNT     (),
              .WRERR       (),
              .DI          (fall_data_r[((64*(rdf_i+1)) + (rdf_i*8))-1:

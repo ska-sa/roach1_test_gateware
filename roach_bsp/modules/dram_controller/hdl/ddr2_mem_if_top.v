@@ -1,53 +1,53 @@
 //*****************************************************************************
 // DISCLAIMER OF LIABILITY
-// 
+//
 // This text/file contains proprietary, confidential
 // information of Xilinx, Inc., is distributed under license
 // from Xilinx, Inc., and may be used, copied and/or
 // disclosed only pursuant to the terms of a valid license
-// agreement with Xilinx, Inc. Xilinx hereby grants you a 
-// license to use this text/file solely for design, simulation, 
-// implementation and creation of design files limited 
-// to Xilinx devices or technologies. Use with non-Xilinx 
-// devices or technologies is expressly prohibited and 
+// agreement with Xilinx, Inc. Xilinx hereby grants you a
+// license to use this text/file solely for design, simulation,
+// implementation and creation of design files limited
+// to Xilinx devices or technologies. Use with non-Xilinx
+// devices or technologies is expressly prohibited and
 // immediately terminates your license unless covered by
 // a separate agreement.
 //
-// Xilinx is providing this design, code, or information 
-// "as-is" solely for use in developing programs and 
-// solutions for Xilinx devices, with no obligation on the 
-// part of Xilinx to provide support. By providing this design, 
-// code, or information as one possible implementation of 
-// this feature, application or standard, Xilinx is making no 
-// representation that this implementation is free from any 
-// claims of infringement. You are responsible for 
-// obtaining any rights you may require for your implementation. 
-// Xilinx expressly disclaims any warranty whatsoever with 
-// respect to the adequacy of the implementation, including 
+// Xilinx is providing this design, code, or information
+// "as-is" solely for use in developing programs and
+// solutions for Xilinx devices, with no obligation on the
+// part of Xilinx to provide support. By providing this design,
+// code, or information as one possible implementation of
+// this feature, application or standard, Xilinx is making no
+// representation that this implementation is free from any
+// claims of infringement. You are responsible for
+// obtaining any rights you may require for your implementation.
+// Xilinx expressly disclaims any warranty whatsoever with
+// respect to the adequacy of the implementation, including
 // but not limited to any warranties or representations that this
-// implementation is free from claims of infringement, implied 
-// warranties of merchantability or fitness for a particular 
+// implementation is free from claims of infringement, implied
+// warranties of merchantability or fitness for a particular
 // purpose.
 //
 // Xilinx products are not intended for use in life support
 // appliances, devices, or systems. Use in such applications is
 // expressly prohibited.
 //
-// Any modifications that are made to the Source Code are 
+// Any modifications that are made to the Source Code are
 // done at the users sole risk and will be unsupported.
 //
 // Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
 //
-// This copyright and support notice must be retained as part 
-// of this text at all times. 
+// This copyright and support notice must be retained as part
+// of this text at all times.
 //*****************************************************************************
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: mem_if_top.v
-// /___/   /\     Date Last Modified: $Date: 2007/11/28 13:20:55 $
+//  /   /         Filename: ddr2_mem_if_top.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/22 15:41:06 $
 // \   \  /  \    Date Created: Wed Aug 16 2006
 //  \___\/\___\
 //
@@ -61,52 +61,54 @@
 
 `timescale 1ns/1ps
 
-module mem_if_top #
+module ddr2_mem_if_top #
   (
-   // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
-   // board design). Actual values may be different. Actual parameters values 
+   // Following parameters are for 72-bit RDIMM design (for ML561 Reference
+   // board design). Actual values may be different. Actual parameters values
    // are passed from design top module ddr2_sdram module. Please refer to
    // the ddr2_sdram module for actual values.
-   parameter BANK_WIDTH     = 2,
-   parameter CKE_WIDTH      = 1,
-   parameter CLK_WIDTH      = 1,
-   parameter COL_WIDTH      = 10,
-   parameter CS_BITS        = 0,
-   parameter CS_NUM         = 1,
-   parameter CS_WIDTH       = 1,
-   parameter DM_WIDTH       = 9,
-   parameter DQ_WIDTH       = 72,
-   parameter DQ_BITS        = 7,
-   parameter DQ_PER_DQS     = 8,
-   parameter DQS_BITS       = 4,
-   parameter DQS_WIDTH      = 9,
-   parameter ODT_WIDTH      = 1,
-   parameter ROW_WIDTH      = 14,
-   parameter APPDATA_WIDTH  = 144,
-   parameter ADDITIVE_LAT   = 0,
-   parameter BURST_LEN      = 4,
-   parameter BURST_TYPE     = 0,
-   parameter CAS_LAT        = 5,
-   parameter ECC_ENABLE     = 0,
-   parameter MULTI_BANK_EN  = 1,
-   parameter TWO_T_TIME_EN  = 0,
-   parameter ODT_TYPE       = 1,
-   parameter DDR_TYPE       = 1,
-   parameter REDUCE_DRV     = 0,
-   parameter REG_ENABLE     = 1,
-   parameter TREFI_NS       = 7800,
-   parameter TRAS           = 40000,
-   parameter TRCD           = 15000,
-   parameter TRFC           = 105000,
-   parameter TRP            = 15000,
-   parameter TRTP           = 7500,
-   parameter TWR            = 15000,
-   parameter TWTR           = 10000,
-   parameter CLK_PERIOD     = 3000,
-   parameter SIM_ONLY       = 0,
-   parameter DEBUG_EN       = 0,
-   parameter DQS_IO_COL     = 0,
-   parameter DQ_IO_MS       = 0
+   parameter BANK_WIDTH            = 2,
+   parameter CKE_WIDTH             = 1,
+   parameter CLK_WIDTH             = 1,
+   parameter COL_WIDTH             = 10,
+   parameter CS_BITS               = 0,
+   parameter CS_NUM                = 1,
+   parameter CS_WIDTH              = 1,
+   parameter USE_DM_PORT           = 1,
+   parameter DM_WIDTH              = 9,
+   parameter DQ_WIDTH              = 72,
+   parameter DQ_BITS               = 7,
+   parameter DQ_PER_DQS            = 8,
+   parameter DQS_BITS              = 4,
+   parameter DQS_WIDTH             = 9,
+   parameter HIGH_PERFORMANCE_MODE = "TRUE",
+   parameter ODT_WIDTH             = 1,
+   parameter ROW_WIDTH             = 14,
+   parameter APPDATA_WIDTH         = 144,
+   parameter ADDITIVE_LAT          = 0,
+   parameter BURST_LEN             = 4,
+   parameter BURST_TYPE            = 0,
+   parameter CAS_LAT               = 5,
+   parameter ECC_ENABLE            = 0,
+   parameter MULTI_BANK_EN         = 1,
+   parameter TWO_T_TIME_EN         = 0,
+   parameter ODT_TYPE              = 1,
+   parameter DDR_TYPE              = 1,
+   parameter REDUCE_DRV            = 0,
+   parameter REG_ENABLE            = 1,
+   parameter TREFI_NS              = 7800,
+   parameter TRAS                  = 40000,
+   parameter TRCD                  = 15000,
+   parameter TRFC                  = 105000,
+   parameter TRP                   = 15000,
+   parameter TRTP                  = 7500,
+   parameter TWR                   = 15000,
+   parameter TWTR                  = 10000,
+   parameter CLK_PERIOD            = 3000,
+   parameter SIM_ONLY              = 0,
+   parameter DEBUG_EN              = 0,
+   parameter DQS_IO_COL            = 0,
+   parameter DQ_IO_MS              = 0
    )
   (
    input                                    clk0,
@@ -189,37 +191,40 @@ module mem_if_top #
 
   //***************************************************************************
 
-  phy_top #
+  ddr2_phy_top #
     (
-     .BANK_WIDTH     (BANK_WIDTH),
-     .CKE_WIDTH      (CKE_WIDTH),
-     .CLK_WIDTH      (CLK_WIDTH),
-     .COL_WIDTH      (COL_WIDTH),
-     .CS_NUM         (CS_NUM),
-     .CS_WIDTH       (CS_WIDTH),
-     .DM_WIDTH       (DM_WIDTH),
-     .DQ_WIDTH       (DQ_WIDTH),
-     .DQ_BITS        (DQ_BITS),
-     .DQ_PER_DQS     (DQ_PER_DQS),
-     .DQS_BITS       (DQS_BITS),
-     .DQS_WIDTH      (DQS_WIDTH),
-     .ODT_WIDTH      (ODT_WIDTH),
-     .ROW_WIDTH      (ROW_WIDTH),
-     .TWO_T_TIME_EN  (TWO_T_TIME_EN),
-     .ADDITIVE_LAT   (ADDITIVE_LAT),
-     .BURST_LEN      (BURST_LEN),
-     .BURST_TYPE     (BURST_TYPE),
-     .CAS_LAT        (CAS_LAT),
-     .ECC_ENABLE     (ECC_ENABLE),
-     .ODT_TYPE       (ODT_TYPE),
-     .DDR_TYPE       (DDR_TYPE),
-     .REDUCE_DRV     (REDUCE_DRV),
-     .REG_ENABLE     (REG_ENABLE),
-     .CLK_PERIOD     (CLK_PERIOD),
-     .SIM_ONLY       (SIM_ONLY),
-     .DEBUG_EN       (DEBUG_EN),
-     .DQS_IO_COL     (DQS_IO_COL),
-     .DQ_IO_MS       (DQ_IO_MS)
+     .BANK_WIDTH            (BANK_WIDTH),
+     .CKE_WIDTH             (CKE_WIDTH),
+     .CLK_WIDTH             (CLK_WIDTH),
+     .COL_WIDTH             (COL_WIDTH),
+     .CS_NUM                (CS_NUM),
+     .CS_WIDTH              (CS_WIDTH),
+     .USE_DM_PORT           (USE_DM_PORT),
+     .DM_WIDTH              (DM_WIDTH),
+     .DQ_WIDTH              (DQ_WIDTH),
+     .DQ_BITS               (DQ_BITS),
+     .DQ_PER_DQS            (DQ_PER_DQS),
+     .DQS_BITS              (DQS_BITS),
+     .DQS_WIDTH             (DQS_WIDTH),
+     .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE),
+     .ODT_WIDTH             (ODT_WIDTH),
+     .ROW_WIDTH             (ROW_WIDTH),
+     .TWO_T_TIME_EN         (TWO_T_TIME_EN),
+     .ADDITIVE_LAT          (ADDITIVE_LAT),
+     .BURST_LEN             (BURST_LEN),
+     .BURST_TYPE            (BURST_TYPE),
+     .CAS_LAT               (CAS_LAT),
+     .ECC_ENABLE            (ECC_ENABLE),
+     .ODT_TYPE              (ODT_TYPE),
+     .DDR_TYPE              (DDR_TYPE),
+     .REDUCE_DRV            (REDUCE_DRV),
+     .REG_ENABLE            (REG_ENABLE),
+     .TWR                   (TWR),
+     .CLK_PERIOD            (CLK_PERIOD),
+     .SIM_ONLY              (SIM_ONLY),
+     .DEBUG_EN              (DEBUG_EN),
+     .DQS_IO_COL            (DQS_IO_COL),
+     .DQ_IO_MS              (DQ_IO_MS)
      )
     u_phy_top
       (
@@ -284,7 +289,7 @@ module mem_if_top #
        .dbg_calib_gate_dly     (dbg_calib_gate_dly)
        );
 
-  usr_top #
+  ddr2_usr_top #
     (
      .BANK_WIDTH    (BANK_WIDTH),
      .COL_WIDTH     (COL_WIDTH),
@@ -326,7 +331,7 @@ module mem_if_top #
        );
 
 
-  ctrl #
+  ddr2_ctrl #
     (
      .BANK_WIDTH    (BANK_WIDTH),
      .COL_WIDTH     (COL_WIDTH),

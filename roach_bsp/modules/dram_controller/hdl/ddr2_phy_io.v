@@ -1,53 +1,53 @@
 //*****************************************************************************
 // DISCLAIMER OF LIABILITY
-// 
+//
 // This text/file contains proprietary, confidential
 // information of Xilinx, Inc., is distributed under license
 // from Xilinx, Inc., and may be used, copied and/or
 // disclosed only pursuant to the terms of a valid license
-// agreement with Xilinx, Inc. Xilinx hereby grants you a 
-// license to use this text/file solely for design, simulation, 
-// implementation and creation of design files limited 
-// to Xilinx devices or technologies. Use with non-Xilinx 
-// devices or technologies is expressly prohibited and 
+// agreement with Xilinx, Inc. Xilinx hereby grants you a
+// license to use this text/file solely for design, simulation,
+// implementation and creation of design files limited
+// to Xilinx devices or technologies. Use with non-Xilinx
+// devices or technologies is expressly prohibited and
 // immediately terminates your license unless covered by
 // a separate agreement.
 //
-// Xilinx is providing this design, code, or information 
-// "as-is" solely for use in developing programs and 
-// solutions for Xilinx devices, with no obligation on the 
-// part of Xilinx to provide support. By providing this design, 
-// code, or information as one possible implementation of 
-// this feature, application or standard, Xilinx is making no 
-// representation that this implementation is free from any 
-// claims of infringement. You are responsible for 
-// obtaining any rights you may require for your implementation. 
-// Xilinx expressly disclaims any warranty whatsoever with 
-// respect to the adequacy of the implementation, including 
+// Xilinx is providing this design, code, or information
+// "as-is" solely for use in developing programs and
+// solutions for Xilinx devices, with no obligation on the
+// part of Xilinx to provide support. By providing this design,
+// code, or information as one possible implementation of
+// this feature, application or standard, Xilinx is making no
+// representation that this implementation is free from any
+// claims of infringement. You are responsible for
+// obtaining any rights you may require for your implementation.
+// Xilinx expressly disclaims any warranty whatsoever with
+// respect to the adequacy of the implementation, including
 // but not limited to any warranties or representations that this
-// implementation is free from claims of infringement, implied 
-// warranties of merchantability or fitness for a particular 
+// implementation is free from claims of infringement, implied
+// warranties of merchantability or fitness for a particular
 // purpose.
 //
 // Xilinx products are not intended for use in life support
 // appliances, devices, or systems. Use in such applications is
 // expressly prohibited.
 //
-// Any modifications that are made to the Source Code are 
+// Any modifications that are made to the Source Code are
 // done at the users sole risk and will be unsupported.
 //
 // Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
 //
-// This copyright and support notice must be retained as part 
-// of this text at all times. 
+// This copyright and support notice must be retained as part
+// of this text at all times.
 //*****************************************************************************
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: phy_io.v
-// /___/   /\     Date Last Modified: $Date: 2007/11/28 13:20:56 $
+//  /   /         Filename: ddr2_phy_io.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/29 15:24:03 $
 // \   \  /  \    Date Created: Wed Aug 16 2006
 //  \___\/\___\
 //
@@ -58,33 +58,36 @@
 //   data mask iobs.
 //Reference:
 //Revision History:
+//   Rev 1.1 - DM_IOB instance made based on USE_DM_PORT value . PK. 25/6/08
 //*****************************************************************************
 
 `timescale 1ns/1ps
 
-module phy_io #
+module ddr2_phy_io #
   (
-   // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
-   // board design). Actual values may be different. Actual parameters values 
+   // Following parameters are for 72-bit RDIMM design (for ML561 Reference
+   // board design). Actual values may be different. Actual parameters values
    // are passed from design top module ddr2_sdram module. Please refer to
    // the ddr2_sdram module for actual values.
-   parameter CLK_WIDTH      = 1,
-   parameter DM_WIDTH       = 9,
-   parameter DQ_WIDTH       = 72,
-   parameter DQ_BITS        = 7,
-   parameter DQ_PER_DQS     = 8,
-   parameter DQS_BITS       = 4,
-   parameter DQS_WIDTH      = 9,
-   parameter ODT_WIDTH      = 1,
-   parameter ADDITIVE_LAT   = 0,
-   parameter CAS_LAT        = 5,
-   parameter REG_ENABLE     = 1,
-   parameter CLK_PERIOD     = 3000,
-   parameter DDR_TYPE       = 1,
-   parameter SIM_ONLY       = 0,
-   parameter DEBUG_EN       = 0,
-   parameter DQS_IO_COL     = 0,
-   parameter DQ_IO_MS       = 0
+   parameter CLK_WIDTH             = 1,
+   parameter USE_DM_PORT           = 1,
+   parameter DM_WIDTH              = 9,
+   parameter DQ_WIDTH              = 72,
+   parameter DQ_BITS               = 7,
+   parameter DQ_PER_DQS            = 8,
+   parameter DQS_BITS              = 4,
+   parameter DQS_WIDTH             = 9,
+   parameter HIGH_PERFORMANCE_MODE = "TRUE",
+   parameter ODT_WIDTH             = 1,
+   parameter ADDITIVE_LAT          = 0,
+   parameter CAS_LAT               = 5,
+   parameter REG_ENABLE            = 1,
+   parameter CLK_PERIOD            = 3000,
+   parameter DDR_TYPE              = 1,
+   parameter SIM_ONLY              = 0,
+   parameter DEBUG_EN              = 0,
+   parameter DQS_IO_COL            = 0,
+   parameter DQ_IO_MS              = 0
    )
   (
    input                                clk0,
@@ -163,7 +166,7 @@ module phy_io #
 
   //***************************************************************************
 
-  phy_calib #
+  ddr2_phy_calib #
     (
      .DQ_WIDTH      (DQ_WIDTH),
      .DQ_BITS       (DQ_BITS),
@@ -266,9 +269,10 @@ module phy_io #
   genvar dqs_i;
   generate
     for(dqs_i = 0; dqs_i < DQS_WIDTH; dqs_i = dqs_i+1) begin: gen_dqs
-      phy_dqs_iob #
+      ddr2_phy_dqs_iob #
         (
-         .DDR_TYPE   (DDR_TYPE)
+         .DDR_TYPE              (DDR_TYPE),
+         .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
          )
         u_iob_dqs
           (
@@ -298,15 +302,17 @@ module phy_io #
 
   genvar dm_i;
   generate
-    for(dm_i = 0; dm_i < DM_WIDTH; dm_i = dm_i+1) begin: gen_dm
-      phy_dm_iob u_iob_dm
-        (
-         .clk90           (clk90),
-         .dm_ce           (dm_ce),
-         .mask_data_rise  (mask_data_rise[dm_i/DM_TO_BYTE_RATIO]),
-         .mask_data_fall  (mask_data_fall[dm_i/DM_TO_BYTE_RATIO]),
-         .ddr_dm          (ddr_dm[dm_i])
-         );
+    if (USE_DM_PORT) begin: gen_dm_inst
+      for(dm_i = 0; dm_i < DM_WIDTH; dm_i = dm_i+1) begin: gen_dm
+        ddr2_phy_dm_iob u_iob_dm
+          (
+           .clk90           (clk90),
+           .dm_ce           (dm_ce),
+           .mask_data_rise  (mask_data_rise[dm_i/DM_TO_BYTE_RATIO]),
+           .mask_data_fall  (mask_data_fall[dm_i/DM_TO_BYTE_RATIO]),
+           .ddr_dm          (ddr_dm[dm_i])
+           );
+      end
     end
   endgenerate
 
@@ -317,10 +323,11 @@ module phy_io #
   genvar dq_i;
   generate
     for(dq_i = 0; dq_i < DQ_WIDTH; dq_i = dq_i+1) begin: gen_dq
-      phy_dq_iob #
+      ddr2_phy_dq_iob #
         (
          .DQ_COL (DQS_IO_COL[2*(dq_i/DQ_PER_DQS)+1:2*(dq_i/DQ_PER_DQS)]),
-         .DQ_MS  (DQ_IO_MS[dq_i])
+         .DQ_MS  (DQ_IO_MS[dq_i]),
+         .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
          )
         u_iob_dq
         (

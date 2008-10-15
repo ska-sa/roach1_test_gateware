@@ -44,10 +44,10 @@
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: phy_write.v
-// /___/   /\     Date Last Modified: $Date: 2007/12/15 04:53:04 $
+//  /   /         Filename: ddr2_phy_write.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/29 15:24:03 $
 // \   \  /  \    Date Created: Thu Aug 24 2006
 //  \___\/\___\
 //
@@ -59,17 +59,19 @@
 //   on CAS latency, additive latency, etc. Also splits the data and mask in
 //   rise and fall buses.
 //Revision History:
+//   Rev 1.1 - For Dual Rank parts support ODT logic corrected. PK. 08/05/08
 //*****************************************************************************
 
 `timescale 1ns/1ps
 
-module phy_write #
+module ddr2_phy_write #
   (
    // Following parameters are for 72-bit RDIMM design (for ML561 Reference
    // board design). Actual values may be different. Actual parameters values
    // are passed from design top module ddr2_sdram module. Please refer to
    // the ddr2_sdram module for actual values.
    parameter DQ_WIDTH      = 72,
+   parameter CS_NUM        = 1,
    parameter ADDITIVE_LAT  = 0,
    parameter CAS_LAT       = 5,
    parameter ECC_ENABLE    = 0,
@@ -91,7 +93,7 @@ module phy_write #
    output reg                  dqs_oe_n ,
    output reg                  dqs_rst_n ,
    output                      wdf_rden,
-   output reg                  odt ,
+   output reg [CS_NUM-1:0]     odt ,
    output [DQ_WIDTH-1:0]       wr_data_rise,
    output [DQ_WIDTH-1:0]       wr_data_fall,
    output [(DQ_WIDTH/8)-1:0]   mask_data_rise,
@@ -418,11 +420,15 @@ module phy_write #
   //  the extra register stage is taken out.
   generate
     if (ODT_WR_LATENCY > 2) begin
-      always @(posedge clk0)
-        odt <= odt_0;
+      always @(posedge clk0) begin
+        odt    <= 'b0;
+        odt[0] <= odt_0;
+      end
     end else begin
-      always @ (*)
-        odt = odt_0;
+      always @ (*) begin
+        odt = 'b0;
+        odt[0] = odt_0;
+      end
     end
   endgenerate
 

@@ -44,10 +44,10 @@
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: usr_wr.v
-// /___/   /\     Date Last Modified: $Date: 2007/11/28 13:20:56 $
+//  /   /         Filename: ddr2_usr_wr.v
+// /___/   /\     Date Last Modified: $Date: 2008/05/08 15:20:47 $
 // \   \  /  \    Date Created: Mon Aug 28 2006
 //  \___\/\___\
 //
@@ -61,7 +61,7 @@
 
 `timescale 1ns/1ps
 
-module usr_wr #
+module ddr2_usr_wr #
   (
    // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
    // board design). Actual values may be different. Actual parameters values 

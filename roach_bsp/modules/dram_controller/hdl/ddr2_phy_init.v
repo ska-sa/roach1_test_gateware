@@ -1,53 +1,53 @@
 //*****************************************************************************
 // DISCLAIMER OF LIABILITY
-// 
+//
 // This text/file contains proprietary, confidential
 // information of Xilinx, Inc., is distributed under license
 // from Xilinx, Inc., and may be used, copied and/or
 // disclosed only pursuant to the terms of a valid license
-// agreement with Xilinx, Inc. Xilinx hereby grants you a 
-// license to use this text/file solely for design, simulation, 
-// implementation and creation of design files limited 
-// to Xilinx devices or technologies. Use with non-Xilinx 
-// devices or technologies is expressly prohibited and 
+// agreement with Xilinx, Inc. Xilinx hereby grants you a
+// license to use this text/file solely for design, simulation,
+// implementation and creation of design files limited
+// to Xilinx devices or technologies. Use with non-Xilinx
+// devices or technologies is expressly prohibited and
 // immediately terminates your license unless covered by
 // a separate agreement.
 //
-// Xilinx is providing this design, code, or information 
-// "as-is" solely for use in developing programs and 
-// solutions for Xilinx devices, with no obligation on the 
-// part of Xilinx to provide support. By providing this design, 
-// code, or information as one possible implementation of 
-// this feature, application or standard, Xilinx is making no 
-// representation that this implementation is free from any 
-// claims of infringement. You are responsible for 
-// obtaining any rights you may require for your implementation. 
-// Xilinx expressly disclaims any warranty whatsoever with 
-// respect to the adequacy of the implementation, including 
+// Xilinx is providing this design, code, or information
+// "as-is" solely for use in developing programs and
+// solutions for Xilinx devices, with no obligation on the
+// part of Xilinx to provide support. By providing this design,
+// code, or information as one possible implementation of
+// this feature, application or standard, Xilinx is making no
+// representation that this implementation is free from any
+// claims of infringement. You are responsible for
+// obtaining any rights you may require for your implementation.
+// Xilinx expressly disclaims any warranty whatsoever with
+// respect to the adequacy of the implementation, including
 // but not limited to any warranties or representations that this
-// implementation is free from claims of infringement, implied 
-// warranties of merchantability or fitness for a particular 
+// implementation is free from claims of infringement, implied
+// warranties of merchantability or fitness for a particular
 // purpose.
 //
 // Xilinx products are not intended for use in life support
 // appliances, devices, or systems. Use in such applications is
 // expressly prohibited.
 //
-// Any modifications that are made to the Source Code are 
+// Any modifications that are made to the Source Code are
 // done at the users sole risk and will be unsupported.
 //
 // Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
 //
-// This copyright and support notice must be retained as part 
-// of this text at all times. 
+// This copyright and support notice must be retained as part
+// of this text at all times.
 //*****************************************************************************
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: phy_init.v
-// /___/   /\     Date Last Modified: $Date: 2007/12/07 02:31:14 $
+//  /   /         Filename: ddr2_phy_init.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/22 15:41:06 $
 // \   \  /  \    Date Created: Thu Aug 24 2006
 //  \___\/\___\
 //
@@ -63,10 +63,10 @@
 
 `timescale 1ns/1ps
 
-module phy_init #
+module ddr2_phy_init #
   (
-   // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
-   // board design). Actual values may be different. Actual parameters values 
+   // Following parameters are for 72-bit RDIMM design (for ML561 Reference
+   // board design). Actual values may be different. Actual parameters values
    // are passed from design top module ddr2_sdram module. Please refer to
    // the ddr2_sdram module for actual values.
    parameter BANK_WIDTH    = 2,
@@ -84,6 +84,8 @@ module phy_init #
    parameter ODT_TYPE      = 1,
    parameter REDUCE_DRV    = 0,
    parameter REG_ENABLE    = 1,
+   parameter TWR           = 15000,
+   parameter CLK_PERIOD    = 3000,
    parameter DDR_TYPE      = 1,
    parameter SIM_ONLY      = 0
    )
@@ -119,6 +121,11 @@ module phy_init #
   // the larger CNTNEXT_CMD can also be used, use smaller number to
   // speed up calibration - avoid tRAS violation, and speeds up simulation
   localparam  CNTNEXT_RD  = 4'b1111;
+
+  // Write recovery (WR) time - is defined by 
+  // tWR (in nanoseconds) by tCK (in nanoseconds) and rounding up a 
+  // noninteger value to the next integer
+  localparam integer WR_RECOVERY =  ((TWR + CLK_PERIOD) - 1)/CLK_PERIOD;
 
   localparam  INIT_CAL1_READ            = 5'h00;
   localparam  INIT_CAL2_READ            = 5'h01;
@@ -240,7 +247,7 @@ module phy_init #
   //   [15:14] - unused          - 00
   //   [13]    - reserved        - 0
   //   [12]    - Power-down mode - 0 (normal)
-  //   [11:9]  - write recovery  - same value as written to CAS LAT
+  //   [11:9]  - write recovery  - for Auto Precharge (tWR/tCK)
   //   [8]     - DLL reset       - 0 or 1
   //   [7]     - Test Mode       - 0 (normal)
   //   [6:4]   - CAS latency     - CAS_LAT
@@ -258,7 +265,11 @@ module phy_init #
                                      ((CAS_LAT == 5) ? 3'b101 : 3'b111));
       assign load_mode_reg[7]     = 1'b0;
       assign load_mode_reg[8]     = 1'b0;    // init value only (DLL not reset)
-      assign load_mode_reg[11:9]  = load_mode_reg[6:4];
+      assign load_mode_reg[11:9]  = (WR_RECOVERY == 6) ? 3'b101 :
+                                    ((WR_RECOVERY == 5) ? 3'b100 :
+                                     ((WR_RECOVERY == 4) ? 3'b011 :
+                                      ((WR_RECOVERY == 3) ? 3'b010 :
+                                      3'b001)));
       assign load_mode_reg[15:12] = 4'b000;
     end else if (DDR_TYPE == DDR1)begin: gen_load_mode_reg_ddr1
       assign load_mode_reg[2:0]   = (BURST_LEN == 8) ? 3'b011 :
@@ -690,13 +701,13 @@ module phy_init #
 
   // indicate when a write is occurring
   always @(posedge clkdiv0)
-    // MIG 2.1: Remove (burst_addr_r<4) term - not used 
+    // MIG 2.1: Remove (burst_addr_r<4) term - not used
     // phy_init_wren <= cal_write && (burst_addr_r < 3'd4);
     phy_init_wren <= cal_write;
-    
+
   // used for read enable calibration, pulse to indicate when read issued
   always @(posedge clkdiv0)
-    // MIG 2.1: Remove (burst_addr_r<4) term - not used 
+    // MIG 2.1: Remove (burst_addr_r<4) term - not used
     // phy_init_rden <= cal_read && (burst_addr_r < 3'd4);
     phy_init_rden <= cal_read;
 
@@ -751,11 +762,14 @@ module phy_init #
   // path constraint in UCF. This signal goes to PHY_WRITE and PHY_CTL_IO
   // datapath logic only. Because it is a multi-cycle path, it can be
   // clocked by either CLKDIV0 or CLK0.
-  FD u_ff_phy_init_data_sel
+  FDRSE u_ff_phy_init_data_sel
     (
-     .Q (phy_init_data_sel),
-     .C (clkdiv0),
-     .D (phy_init_done_r1)
+     .Q   (phy_init_data_sel),
+     .C   (clkdiv0),
+     .CE  (1'b1),
+     .D   (phy_init_done_r1),
+     .R   (1'b0),
+     .S   (1'b0)
      ) /* synthesis syn_preserve=1 */
        /* synthesis syn_replicate = 0 */;
 

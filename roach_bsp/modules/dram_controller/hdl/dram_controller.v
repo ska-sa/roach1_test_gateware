@@ -1,36 +1,84 @@
 /* TODO: requires clean-up */
 module dram_controller #(
-    parameter BANK_WIDTH    = 3,       // # of memory bank addr bits
-    parameter CKE_WIDTH     = 2,       // # of memory clock enable outputs
-    parameter CLK_WIDTH     = 3,       // # of clock outputs
-    parameter COL_WIDTH     = 10,      // # of memory column bits
-    parameter CS_NUM        = 1,       // # of separate memory chip selects
-    parameter CS_WIDTH      = 1,       // # of total memory chip selects
-    parameter CS_BITS       = 0,       // set to log2(CS_NUM) (rounded up)
-    parameter DM_WIDTH      = 8,       // # of data mask bits
-    parameter DQ_WIDTH      = 64,      // # of data width
-    parameter DQS_WIDTH     = 8,       // # of DQS strobes
-    parameter DQ_BITS       = 7,       // set to log2(DQS_WIDTH*DQ_PER_DQS)
-    parameter DQS_BITS      = 4,       // set to log2(DQS_WIDTH)
-    parameter ODT_WIDTH     = 2,       // # of memory on-die term enables
-    parameter ROW_WIDTH     = 13,      // # of memory row and # of addr bits
-    parameter CAS_LAT       = 3,       // CAS latency
-    parameter ECC_ENABLE    = 0,       // enable ECC (=1 enable)
-    parameter MULTI_BANK_EN = 1,       // Keeps multiple banks open. (= 1 enable)
-    parameter TWO_T_TIME_EN = 1,       // 2t timing for unbuffered dimms
-    parameter REG_ENABLE    = 0,       // registered addr/ctrl (=1 yes)
-    parameter ADDITIVE_LAT  = 0,       // additive write latency 
-    parameter TREFI_NS      = 7812,    // auto refresh interval (ns)
-    parameter BURST_TYPE    = 0,       // burst type (=0 seq; =1 interleaved)
-    parameter TRAS          = 45000,   // active->precharge delay
-    parameter TRCD          = 15000,   // active->read/write delay
-    parameter TRFC          = 105000,  // refresh->refresh, refresh->active delay
-    parameter TRP           = 15000,   // precharge->command delay
-    parameter TRTP          = 7500,    // read->precharge delay
-    parameter TWR           = 15000,   // used to determine write->precharge
-    parameter TWTR          = 7500,   // write->read delay
-    parameter ODT_TYPE      = 0,       // ODT (=0(none),=1(75),=2(150),=3(50))
-    parameter CLK_FREQ      = 200      // Core/Memory clock frequency (MHz)
+   parameter BANK_WIDTH              = 2,       
+                                       // # of memory bank addr bits.
+   parameter CKE_WIDTH               = 1,       
+                                       // # of memory clock enable outputs.
+   parameter CLK_WIDTH               = 1,       
+                                       // # of clock outputs.
+   parameter COL_WIDTH               = 10,       
+                                       // # of memory column bits.
+   parameter CS_NUM                  = 1,       
+                                       // # of separate memory chip selects.
+   parameter CS_WIDTH                = 1,       
+                                       // # of total memory chip selects.
+   parameter CS_BITS                 = 0,       
+                                       // set to log2(CS_NUM) (rounded up).
+   parameter DM_WIDTH                = 9,       
+                                       // # of data mask bits.
+   parameter DQ_WIDTH                = 72,       
+                                       // # of data width.
+   parameter DQ_PER_DQS              = 8,       
+                                       // # of DQ data bits per strobe.
+   parameter DQS_WIDTH               = 9,       
+                                       // # of DQS strobes.
+   parameter DQ_BITS                 = 7,       
+                                       // set to log2(DQS_WIDTH*DQ_PER_DQS).
+   parameter DQS_BITS                = 4,       
+                                       // set to log2(DQS_WIDTH).
+   parameter ODT_WIDTH               = 1,       
+                                       // # of memory on-die term enables.
+   parameter ROW_WIDTH               = 13,       
+                                       // # of memory row and # of addr bits.
+   parameter ADDITIVE_LAT            = 0,       
+                                       // additive write latency.
+   parameter BURST_LEN               = 4,       
+                                       // burst length (in double words).
+   parameter BURST_TYPE              = 0,       
+                                       // burst type (=0 seq; =1 interleaved).
+   parameter CAS_LAT                 = 5,       
+                                       // CAS latency.
+   parameter ECC_ENABLE              = 0,       
+                                       // enable ECC (=1 enable).
+   parameter MULTI_BANK_EN           = 1,       
+                                       // Keeps multiple banks open. (= 1 enable).
+   parameter TWO_T_TIME_EN           = 0,       
+                                       // 2t timing for unbuffered dimms.
+   parameter ODT_TYPE                = 1,       
+                                       // ODT (=0(none),=1(75),=2(150),=3(50)).
+   parameter REDUCE_DRV              = 0,       
+                                       // reduced strength mem I/O (=1 yes).
+   parameter REG_ENABLE              = 1,       
+                                       // registered addr/ctrl (=1 yes).
+   parameter TREFI_NS                = 7800,       
+                                       // auto refresh interval (ns).
+   parameter TRAS                    = 40000,       
+                                       // active->precharge delay.
+   parameter TRCD                    = 15000,       
+                                       // active->read/write delay.
+   parameter TRFC                    = 75000,       
+                                       // refresh->refresh, refresh->active delay.
+   parameter TRP                     = 15000,       
+                                       // precharge->command delay.
+   parameter TRTP                    = 7500,       
+                                       // read->precharge delay.
+   parameter TWR                     = 15000,       
+                                       // used to determine write->precharge.
+   parameter TWTR                    = 10000,       
+                                       // write->read delay.
+   parameter HIGH_PERFORMANCE_MODE   = "TRUE",       
+                              // # = TRUE, the IODELAY performance mode is set
+                              // to high.
+                              // # = FALSE, the IODELAY performance mode is set
+                              // to low.
+   parameter CLK_FREQ                = 5000,       
+                                       // Core/Memory clock period (in ps).
+   parameter DQS_IO_COL              = 18'b000000000000000000,       
+                                       // I/O column location of DQS groups
+                                       // (=0, left; =1 center, =2 right).
+   parameter DQ_IO_MS                = 72'b101001011010010110100101101001011010010110100101101001011010010110100101
+                                       // Master/Slave location of DQ I/O (=0 slave).
+                                       // =1 for active low reset, =0 for active high.
   ) (
     input          clk0,
     input          clk90,
@@ -91,23 +139,13 @@ module dram_controller #(
                              CLK_FREQ == 333 ? 3003 :
                                                3759; /* default 266 */
   localparam SIM_ONLY    = 0;       // = 1 to skip SDRAM power up delay
-  localparam RST_ACT_LOW = 1;       // =1 for active low reset, =0 for active high
-  localparam DQ_PER_DQS  = 8;       // # of DQ data bits per strobe
-  localparam BURST_LEN   = 4;       // burst length (in double words)
   localparam DEBUG_EN    = 0;       // Enable debug signals/controls
-  localparam REDUCE_DRV  = 0;       // reduced strength mem I/O (=1 yes)
-
-  //localparam DQS_IO_COL  = 18'b000000000000000000;       // I/O column location of DQS groups (=0, left; =1 center, =2 right)
-  //localparam DQ_IO_MS    = 72'b10100101_10100101_10100101_10100101_10100101_10100101_10100101_10100101_10100101;       // Master/Slave location of DQ I/O (=0 slave)
-
-  localparam DQS_IO_COL    = 16'b0000000000000000;       // I/O column location of DQS groups (=0, left; =1 center, =2 right)
-  localparam DQ_IO_MS      = 64'b10100101_10100101_10100101_10100101_10100101_10100101_10100101_10100101; // Master/Slave location of DQ I/O (=0 slave) 
 
   wire app_af_afull; //currently unused
   wire app_wdf_afull;
 
 
-  mem_if_top #
+  ddr2_mem_if_top #
     (
      .BANK_WIDTH     (BANK_WIDTH),
      .CKE_WIDTH      (CKE_WIDTH),

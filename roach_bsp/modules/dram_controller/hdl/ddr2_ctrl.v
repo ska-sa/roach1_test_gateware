@@ -1,53 +1,53 @@
 //*****************************************************************************
 // DISCLAIMER OF LIABILITY
-// 
+//
 // This text/file contains proprietary, confidential
 // information of Xilinx, Inc., is distributed under license
 // from Xilinx, Inc., and may be used, copied and/or
 // disclosed only pursuant to the terms of a valid license
-// agreement with Xilinx, Inc. Xilinx hereby grants you a 
-// license to use this text/file solely for design, simulation, 
-// implementation and creation of design files limited 
-// to Xilinx devices or technologies. Use with non-Xilinx 
-// devices or technologies is expressly prohibited and 
+// agreement with Xilinx, Inc. Xilinx hereby grants you a
+// license to use this text/file solely for design, simulation,
+// implementation and creation of design files limited
+// to Xilinx devices or technologies. Use with non-Xilinx
+// devices or technologies is expressly prohibited and
 // immediately terminates your license unless covered by
 // a separate agreement.
 //
-// Xilinx is providing this design, code, or information 
-// "as-is" solely for use in developing programs and 
-// solutions for Xilinx devices, with no obligation on the 
-// part of Xilinx to provide support. By providing this design, 
-// code, or information as one possible implementation of 
-// this feature, application or standard, Xilinx is making no 
-// representation that this implementation is free from any 
-// claims of infringement. You are responsible for 
-// obtaining any rights you may require for your implementation. 
-// Xilinx expressly disclaims any warranty whatsoever with 
-// respect to the adequacy of the implementation, including 
+// Xilinx is providing this design, code, or information
+// "as-is" solely for use in developing programs and
+// solutions for Xilinx devices, with no obligation on the
+// part of Xilinx to provide support. By providing this design,
+// code, or information as one possible implementation of
+// this feature, application or standard, Xilinx is making no
+// representation that this implementation is free from any
+// claims of infringement. You are responsible for
+// obtaining any rights you may require for your implementation.
+// Xilinx expressly disclaims any warranty whatsoever with
+// respect to the adequacy of the implementation, including
 // but not limited to any warranties or representations that this
-// implementation is free from claims of infringement, implied 
-// warranties of merchantability or fitness for a particular 
+// implementation is free from claims of infringement, implied
+// warranties of merchantability or fitness for a particular
 // purpose.
 //
 // Xilinx products are not intended for use in life support
 // appliances, devices, or systems. Use in such applications is
 // expressly prohibited.
 //
-// Any modifications that are made to the Source Code are 
+// Any modifications that are made to the Source Code are
 // done at the users sole risk and will be unsupported.
 //
 // Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
 //
-// This copyright and support notice must be retained as part 
-// of this text at all times. 
+// This copyright and support notice must be retained as part
+// of this text at all times.
 //*****************************************************************************
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: ctrl.v
-// /___/   /\     Date Last Modified: $Date: 2008/01/09 15:43:36 $
+//  /   /         Filename: ddr2_ctrl.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/29 15:24:03 $
 // \   \  /  \    Date Created: Wed Aug 30 2006
 //  \___\/\___\
 //
@@ -60,15 +60,18 @@
 //   user commands.
 //Reference:
 //Revision History:
-// Rev1.2 - Fixed auto refresh to activate bug. KP 11-19-2007
+//   Rev 1.2 - Fixed auto refresh to activate bug. KP 11-19-2007
+//   Rev 1.3 - For Dual Rank parts support CS logic modified. KP. 05/08/08
+//   Rev 1.4 - AUTO_REFRESH_WAIT state modified for Auto Refresh flag asserted
+//             immediately after calibration is completed. KP. 07/28/08
 //*****************************************************************************
 
 `timescale 1ns/1ps
 
-module ctrl #
+module ddr2_ctrl #
   (
-   // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
-   // board design). Actual values may be different. Actual parameters values 
+   // Following parameters are for 72-bit RDIMM design (for ML561 Reference
+   // board design). Actual values may be different. Actual parameters values
    // are passed from design top module ddr2_sdram module. Please refer to
    // the ddr2_sdram module for actual values.
    parameter BANK_WIDTH    = 2,
@@ -120,16 +123,16 @@ module ctrl #
   localparam BANK_RANGE_START    = ROW_RANGE_END + 1;
   localparam BANK_RANGE_END      = BANK_WIDTH + BANK_RANGE_START - 1;
   localparam CS_RANGE_START      = BANK_RANGE_START + BANK_WIDTH;
-  localparam CS_RANGE_END        = CS_NUM + CS_RANGE_START - 1;
+  localparam CS_RANGE_END        = CS_BITS + CS_RANGE_START - 1;
   // compare address (for determining bank/row hits) split into various ranges
   // (compare address doesn't include column bits)
-  localparam CMP_WIDTH            = CS_NUM + BANK_WIDTH + ROW_WIDTH;
+  localparam CMP_WIDTH            = CS_BITS + BANK_WIDTH + ROW_WIDTH;
   localparam CMP_ROW_RANGE_START  = 0;
   localparam CMP_ROW_RANGE_END    = ROW_WIDTH + CMP_ROW_RANGE_START - 1;
   localparam CMP_BANK_RANGE_START = CMP_ROW_RANGE_END + 1;
   localparam CMP_BANK_RANGE_END   = BANK_WIDTH + CMP_BANK_RANGE_START - 1;
   localparam CMP_CS_RANGE_START   = CMP_BANK_RANGE_END + 1;
-  localparam CMP_CS_RANGE_END     = CS_BITS + CMP_CS_RANGE_START;
+  localparam CMP_CS_RANGE_END     = CS_BITS + CMP_CS_RANGE_START-1;
 
   localparam BURST_LEN_DIV2      = BURST_LEN / 2;
   localparam OPEN_BANK_NUM       = 4;
@@ -226,6 +229,8 @@ module ctrl #
   reg                                      ctrl_af_rden_r;
   reg                                      conflict_detect_r;
   wire                                     conflict_detect;
+  reg                                      cs_change_r;
+  reg                                      cs_change_sticky_r;
   reg [ROW_WIDTH-1:0]                      ddr_addr_r;
   wire [ROW_WIDTH-1:0]                     ddr_addr_col;
   wire [ROW_WIDTH-1:0]                     ddr_addr_row;
@@ -415,7 +420,29 @@ module ctrl #
                               != sb_open_add_r[CMP_WIDTH-1:0]);
       end
     end
-  end
+  end // always@ (posedge clk)
+
+  //detecting cs change for multi chip select case
+  generate
+    if(CS_NUM > 1) begin: gen_cs_change
+       always @(posedge clk) begin
+          if(sm_rden || ~af_valid_r2)begin
+            cs_change_r <= af_addr_r1[CS_RANGE_END:CS_RANGE_START] !=
+                       af_addr_r2[CS_RANGE_END:CS_RANGE_START] ;
+            cs_change_sticky_r <=
+             af_addr_r1[CS_RANGE_END:CS_RANGE_START] !=
+             af_addr_r2[CS_RANGE_END:CS_RANGE_START] ;
+          end else
+            cs_change_r <= 1'd0;
+       end
+    end // block: gen_cs_change
+    else begin: gen_cs_0
+       always @(posedge clk) begin
+          cs_change_r <= 1'd0;
+          cs_change_sticky_r <= 1'd0;
+       end
+    end
+ endgenerate
 
   assign conflict_detect = (MULTI_BANK_EN) ?
                            ((|(row_conflict_r[3:0] & bank_hit_r[3:0]))
@@ -608,11 +635,15 @@ module ctrl #
       ctrl_rden   <= 1'b0;
    end
 
+  // the rd_burst_ok_r signal will be asserted one cycle later
+  // in multi chip select cases if the back to back read is to
+  // different chip selects. The cs_changed_sticky_r signal will
+  // be asserted only for multi chip select cases.
   always @(posedge clk) begin
     if ((state_r == CTRL_BURST_READ)
         && (BURST_LEN_DIV2 > 2))
       rdburst_ok_r <= 1'd0;
-    else if ((rdburst_cnt_r <= 3'd3) ||
+    else if ((rdburst_cnt_r <=( 3'd3 - cs_change_sticky_r)) ||
              (BURST_LEN_DIV2 <= 2))
       rdburst_ok_r <= 1'b1;
   end
@@ -819,7 +850,7 @@ module ctrl #
   always @(posedge clk)begin
     if (rst_r1 || (state_r1 == CTRL_PRECHARGE))
       auto_cnt_r <= 'd0;
-    else if (state_r == CTRL_AUTO_REFRESH)
+    else if (state_r1 == CTRL_AUTO_REFRESH)
       auto_cnt_r <= auto_cnt_r + 1;
   end
 
@@ -891,11 +922,12 @@ module ctrl #
               next_state = CTRL_AUTO_REFRESH;
            end else if (rfc_ok_r)begin
               if(auto_ref_r)
-                next_state = CTRL_AUTO_REFRESH;
+                // MIG 2.3: For deep designs if Auto Refresh
+                // flag asserted immediately after calibration is completed
+                next_state = CTRL_PRECHARGE;
               else if  ( wr_flag || rd_flag)
                 next_state = CTRL_ACTIVE;
             end
-
 
       CTRL_ACTIVE:
         next_state = CTRL_ACTIVE_WAIT;
@@ -965,7 +997,10 @@ module ctrl #
             next_state = CTRL_ACTIVE;
           else if (precharge_ok_r)
             next_state = CTRL_PRECHARGE;
-        end else if (rdburst_ok_r  && rd_flag)
+        // for burst of 4 in multi chip select
+        // if there is a change in cs wait one cycle before the
+        // next read command. cs_change_r will be asserted.
+        end else if (rdburst_ok_r  && rd_flag && ~cs_change_r)
           next_state = CTRL_BURST_READ;
         else if (wr_flag && (rd_to_wr_ok_r))
           next_state = CTRL_BURST_WRITE;
@@ -1063,6 +1098,7 @@ module ctrl #
       assign ddr_addr_row = af_addr_r2[ROW_RANGE_END:ROW_RANGE_START];
   endgenerate
 
+
   always @(posedge clk)begin
     if ((state_r == CTRL_ACTIVE) ||
         ((state_r1 == CTRL_ACTIVE) && TWO_T_TIME_EN))
@@ -1119,27 +1155,52 @@ module ctrl #
         else
           ddr_cs_n_r[0] <= 1'b0;
     // otherwise if we have multiple chip selects
-    end else begin: gen_ddr_cs_1
-      always @(posedge clk)
-        if (rst_r1)
-          ddr_cs_n_r <= {CS_NUM{1'b1}};
-        else if (state_r == CTRL_AUTO_REFRESH) begin
-          // if auto-refreshing, only auto-refresh one CS at any time (avoid
-          // beating on the ground plane by refreshing all CS's at same time)
-          ddr_cs_n_r <= {CS_NUM{1'b1}};
-          ddr_cs_n_r[auto_cnt_r] <= 1'b0;
-        end else if ((state_r == CTRL_PRECHARGE) && bank_conflict_r &&
-                     MULTI_BANK_EN) begin
-          // precharging the LRU bank
-          ddr_cs_n_r <= {CS_NUM{1'b1}};
-          ddr_cs_n_r[bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_CS_RANGE_END:
-                                     (3*CMP_WIDTH)+CMP_CS_RANGE_START]]
-            <= 1'b0;
-        end else begin
+      end else begin: gen_ddr_cs_1
+      if(TWO_T_TIME_EN) begin: gen_2t_cs
+         always @(posedge clk)
+           if (rst_r1)
+             ddr_cs_n_r <= {CS_NUM{1'b1}};
+           else if ((state_r1 == CTRL_AUTO_REFRESH)) begin
+             // if auto-refreshing, only auto-refresh one CS at any time (avoid
+             // beating on the ground plane by refreshing all CS's at same time)
+             ddr_cs_n_r <= {CS_NUM{1'b1}};
+             ddr_cs_n_r[auto_cnt_r] <= 1'b0;
+           end else if (auto_ref_r && (state_r1 == CTRL_PRECHARGE)) begin
+             ddr_cs_n_r <= {CS_NUM{1'b0}};
+           end else if ((state_r1 == CTRL_PRECHARGE) && ( bank_conflict_r
+                    && MULTI_BANK_EN))begin
+                  // precharging the LRU bank
+                  ddr_cs_n_r <= {CS_NUM{1'b1}};
+                  ddr_cs_n_r[bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_CS_RANGE_END:
+                  (3*CMP_WIDTH)+CMP_CS_RANGE_START]] <= 1'b0;
+           end else begin
           // otherwise, check the upper address bits to see which CS to assert
-          ddr_cs_n_r <= {CS_NUM{1'b1}};
-          ddr_cs_n_r <= af_addr_r2[CS_RANGE_END:CS_RANGE_START];
-        end
+             ddr_cs_n_r <= {CS_NUM{1'b1}};
+             ddr_cs_n_r[af_addr_r3[CS_RANGE_END:CS_RANGE_START]] <= 1'b0;
+           end // else: !if(((state_r == CTRL_PRECHARGE)  ||...
+        end else begin: gen_1t_cs // block: gen_2t_cs
+         always @(posedge clk)
+           if (rst_r1)
+             ddr_cs_n_r <= {CS_NUM{1'b1}};
+           else if ((state_r == CTRL_AUTO_REFRESH) ) begin
+             // if auto-refreshing, only auto-refresh one CS at any time (avoid
+             // beating on the ground plane by refreshing all CS's at same time)
+             ddr_cs_n_r <= {CS_NUM{1'b1}};
+             ddr_cs_n_r[auto_cnt_r] <= 1'b0;
+           end else if (auto_ref_r && (state_r == CTRL_PRECHARGE) ) begin
+             ddr_cs_n_r <= {CS_NUM{1'b0}};
+           end else if ((state_r == CTRL_PRECHARGE)  &&
+                 (bank_conflict_r && MULTI_BANK_EN))begin
+                  // precharging the LRU bank
+                  ddr_cs_n_r <= {CS_NUM{1'b1}};
+                  ddr_cs_n_r[bank_cmp_addr_r[(3*CMP_WIDTH)+CMP_CS_RANGE_END:
+                  (3*CMP_WIDTH)+CMP_CS_RANGE_START]] <= 1'b0;
+           end else begin
+          // otherwise, check the upper address bits to see which CS to assert
+             ddr_cs_n_r <= {CS_NUM{1'b1}};
+             ddr_cs_n_r[af_addr_r2[CS_RANGE_END:CS_RANGE_START]] <= 1'b0;
+           end // else: !if(((state_r == CTRL_PRECHARGE)  ||...
+        end // block: gen_1t_cs
     end
   endgenerate
 

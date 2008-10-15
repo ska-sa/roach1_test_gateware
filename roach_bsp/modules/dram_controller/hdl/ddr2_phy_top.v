@@ -1,53 +1,53 @@
 //*****************************************************************************
 // DISCLAIMER OF LIABILITY
-// 
+//
 // This text/file contains proprietary, confidential
 // information of Xilinx, Inc., is distributed under license
 // from Xilinx, Inc., and may be used, copied and/or
 // disclosed only pursuant to the terms of a valid license
-// agreement with Xilinx, Inc. Xilinx hereby grants you a 
-// license to use this text/file solely for design, simulation, 
-// implementation and creation of design files limited 
-// to Xilinx devices or technologies. Use with non-Xilinx 
-// devices or technologies is expressly prohibited and 
+// agreement with Xilinx, Inc. Xilinx hereby grants you a
+// license to use this text/file solely for design, simulation,
+// implementation and creation of design files limited
+// to Xilinx devices or technologies. Use with non-Xilinx
+// devices or technologies is expressly prohibited and
 // immediately terminates your license unless covered by
 // a separate agreement.
 //
-// Xilinx is providing this design, code, or information 
-// "as-is" solely for use in developing programs and 
-// solutions for Xilinx devices, with no obligation on the 
-// part of Xilinx to provide support. By providing this design, 
-// code, or information as one possible implementation of 
-// this feature, application or standard, Xilinx is making no 
-// representation that this implementation is free from any 
-// claims of infringement. You are responsible for 
-// obtaining any rights you may require for your implementation. 
-// Xilinx expressly disclaims any warranty whatsoever with 
-// respect to the adequacy of the implementation, including 
+// Xilinx is providing this design, code, or information
+// "as-is" solely for use in developing programs and
+// solutions for Xilinx devices, with no obligation on the
+// part of Xilinx to provide support. By providing this design,
+// code, or information as one possible implementation of
+// this feature, application or standard, Xilinx is making no
+// representation that this implementation is free from any
+// claims of infringement. You are responsible for
+// obtaining any rights you may require for your implementation.
+// Xilinx expressly disclaims any warranty whatsoever with
+// respect to the adequacy of the implementation, including
 // but not limited to any warranties or representations that this
-// implementation is free from claims of infringement, implied 
-// warranties of merchantability or fitness for a particular 
+// implementation is free from claims of infringement, implied
+// warranties of merchantability or fitness for a particular
 // purpose.
 //
 // Xilinx products are not intended for use in life support
 // appliances, devices, or systems. Use in such applications is
 // expressly prohibited.
 //
-// Any modifications that are made to the Source Code are 
+// Any modifications that are made to the Source Code are
 // done at the users sole risk and will be unsupported.
 //
 // Copyright (c) 2006-2007 Xilinx, Inc. All rights reserved.
 //
-// This copyright and support notice must be retained as part 
-// of this text at all times. 
+// This copyright and support notice must be retained as part
+// of this text at all times.
 //*****************************************************************************
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: phy_top.v
-// /___/   /\     Date Last Modified: $Date: 2007/11/28 13:20:56 $
+//  /   /         Filename: ddr2_phy_top.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/22 15:41:06 $
 // \   \  /  \    Date Created: Wed Aug 16 2006
 //  \___\/\___\
 //
@@ -61,41 +61,45 @@
 
 `timescale 1ns/1ps
 
-module phy_top #
+(* X_CORE_INFO = "mig_v2_3_ddr2_v5, Coregen 10.1.02" , CORE_GENERATION_INFO = "ddr2_v5,mig_v2_3,{component_name=ddr2_phy_top, BANK_WIDTH=2, CKE_WIDTH=1, CLK_WIDTH=1, COL_WIDTH=10, CS_NUM=1, CS_WIDTH=1, DM_WIDTH=9, DQ_WIDTH=72, DQ_PER_DQS=8, DQS_WIDTH=9, ODT_WIDTH=1, ROW_WIDTH=14, ADDITIVE_LAT=0, BURST_LEN=4, BURST_TYPE=0, CAS_LAT=4, ECC_ENABLE=0, MULTI_BANK_EN=1, TWO_T_TIME_EN=0, ODT_TYPE=1, REDUCE_DRV=0, REG_ENABLE=1, TREFI_NS=7800, TRAS=40000, TRCD=15000, TRFC=105000, TRP=15000, TRTP=7500, TWR=15000, TWTR=10000, DDR2_CLK_PERIOD=5000, RST_ACT_LOW=1}" *)
+module ddr2_phy_top #
   (
-   // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
-   // board design). Actual values may be different. Actual parameters values 
+   // Following parameters are for 72-bit RDIMM design (for ML561 Reference
+   // board design). Actual values may be different. Actual parameters values
    // are passed from design top module ddr2_sdram module. Please refer to
    // the ddr2_sdram module for actual values.
-   parameter BANK_WIDTH     = 2,
-   parameter CLK_WIDTH      = 1,
-   parameter CKE_WIDTH      = 1,
-   parameter COL_WIDTH      = 10,
-   parameter CS_NUM         = 1,
-   parameter CS_WIDTH       = 1,
-   parameter DM_WIDTH       = 9,
-   parameter DQ_WIDTH       = 72,
-   parameter DQ_BITS        = 7,
-   parameter DQ_PER_DQS     = 8,
-   parameter DQS_WIDTH      = 9,
-   parameter DQS_BITS       = 4,
-   parameter ODT_WIDTH      = 1,
-   parameter ROW_WIDTH      = 14,
-   parameter ADDITIVE_LAT   = 0,
-   parameter TWO_T_TIME_EN  = 0,
-   parameter BURST_LEN      = 4,
-   parameter BURST_TYPE     = 0,
-   parameter CAS_LAT        = 5,
-   parameter ECC_ENABLE     = 0,
-   parameter ODT_TYPE       = 1,
-   parameter DDR_TYPE       = 1,
-   parameter REDUCE_DRV     = 0,
-   parameter REG_ENABLE     = 1,
-   parameter CLK_PERIOD     = 3000,
-   parameter SIM_ONLY       = 0,
-   parameter DEBUG_EN       = 0,
-   parameter DQS_IO_COL     = 0,
-   parameter DQ_IO_MS       = 0
+   parameter BANK_WIDTH            = 2,
+   parameter CLK_WIDTH             = 1,
+   parameter CKE_WIDTH             = 1,
+   parameter COL_WIDTH             = 10,
+   parameter CS_NUM                = 1,
+   parameter CS_WIDTH              = 1,
+   parameter USE_DM_PORT           = 1,
+   parameter DM_WIDTH              = 9,
+   parameter DQ_WIDTH              = 72,
+   parameter DQ_BITS               = 7,
+   parameter DQ_PER_DQS            = 8,
+   parameter DQS_WIDTH             = 9,
+   parameter DQS_BITS              = 4,
+   parameter HIGH_PERFORMANCE_MODE = "TRUE",
+   parameter ODT_WIDTH             = 1,
+   parameter ROW_WIDTH             = 14,
+   parameter ADDITIVE_LAT          = 0,
+   parameter TWO_T_TIME_EN         = 0,
+   parameter BURST_LEN             = 4,
+   parameter BURST_TYPE            = 0,
+   parameter CAS_LAT               = 5,
+   parameter TWR                   = 15000,
+   parameter ECC_ENABLE            = 0,
+   parameter ODT_TYPE              = 1,
+   parameter DDR_TYPE              = 1,
+   parameter REDUCE_DRV            = 0,
+   parameter REG_ENABLE            = 1,
+   parameter CLK_PERIOD            = 3000,
+   parameter SIM_ONLY              = 0,
+   parameter DEBUG_EN              = 0,
+   parameter DQS_IO_COL            = 0,
+   parameter DQ_IO_MS              = 0
    )
   (
    input                                  clk0,
@@ -170,7 +174,7 @@ module phy_top #
   wire                     dqs_rst_n;
   wire [(DQ_WIDTH/8)-1:0]  mask_data_fall;
   wire [(DQ_WIDTH/8)-1:0]  mask_data_rise;
-  wire                     odt;
+  wire [CS_NUM-1:0]        odt;
   wire [ROW_WIDTH-1:0]     phy_init_addr;
   wire [BANK_WIDTH-1:0]    phy_init_ba;
   wire                     phy_init_cas_n;
@@ -184,15 +188,12 @@ module phy_top #
   wire [DQ_WIDTH-1:0]      wr_data_fall;
   wire [DQ_WIDTH-1:0]      wr_data_rise;
 
-  // synthesis attribute X_CORE_INFO of phy_top is "mig_v2_1_ddr2_v5, Coregen 10.1i_ip0";
-
-  // synthesis attribute CORE_GENERATION_INFO of ddr2_sdram is "ddr2_v5,mig_v2_1,{component_name=ddr2_v5, bank_width=3, cke_width=1, clk_width=3, col_width=10, cs_num=1, cs_width=1, dm_width=8, dq_width=64, dq_per_dqs=8, dqs_width=8, odt_width=1, row_width=13, additive_lat=0, burst_len=4, burst_type=0, cas_lat=3, ecc_enable=0, multi_bank_en=1, two_t_time_en=1, odt_type=1, reduce_drv=0, reg_enable=0, trefi_ns=7800, tras=40000, trcd=15000, trfc=127500, trp=15000, trtp=7500, twr=15000, twtr=10000, clk_period=5000, rst_act_low=1}";
-
   //***************************************************************************
 
-  phy_write #
+  ddr2_phy_write #
     (
      .DQ_WIDTH     (DQ_WIDTH),
+     .CS_NUM       (CS_NUM),
      .ADDITIVE_LAT (ADDITIVE_LAT),
      .CAS_LAT      (CAS_LAT),
      .ECC_ENABLE   (ECC_ENABLE),
@@ -222,25 +223,27 @@ module phy_top #
        .mask_data_fall          (mask_data_fall)
        );
 
-  phy_io #
+  ddr2_phy_io #
     (
-     .CLK_WIDTH      (CLK_WIDTH),
-     .DM_WIDTH       (DM_WIDTH),
-     .DQ_WIDTH       (DQ_WIDTH),
-     .DQ_BITS        (DQ_BITS),
-     .DQ_PER_DQS     (DQ_PER_DQS),
-     .DQS_BITS       (DQS_BITS),
-     .DQS_WIDTH      (DQS_WIDTH),
-     .ODT_WIDTH      (ODT_WIDTH),
-     .ADDITIVE_LAT   (ADDITIVE_LAT),
-     .CAS_LAT        (CAS_LAT),
-     .REG_ENABLE     (REG_ENABLE),
-     .CLK_PERIOD     (CLK_PERIOD),
-     .DDR_TYPE       (DDR_TYPE),
-     .SIM_ONLY       (SIM_ONLY),
-     .DEBUG_EN       (DEBUG_EN),
-     .DQS_IO_COL     (DQS_IO_COL),
-     .DQ_IO_MS       (DQ_IO_MS)
+     .CLK_WIDTH             (CLK_WIDTH),
+     .USE_DM_PORT           (USE_DM_PORT),
+     .DM_WIDTH              (DM_WIDTH),
+     .DQ_WIDTH              (DQ_WIDTH),
+     .DQ_BITS               (DQ_BITS),
+     .DQ_PER_DQS            (DQ_PER_DQS),
+     .DQS_BITS              (DQS_BITS),
+     .DQS_WIDTH             (DQS_WIDTH),
+     .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE),
+     .ODT_WIDTH             (ODT_WIDTH),
+     .ADDITIVE_LAT          (ADDITIVE_LAT),
+     .CAS_LAT               (CAS_LAT),
+     .REG_ENABLE            (REG_ENABLE),
+     .CLK_PERIOD            (CLK_PERIOD),
+     .DDR_TYPE              (DDR_TYPE),
+     .SIM_ONLY              (SIM_ONLY),
+     .DEBUG_EN              (DEBUG_EN),
+     .DQS_IO_COL            (DQS_IO_COL),
+     .DQ_IO_MS              (DQ_IO_MS)
      )
     u_phy_io
       (
@@ -298,7 +301,7 @@ module phy_top #
        .dbg_calib_gate_dly     (dbg_calib_gate_dly)
        );
 
-  phy_ctl_io #
+  ddr2_phy_ctl_io #
     (
      .BANK_WIDTH    (BANK_WIDTH),
      .CKE_WIDTH     (CKE_WIDTH),
@@ -341,7 +344,7 @@ module phy_top #
        .ddr_odt                 (ddr_odt)
        );
 
-  phy_init #
+  ddr2_phy_init #
     (
      .BANK_WIDTH   (BANK_WIDTH),
      .CKE_WIDTH    (CKE_WIDTH),
@@ -358,6 +361,8 @@ module phy_top #
      .ODT_TYPE     (ODT_TYPE),
      .REDUCE_DRV   (REDUCE_DRV),
      .REG_ENABLE   (REG_ENABLE),
+     .TWR          (TWR),
+     .CLK_PERIOD   (CLK_PERIOD),
      .DDR_TYPE     (DDR_TYPE),
      .SIM_ONLY     (SIM_ONLY)
      )

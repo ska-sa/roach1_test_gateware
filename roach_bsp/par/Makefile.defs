@@ -15,7 +15,7 @@ TAEGINE=taengine-$(ISE_VER)
 
 ######### Command Flags ###########
 NGDBUILD_FLAGS=-aul
-MAP_FLAGS=-detail -ol std -w
+MAP_FLAGS=-detail -ol high -w
 PAR_FLAGS=-w -ol high
 BITGEN_FLAGS=-w -g DriveDone:No -g DonePin:Pullup -g StartUpClk:CCLK -g Security:NONE -m -g binary:yes
 CPLDFIT_FLAGS=

@@ -44,10 +44,10 @@
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: phy_calib.v
-// /___/   /\     Date Last Modified: $Date: 2007/12/15 04:53:04 $
+//  /   /         Filename: ddr2_phy_calib.v
+// /___/   /\     Date Last Modified: $Date: 2008/07/02 14:03:08 $
 // \   \  /  \    Date Created: Thu Aug 10 2006
 //  \___\/\___\
 //
@@ -61,7 +61,7 @@
 
 `timescale 1ns/1ps
 
-module phy_calib #
+module ddr2_phy_calib #
   (
    // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
    // board design). Actual values may be different. Actual parameters values 
@@ -1224,11 +1224,14 @@ module phy_calib #
   genvar rd_i;
   generate
     for (rd_i = 0; rd_i < DQS_WIDTH; rd_i = rd_i+1) begin: gen_rd_data_sel
-      FD u_ff_rd_data_sel
+      FDRSE u_ff_rd_data_sel
         (
-         .Q (rd_data_sel[rd_i]),
-         .C (clkdiv),
-         .D (cal2_rd_data_sel[rd_i])
+         .Q   (rd_data_sel[rd_i]),
+         .C   (clkdiv),
+         .CE  (1'b1),
+         .D   (cal2_rd_data_sel[rd_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve = 1 */
            /* synthesis syn_replicate = 0 */;
     end
@@ -1494,11 +1497,14 @@ module phy_calib #
   generate
     for (cal_rden_ff_i = 0; cal_rden_ff_i < 5;
          cal_rden_ff_i = cal_rden_ff_i+1) begin: gen_cal_rden_dly
-      FD u_ff_cal_rden_dly
+      FDRSE u_ff_cal_rden_dly
         (
-         .Q (calib_rden_srl_a_r[cal_rden_ff_i]),
-         .C (clkdiv),
-         .D (calib_rden_srl_a[cal_rden_ff_i])
+         .Q   (calib_rden_srl_a_r[cal_rden_ff_i]),
+         .C   (clkdiv),
+         .CE  (1'b1),
+         .D   (calib_rden_srl_a[cal_rden_ff_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve = 1 */
            /* synthesis syn_replicate = 0 */;
     end
@@ -1514,11 +1520,14 @@ module phy_calib #
      .D   (calib_rden_edge_r)
      );
 
-  FD u_calib_rden_srl_out_r
+  FDRSE u_calib_rden_srl_out_r
     (
-     .Q  (calib_rden_srl_out_r),
-     .C  (clk),
-     .D  (calib_rden_srl_out)
+         .Q   (calib_rden_srl_out_r),
+         .C   (clk),
+         .CE  (1'b1),
+         .D   (calib_rden_srl_out),
+         .R   (1'b0),
+         .S   (1'b0)
      ) /* synthesis syn_preserve = 1 */;
 
   // convert to CLKDIV domain. Two version are generated because we need
@@ -1543,11 +1552,14 @@ module phy_calib #
   generate
     for (rden_ff_i = 0; rden_ff_i < 5*DQS_WIDTH;
          rden_ff_i = rden_ff_i+1) begin: gen_rden_dly
-      FD u_ff_rden_dly
+      FDRSE u_ff_rden_dly
         (
-         .Q (rden_dly_r[rden_ff_i]),
-         .C (clkdiv),
-         .D (rden_dly[rden_ff_i])
+         .Q   (rden_dly_r[rden_ff_i]),
+         .C   (clkdiv),
+         .CE  (1'b1),
+         .D   (rden_dly[rden_ff_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve = 1 */
            /* synthesis syn_replicate = 0 */;
     end
@@ -1570,11 +1582,14 @@ module phy_calib #
          .CLK (clk),
          .D   (ctrl_rden_r)
          );
-      FD u_calib_rden_r
+      FDRSE u_calib_rden_r
         (
-         .Q  (calib_rden[rden_i]),
-         .C  (clk),
-         .D  (rden_srl_out[rden_i])
+         .Q   (calib_rden[rden_i]),
+         .C   (clk),
+         .CE  (1'b1),
+         .D   (rden_srl_out[rden_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve = 1 */;
     end
   endgenerate
@@ -1981,11 +1996,14 @@ module phy_calib #
   generate
     for (gate_ff_i = 0; gate_ff_i < 5*DQS_WIDTH;
          gate_ff_i = gate_ff_i+1) begin: gen_gate_dly
-      FD u_ff_gate_dly
+      FDRSE u_ff_gate_dly
         (
-         .Q (gate_dly_r[gate_ff_i]),
-         .C (clkdiv),
-         .D (gate_dly[gate_ff_i])
+         .Q   (gate_dly_r[gate_ff_i]),
+         .C   (clkdiv),
+         .CE  (1'b1),
+         .D   (gate_dly[gate_ff_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve = 1 */
            /* synthesis syn_replicate = 0 */;
     end
@@ -2018,21 +2036,27 @@ module phy_calib #
       if (GATE_BASE_DELAY > 0) begin: gen_gate_base_dly_gt3
         // add flop between SRL32 and EN_DQS flop (which is located near the
         // DDR2 IOB's)
-        FD u_gate_srl_ff
+        FDRSE u_gate_srl_ff
           (
-           .Q  (gate_srl_out_r[gate_i]),
-           .C  (clk),
-           .D  (gate_srl_out[gate_i])
+         .Q   (gate_srl_out_r[gate_i]),
+         .C   (clk),
+         .CE  (1'b1),
+         .D   (gate_srl_out[gate_i]),
+         .R   (1'b0),
+         .S   (1'b0)
            ) /* synthesis syn_preserve = 1 */;
       end else begin: gen_gate_base_dly_le3
         assign gate_srl_out_r[gate_i] = gate_srl_out[gate_i];
       end
 
-      FD u_en_dqs_ff
+      FDRSE u_en_dqs_ff
         (
-         .Q  (en_dqs[gate_i]),
-         .C  (clk),
-         .D  (gate_srl_out_r[gate_i])
+         .Q   (en_dqs[gate_i]),
+         .C   (clk),
+         .CE  (1'b1),
+         .D   (gate_srl_out_r[gate_i]),
+         .R   (1'b0),
+         .S   (1'b0)
          ) /* synthesis syn_preserve = 1 */
            /* synthesis syn_replicate = 0 */;
     end
@@ -2259,10 +2283,32 @@ module phy_calib #
 
         // give additional time for RDEN_R pipe to clear from effects of
         // previous pipeline (and IDELAY reset)
-        CAL4_RDEN_PIPE_CLR_WAIT:
+        CAL4_RDEN_PIPE_CLR_WAIT: begin
+          // MIG 2.2: Bug fix - make sure to update GATE_DLY count, since
+          // possible for FIND_EDGE->RDEN_PIPE_CLR_WAIT->FIND_WINDOW
+          // transition (i.e. need to make sure the gate count updated in
+          // FIND_EDGE gets reflected in GATE_DLY by the time we reach
+          // state FIND_WINDOW) - previously GATE_DLY only being updated
+          // during state CAL4_IDEL_WAIT
+          if (SIM_ONLY != 0) begin
+            for (i = 0; i < DQS_WIDTH; i = i + 1) begin: loop_sim_gate_dly_pipe
+              gate_dly[(i*5)+4] <= cal4_gate_srl_a[4];
+              gate_dly[(i*5)+3] <= cal4_gate_srl_a[3];
+              gate_dly[(i*5)+2] <= cal4_gate_srl_a[2];
+              gate_dly[(i*5)+1] <= cal4_gate_srl_a[1];
+              gate_dly[(i*5)]   <= cal4_gate_srl_a[0];
+            end
+          end else begin
+            gate_dly[(count_gate*5)+4] <= cal4_gate_srl_a[4];
+            gate_dly[(count_gate*5)+3] <= cal4_gate_srl_a[3];
+            gate_dly[(count_gate*5)+2] <= cal4_gate_srl_a[2];
+            gate_dly[(count_gate*5)+1] <= cal4_gate_srl_a[1];
+            gate_dly[(count_gate*5)]   <= cal4_gate_srl_a[0];
+          end 	  
           // look for new window
           if (calib_rden_pipe_cnt == 5'b00000)
             cal4_state <= CAL4_FIND_WINDOW;
+	end
 
         // increment/decrement DQS/DQ IDELAY for final adjustment
         CAL4_ADJ_IDEL:

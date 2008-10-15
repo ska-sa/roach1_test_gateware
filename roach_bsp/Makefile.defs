@@ -37,22 +37,21 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/ten_gig_eth/hdl/retimer.vhd \
     ./modules/ten_gig_eth/hdl/addr_fifo.v \
     ./modules/dram_controller/hdl/dram_controller.v \
-    ./modules/dram_controller/hdl/ctrl.v \
-    ./modules/dram_controller/hdl/ddr2_sdram.v \
-    ./modules/dram_controller/hdl/mem_if_top.v \
-    ./modules/dram_controller/hdl/phy_calib.v \
-    ./modules/dram_controller/hdl/phy_ctl_io.v \
-    ./modules/dram_controller/hdl/phy_dm_iob.v \
-    ./modules/dram_controller/hdl/phy_dq_iob.v \
-    ./modules/dram_controller/hdl/phy_dqs_iob.v \
-    ./modules/dram_controller/hdl/phy_init.v \
-    ./modules/dram_controller/hdl/phy_io.v \
-    ./modules/dram_controller/hdl/phy_top.v \
-    ./modules/dram_controller/hdl/phy_write.v \
-    ./modules/dram_controller/hdl/usr_addr_fifo.v \
-    ./modules/dram_controller/hdl/usr_rd.v \
-    ./modules/dram_controller/hdl/usr_top.v \
-    ./modules/dram_controller/hdl/usr_wr.v \
+    ./modules/dram_controller/hdl/ddr2_ctrl.v \
+    ./modules/dram_controller/hdl/ddr2_mem_if_top.v \
+    ./modules/dram_controller/hdl/ddr2_phy_calib.v \
+    ./modules/dram_controller/hdl/ddr2_phy_ctl_io.v \
+    ./modules/dram_controller/hdl/ddr2_phy_dm_iob.v \
+    ./modules/dram_controller/hdl/ddr2_phy_dq_iob.v \
+    ./modules/dram_controller/hdl/ddr2_phy_dqs_iob.v \
+    ./modules/dram_controller/hdl/ddr2_phy_init.v \
+    ./modules/dram_controller/hdl/ddr2_phy_io.v \
+    ./modules/dram_controller/hdl/ddr2_phy_top.v \
+    ./modules/dram_controller/hdl/ddr2_phy_write.v \
+    ./modules/dram_controller/hdl/ddr2_usr_addr_fifo.v \
+    ./modules/dram_controller/hdl/ddr2_usr_rd.v \
+    ./modules/dram_controller/hdl/ddr2_usr_top.v \
+    ./modules/dram_controller/hdl/ddr2_usr_wr.v \
     ./modules/dram_cpu_interface/hdl/dram_cpu_interface.v \
     ./modules/dram_cpu_interface/hdl/dram_reg_wb_attach.v \
     ./modules/dram_infrastructure/hdl/dram_infrastructure.v \

@@ -44,10 +44,10 @@
 //   ____  ____
 //  /   /\/   /
 // /___/  \  /    Vendor: Xilinx
-// \   \   \/     Version: 2.1
+// \   \   \/     Version: 2.3
 //  \   \         Application: MIG
-//  /   /         Filename: usr_top.v
-// /___/   /\     Date Last Modified: $Date: 2007/11/28 13:20:56 $
+//  /   /         Filename: ddr2_usr_top.v
+// /___/   /\     Date Last Modified: $Date: 2008/05/08 15:20:47 $
 // \   \  /  \    Date Created: Mon Aug 28 2006
 //  \___\/\___\
 //
@@ -62,7 +62,7 @@
 
 `timescale 1ns/1ps
 
-module usr_top #
+module ddr2_usr_top #
   (
    // Following parameters are for 72-bit RDIMM design (for ML561 Reference 
    // board design). Actual values may be different. Actual parameters values 
@@ -115,7 +115,7 @@ module usr_top #
                              i_rd_data_fifo_out_rise};
 
   // read data de-skew and ECC calculation
-  usr_rd #
+  ddr2_usr_rd #
     (
      .DQ_PER_DQS    (DQ_PER_DQS),
      .ECC_ENABLE    (ECC_ENABLE),
@@ -137,7 +137,7 @@ module usr_top #
        );
 
   // Command/Addres FIFO
-  usr_addr_fifo #
+  ddr2_usr_addr_fifo #
     (
      .BANK_WIDTH (BANK_WIDTH),
      .COL_WIDTH  (COL_WIDTH),
@@ -158,7 +158,7 @@ module usr_top #
        .app_af_afull (app_af_afull)
        );
 
-  usr_wr #
+  ddr2_usr_wr #
     (
      .BANK_WIDTH    (BANK_WIDTH),
      .COL_WIDTH     (COL_WIDTH),
