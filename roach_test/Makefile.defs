@@ -1,0 +1,28 @@
+################## Project Specific Entries #######################
+#
+# These values override other definitions
+#
+# Project name
+
+PROJECT=roach_test
+# module ID -> 16 bit hex
+MODULE_ID=0 
+REV_MAJOR=1
+REV_MINOR=0
+RCS_UPTODATE=0
+REV_RCS=0
+# Enter your source files here space seperated
+#      Note: no spaces in filenames
+SRC=./modules/toplevel/hdl/toplevel.v
+
+# Module name of toplevel entity
+TOPLEVEL_MODULE=toplevel
+# Logic Device Part Number
+PARTNUM=5vlx110t-ff1136-1
+
+# Verilog Include Directory
+VINC=include
+
+GEN_DIR=gen
+
+NETLIST_DIR=netlist
