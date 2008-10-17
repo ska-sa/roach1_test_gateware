@@ -2,8 +2,11 @@
 # Timing Constraints
 #
 
-#Net mgt_clk TNM_NET = mgt_clk;
-#TIMESPEC TS_mgt_clk = PERIOD mgt_clk 156.25 MHz;
+Net mgt_clk_0 TNM_NET = mgt_clk_0;
+TIMESPEC TS_mgt_clk_0 = PERIOD mgt_clk_0 156.25 MHz;
+
+Net mgt_clk_1 TNM_NET = mgt_clk_1;
+TIMESPEC TS_mgt_clk_1 = PERIOD mgt_clk_1 156.25 MHz;
 
 Net sys_clk TNM_NET = sys_clk;
 TIMESPEC TS_sys_clk = PERIOD sys_clk 100 MHz;
@@ -14,11 +17,11 @@ TIMESPEC TS_dly_n_clk = PERIOD dly_clk_n 200 MHz;
 Net epb_clk TNM_NET = epb_clk;
 TIMESPEC TS_epb_clk = PERIOD epb_clk 88 MHz;
 
-#Net adc0_clk_0 TNM_NET = adc0_clk_0;
-#TIMESPEC TS_adc0_clk_0 = PERIOD adc0_clk_0 150 MHz;
+Net adc0_clk_0 TNM_NET = adc0_clk_0;
+TIMESPEC TS_adc0_clk_0 = PERIOD adc0_clk_0 150 MHz;
 
-#Net adc1_clk_0 TNM_NET = adc1_clk_0;
-#TIMESPEC TS_adc1_clk_0 = PERIOD adc1_clk_0 150 MHz;
+Net adc1_clk_0 TNM_NET = adc1_clk_0;
+TIMESPEC TS_adc1_clk_0 = PERIOD adc1_clk_0 150 MHz;
 
 
 ###################ROACH constraints

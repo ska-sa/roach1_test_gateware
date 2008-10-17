@@ -75,14 +75,14 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/iadc_controller/hdl/iadc_controller.v \
     ./modules/iadc_controller/hdl/fifo_72.v \
     ./modules/iadc_infrastructure/hdl/iadc_infrastructure.v \
-    ./support/roach_app.v \
     ./include/parameters.v \
     ./include/mem_layout.v
 
 
-NETLIST_DIRS=./modules/xaui_phy/netlist\
-             ./modules/ten_gig_eth/netlist\
-             ./modules/iadc_controller/netlist
+NETLIST_DIRS=./modules/xaui_phy/netlist \
+             ./modules/ten_gig_eth/netlist \
+             ./modules/iadc_controller/netlist \
+	     ./modules/roach_app/netlist
 
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel

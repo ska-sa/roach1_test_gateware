@@ -2006,7 +2006,9 @@ module toplevel(
   );
 
   /*TODO: make buffer optional, pass through ADC signals */
-  iadc_controller iadc_controller_inst_1(
+  iadc_controller #(
+    .ENABLE_DATA_BUFFER(1)
+  ) iadc_controller_inst_1 (
     /* Wishbone Interface */
     .wb_clk_i (wb_clk),
     .wb_rst_i (sys_reset),
@@ -2196,7 +2198,7 @@ module toplevel(
     .irq (app_irq)
   );
   
-  // synthesis attribute box_type of roach_app is "black_box";
+  // synthesis attribute box_type of roach_app is "user_black_box";
 
 
 `else

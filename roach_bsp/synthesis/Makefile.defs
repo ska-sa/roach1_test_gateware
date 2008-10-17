@@ -16,7 +16,7 @@ XST_ARGS=run,\
 -iuc NO,\
 -keep_hierarchy No,\
 -rtlview Yes,\
--read_cores YES,\
+-read_cores No,\
 -cross_clock_analysis NO,\
 -hierarchy_separator /,\
 -bus_delimiter <>,\
