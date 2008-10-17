@@ -23,7 +23,9 @@ module dram_cpu_interface(
     dram_wr_be,
 
     dram_rd_data,
-    dram_rd_valid
+    dram_rd_valid,
+
+    dram_arb_grant
   );
   parameter CLK_FREQ = 0;
   parameter DQ_WIDTH = 72;
@@ -66,6 +68,11 @@ module dram_cpu_interface(
   input  [DQ_WIDTH*2 - 1:0] dram_rd_data;
   input  dram_rd_valid;
 
+  /* allow user dram interface to access
+   * memory if DRAM_BASIC_ARB is defined
+   */
+  output dram_arb_grant;
+
   wire   dram_reset_int;
 
   dram_reg_wb_attach #(
@@ -83,9 +90,12 @@ module dram_cpu_interface(
     .wb_dat_o (reg_wb_dat_o),
     .wb_ack_o (reg_wb_ack_o),
 
-    .phy_ready (dram_phy_rdy),
-    .cal_fail  (dram_cal_fail),
-    .dram_reset (dram_reset_int)
+    .phy_ready  (dram_phy_rdy),
+    .cal_fail   (dram_cal_fail),
+
+    .dram_reset (dram_reset_int),
+
+    .arb_grant  (dram_arb_grant)
   );
 
   /* stretch the reset pulse out */

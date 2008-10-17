@@ -22,6 +22,7 @@
 `define ENABLE_QDR1
 `define ENABLE_IADC_0
 `define ENABLE_IADC_1
+`define ENABLE_APPLICATION
 
 /************** XAUI/TENGBE Defines ***************/
 
@@ -53,9 +54,10 @@
 
 /***************** DRAM Defines ********************/
 
-`define DRAM_CLK_FREQ         266
+`define DRAM_CLK_FREQ         200
 `define DRAM_WIDTH_MULTIPLIER 1
 `define DRAM_HALF_BURST       0
+`define DRAM_ARB_BASIC
 
 /***************** QDR Defines ********************/
 

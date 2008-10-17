@@ -68,7 +68,7 @@ module iadc_infrastructure(
 
   /* Fabric Ports */
   output adc_clk_0, adc_clk_90;
-  output adc_sync;
+  output [3:0] adc_sync;
   output  [3:0] adc_outofrange;
   output [63:0] adc_data;
   input  adc_ddrb, adc_dcm_reset;
@@ -127,13 +127,32 @@ module iadc_infrastructure(
 
   /************ Sync Port *************/
 
+  wire adc_sync_int;
+
   IBUFDS #(
     .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
   ) ibufds_sync (
     .I(adc_sync_p), .IB(adc_sync_n),
-    .O(adc_sync)
+    .O(adc_sync_int)
   );
+
+  reg [3:0] adc_sync;
+
+  always @(posedge adc_clk_0) begin
+    adc_sync[0] <= adc_sync_int;
+  end
+  always @(posedge adc_clk_90) begin
+    adc_sync[1] <= adc_sync_int;
+  end
+  always @(negedge adc_clk_0) begin
+    adc_sync[2] <= adc_sync_int;
+  end
+  always @(negedge adc_clk_90) begin
+    adc_sync[3] <= adc_sync_int;
+  end
+
+
 
   /************ Out-of-range  *************/
 

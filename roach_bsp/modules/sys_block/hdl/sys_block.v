@@ -6,7 +6,8 @@ module sys_block(
     wb_adr_i, wb_dat_i, wb_dat_o,
     wb_ack_o,
     soft_reset,
-    user_irq
+    irq_n,
+    app_irq
   );
   parameter BOARD_ID     = 16'hdead;
   parameter REV_MAJOR    = 16'haaaa;
@@ -26,9 +27,12 @@ module sys_block(
   output wb_ack_o;
 
   output soft_reset;
-  output user_irq;
+  output irq_n;
+  input  [15:0] app_irq;
+/* TODO: implement interrupts in system block */
 
-  reg soft_reset, user_irq;
+
+  reg soft_reset, irq_n;
 
   reg wb_ack_o;
   reg  [3:0] wb_dat_o_sel;
@@ -41,14 +45,14 @@ module sys_block(
                     wb_dat_o_sel == `REG_RCS_UPTODATE ? {15'b0, RCS_UPTODATE} :
                     wb_dat_o_sel == `REG_SCRATCHPAD   ? scratch_pad           :
                     wb_dat_o_sel == `REG_SOFT_RESET   ? {15'b0, soft_reset}   :
-                    wb_dat_o_sel == `REG_USER_IRQ     ? {15'b0, user_irq}     :
+                    wb_dat_o_sel == `REG_USER_IRQ     ? {15'b0, irq_n}     :
                     16'b0;
 
   always @(posedge wb_clk_i) begin
     wb_ack_o <= 1'b0;
     if (wb_rst_i) begin
       soft_reset <= 1'b0;
-      user_irq   <= 1'b0;
+      irq_n      <= 1'b1;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o     <= 1'b1;
@@ -80,7 +84,7 @@ module sys_block(
           end
           `REG_USER_IRQ: begin
             if (wb_we_i && wb_sel_i[0]) begin
-              user_irq <= wb_dat_i[0];
+              irq_n <= wb_dat_i[0];
             end
           end
         endcase

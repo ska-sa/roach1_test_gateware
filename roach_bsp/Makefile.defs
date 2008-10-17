@@ -74,7 +74,10 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/multiport_qdr/hdl/multiport_qdr.v \
     ./modules/iadc_controller/hdl/iadc_controller.v \
     ./modules/iadc_controller/hdl/fifo_72.v \
-    ./modules/iadc_infrastructure/hdl/iadc_infrastructure.v
+    ./modules/iadc_infrastructure/hdl/iadc_infrastructure.v \
+    ./support/roach_app.v \
+    ./include/parameters.v \
+    ./include/mem_layout.v
 
 
 NETLIST_DIRS=./modules/xaui_phy/netlist\

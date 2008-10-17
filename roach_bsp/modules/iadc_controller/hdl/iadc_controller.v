@@ -10,7 +10,7 @@ module iadc_controller(
     wb_ack_o,
 
     /* ADC inputs */
-    adc_clk_0, adc_clk_90,
+    adc_clk_0,
     adc_data,  // [ch 1:3, ch1:2, ch1:1, ch1:0, ch 0:3, ch0:2, ch0:1, ch0:0]
     adc_sync,
     adc_outofrange,
@@ -22,6 +22,7 @@ module iadc_controller(
     adc_mode, //interleave mode config
     adc_ddrb, adc_dcm_reset
   );
+  parameter ENABLE_DATA_BUFFER = 0;
   /* Wishbone Interface */
   input  wb_clk_i, wb_rst_i;
   input  wb_cyc_i, wb_stb_i, wb_we_i;
@@ -32,9 +33,9 @@ module iadc_controller(
   output wb_ack_o;
 
   /* ADC inputs */
-  input adc_clk_0, adc_clk_90;
+  input adc_clk_0;
   input [63:0] adc_data;
-  input adc_sync;
+  input  [3:0] adc_sync;
   input  [3:0] adc_outofrange;
 
   /* ADC config bits */
@@ -264,27 +265,13 @@ module iadc_controller(
 
   /***** Register Data *****/
 
-  reg [3:0] adc_sync_reg;
-
-  always @(posedge adc_clk_0) begin
-    adc_sync_reg[0] <= adc_sync;
-  end
-  always @(posedge adc_clk_90) begin
-    adc_sync_reg[1] <= adc_sync;
-  end
-  always @(negedge adc_clk_0) begin
-    adc_sync_reg[2] <= adc_sync;
-  end
-  always @(negedge adc_clk_90) begin
-    adc_sync_reg[3] <= adc_sync;
-  end
 
   reg [71:0] fifo_wr_data;
 
   reg fifo_enable_reg;
 
   always @(posedge adc_clk_0) begin
-    fifo_wr_data <= {adc_sync_reg, adc_outofrange, adc_data};
+    fifo_wr_data <= {adc_sync, adc_outofrange, adc_data};
     //Cross [badly] over to adc_clk_0 domain
     fifo_enable_reg <= fifo_enable;
   end
@@ -304,6 +291,8 @@ module iadc_controller(
   wire fifo_almost_empty, fifo_almost_full, fifo_empty, fifo_full;
   assign fifo_status = {fifo_full, fifo_almost_full, fifo_almost_empty, fifo_empty};
 
+generate if (ENABLE_DATA_BUFFER) begin: fifo_gen
+
   fifo_72 fifo_72_inst(
     .din(fifo_wr_data),
     .wr_clk(adc_clk_0),
@@ -319,5 +308,7 @@ module iadc_controller(
     .empty(fifo_empty), .full(fifo_full)
   );
   //synthesis attribute box_type fifo_72_inst "black_box"
+
+end endgenerate
 
 endmodule

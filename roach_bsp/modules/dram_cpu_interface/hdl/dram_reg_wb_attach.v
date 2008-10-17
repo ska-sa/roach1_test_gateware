@@ -8,7 +8,8 @@ module dram_reg_wb_attach(
     wb_ack_o,
     phy_ready,
     cal_fail,
-    dram_reset
+    dram_reset,
+    arb_grant
   );
   parameter CLK_FREQ = 0;
   input  wb_clk_i;
@@ -25,8 +26,10 @@ module dram_reg_wb_attach(
   input  phy_ready;
   input  cal_fail;
   output dram_reset;
+  output arb_grant;
 
   reg dram_reset;
+  reg arb_grant;
 
   reg wb_ack_o;
   reg [2:0] wb_dat_o_src;
@@ -34,13 +37,16 @@ module dram_reg_wb_attach(
   assign wb_dat_o = wb_dat_o_src == `REG_DRAM_PHY_READY ? {8'h0, 3'b0, cal_fail, 3'b0, phy_ready} :
                     wb_dat_o_src == `REG_DRAM_RESET     ? 16'b0              :
                     wb_dat_o_src == `REG_DRAM_FREQ      ? CLK_FREQ :
+                    wb_dat_o_src == `REG_DRAM_GRANT     ? {15'b0, arb_grant} :
                     16'd0;
 
   always @(posedge wb_clk_i) begin
     // strobes
-    wb_ack_o <= 1'b0;
+    wb_ack_o   <= 1'b0;
     dram_reset <= 1'b0;
+
     if (wb_rst_i) begin
+      arb_grant <= 1'b0;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o <= 1'b1;
@@ -57,6 +63,11 @@ module dram_reg_wb_attach(
             end
           end
           `REG_DRAM_FREQ: begin
+          end
+          `REG_DRAM_GRANT: begin
+            if (wb_we_i & wb_sel_i[0]) begin
+              arb_grant <= wb_dat_i[0];
+            end
           end
         endcase
       end

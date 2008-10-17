@@ -361,8 +361,8 @@ module transceiver(
     assign  loopback1_i                 =   LOOPBACK1_IN;
 
     //Drive RXELECIDLERESET with elec idle reset enabled during normal operation when RXELECIDLE goes high
-    assign  rxelecidlereset0_i          =  1'b0;// (rxelecidle0_i && resetdone0_i) && !serialloopback0_i;
-    assign  rxelecidlereset1_i          =  1'b0;// (rxelecidle1_i && resetdone1_i) && !serialloopback1_i;
+    assign  rxelecidlereset0_i          =  (rxelecidle0_i && resetdone0_i) && !serialloopback0_i;
+    assign  rxelecidlereset1_i          =  (rxelecidle1_i && resetdone1_i) && !serialloopback1_i;
     assign  rxenelecidleresetb_i        =   !(rxelecidlereset0_i||rxelecidlereset1_i);  
     assign  serialloopback0_i           =   !loopback0_i[0] && loopback0_i[1] && !loopback0_i[2];
     assign  serialloopback1_i           =   !loopback1_i[0] && loopback1_i[1] && !loopback1_i[2];

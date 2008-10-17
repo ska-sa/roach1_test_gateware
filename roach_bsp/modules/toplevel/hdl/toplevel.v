@@ -171,6 +171,8 @@ module toplevel(
   /****************** Glocal Signals **********************/
 
   wire sys_clk, dly_clk, epb_clk, mgt_clk_0, mgt_clk_1, aux_clk_0, aux_clk_1;
+  wire dram_clk;
+  wire qdr_clk_0,  qdr_clk_1;  
   wire adc0_clk_0, adc1_clk_0;
 
   // Ensure that the above nets are not synthesized away
@@ -187,6 +189,10 @@ module toplevel(
   wire soft_reset; 
   /* Clock used for wishbone modules */
   wire wb_clk = sys_clk;
+
+  /* L-E-D-s signals */
+  wire [15:0] leddies;
+  wire [15:0] app_irq;
 
   /**************** Global Infrastructure ****************/
 
@@ -510,7 +516,8 @@ module toplevel(
     .wb_dat_o   (wb_dat_i[16*(SYSBLOCK_SLI + 1) - 1: 16*SYSBLOCK_SLI]),
     .wb_ack_o   (wb_ack_i[SYSBLOCK_SLI]),
     .soft_reset (soft_reset),
-    .user_irq   (ppc_irq_n)
+    .irq_n      (ppc_irq_n),
+    .app_irq    (app_irq)
   );
 
   /************* XAUI Infrastructure ***************/
@@ -1105,6 +1112,8 @@ module toplevel(
 
   /**** DRAM "Fabric" Interface signals ****/
 
+  wire dram_rdy;
+
   wire dram_cmd_valid;
   wire dram_cmd_ack;
   wire dram_cmd_rnw;
@@ -1119,8 +1128,10 @@ module toplevel(
   wire [31:0] dram_rd_tag;
 
 `ifdef ENABLE_DRAM
-  wire dram_clk_0, dram_clk_90, dram_clk_div;
+  wire dram_clk0, dram_clk90, dram_clk_div;
   wire dram_rst_0, dram_rst_90, dram_rst_div;
+
+  assign dram_clk = dram_clk0;
 
   wire dram_usr_rst;
 
@@ -1129,8 +1140,8 @@ module toplevel(
   ) dram_infrastructure_inst (
     .reset        (sys_reset | ~idelay_ready),
     .clk_in       (dly_clk),
-    .dram_clk_0   (dram_clk_0),
-    .dram_clk_90  (dram_clk_90),
+    .dram_clk_0   (dram_clk0),
+    .dram_clk_90  (dram_clk90),
     .dram_clk_div (dram_clk_div),
     .dram_rst_0   (dram_rst_0),
     .dram_rst_90  (dram_rst_90),
@@ -1154,12 +1165,14 @@ module toplevel(
   /* DRAM Phy signals */
   wire dram_phy_rdy;
   wire dram_cal_fail;
+
+  assign dram_rdy = dram_phy_rdy;
   
   dram_controller #(
     .CLK_FREQ      (`DRAM_CLK_FREQ)
   ) dram_controller_inst (
-    .clk0    (dram_clk_0),
-    .clk90   (dram_clk_90),
+    .clk0    (dram_clk0),
+    .clk90   (dram_clk90),
     .clkdiv0 (dram_clk_div),
     .rst0    (dram_rst_0),
     .rst90   (dram_rst_90),
@@ -1233,42 +1246,48 @@ module toplevel(
     .mem_wb_dat_o (wb_dat_i[16*(DRAM_SLI + 1) - 1: 16*DRAM_SLI]),
     .mem_wb_ack_o (wb_ack_i[DRAM_SLI]),
     //dram interface
-    .dram_clk0  (dram_clk_0),
-    .dram_clk90 (dram_clk_90),
+    .dram_clk0  (dram_clk0),
+    .dram_clk90 (dram_clk90),
     .dram_rst_o (dram_usr_rst),
 
     .dram_phy_rdy  (dram_phy_ready),
     .dram_cal_fail (dram_cal_fail),
 
-    //dram application interface
-    /*
     .dram_cmd_valid (dram_cmd_valid_cpu),
     .dram_cmd_rnw   (dram_cmd_rnw_cpu),
     .dram_cmd_addr  (dram_cmd_addr_cpu),
     .dram_wr_data   (dram_wr_data_cpu),
     .dram_wr_be     (dram_wr_be_cpu),
     .dram_rd_data   (dram_rd_data_cpu),
-    .dram_rd_valid  (dram_rd_valid_cpu)
-    */
-    .dram_cmd_valid (dram_cmd_valid_master),
-    .dram_cmd_rnw   (dram_cmd_rnw_master),
-    .dram_cmd_addr  (dram_cmd_addr_master),
-    .dram_wr_data   (dram_wr_data_master),
-    .dram_wr_be     (dram_wr_be_master),
-    .dram_rd_data   (dram_rd_data_master),
-    .dram_rd_valid  (dram_rd_valid_master)
+    .dram_rd_valid  (dram_rd_valid_cpu),
+
+    .dram_arb_grant (dram_arb_grant)  /* Basic Arbitration Signal */
   );
-/*
+
+`ifdef DRAM_ARB_BASIC
+  assign dram_cmd_addr_master  = dram_arb_grant ? dram_cmd_addr  : dram_cmd_addr_cpu;
+  assign dram_cmd_rnw_master   = dram_arb_grant ? dram_cmd_rnw   : dram_cmd_rnw_cpu;
+  assign dram_cmd_valid_master = dram_arb_grant ? dram_cmd_valid : dram_cmd_valid_cpu;
+  assign dram_wr_data_master   = dram_arb_grant ? dram_wr_data   : dram_wr_data_cpu;
+  assign dram_wr_be_master     = dram_arb_grant ? dram_wr_be     : dram_wr_be_cpu;
+
+  assign dram_rd_valid         = dram_arb_grant ? dram_rd_valid_master : 1'b0;
+  assign dram_rd_data          = dram_rd_data_master;
+
+  assign dram_rd_valid_cpu     = dram_arb_grant ? 1'b0 : dram_rd_valid_master;
+  assign dram_rd_data_cpu      = dram_rd_data_master;
+
+`else 
   multiport_dram #(
     .C_NUM_PORTS    (2),
     .C_PORTS_WIDTH  (1),
     .C_WIDE_DATA    (`DRAM_WIDTH_MULTIPLIER == 2),
     .C_HALF_BURST   (`DRAM_HALF_BURST),
-    .C_BURST_WINDOW (2),
-    .C_BWIND_WIDTH  (1)
+    .C_BURST_WINDOW (160),
+    .C_BWIND_WIDTH  (8)
   ) multiport_dram_inst (
    // System inputs
-   .Clk (dram_clk_0),
+   .Clk (dram_clk0),
    .Rst (dram_rst_0),
 
    // Memory interface in 0 (non-shared)
@@ -1292,7 +1311,7 @@ module toplevel(
    .In1_Cmd_Ack     (), //ack unsed
    .In1_Rd_Dout     (dram_rd_data_cpu),
    .In1_Rd_Tag      (), //tag unused
-   .In1_Rd_Ack      (dram_rd_valid_cpu),
+   .In1_Rd_Ack      (1'b1),
    .In1_Rd_Valid    (dram_rd_valid_cpu),
    .In1_Wr_Din      (dram_wr_data_cpu),
    .In1_Wr_BE       (dram_wr_be_cpu),
@@ -1303,14 +1322,15 @@ module toplevel(
    .Out_Cmd_Valid   (dram_cmd_valid_master),
    .Out_Cmd_Tag     (dram_cmd_tag_master),
    .Out_Cmd_Ack     (dram_cmd_ack_master),
-   .Out_Rd_Dout     (dram_wr_data_master),
+   .Out_Rd_Dout     (dram_rd_data_master),
    .Out_Rd_Tag      (dram_rd_tag_master),
    .Out_Rd_Ack      (dram_rd_ack_master),
    .Out_Rd_Valid    (dram_rd_valid_master),
    .Out_Wr_Din      (dram_wr_data_master),
    .Out_Wr_BE       (dram_wr_be_master)
- );
-*/
+  );
+`endif
+
 `else
   /* Tie off the external signals */
   assign dram_dq = {72{1'bz}};
@@ -1356,31 +1376,48 @@ module toplevel(
   assign wb_ack_i[DRAM_SLI] = 1'b0;
 `endif
 
-  /***************** QDR0 ************************/
-
-  wire [31:0] qdr0_cmd_addr;
-  wire qdr0_cmd_ack = 1'b1; //should implement this...
-  wire qdr0_rd_strb;
-  wire qdr0_rd_valid;
-  wire [36*`QDR0_WIDTH_MULTIPLIER - 1:0] qdr0_rd_data;
-  wire qdr0_wr_strb;
-  wire [36*`QDR0_WIDTH_MULTIPLIER - 1:0] qdr0_wr_data;
-  wire [ 4*`QDR0_WIDTH_MULTIPLIER - 1:0] qdr0_wr_be;
 
   /**** QDR 0 & 1 "Fabric" Interface signals ****/
 
+  wire qdr0_rdy;
+  wire qdr0_cmd_valid;
+  wire qdr0_cmd_ack;
+  wire qdr0_cmd_rnw;
+  wire [31:0] qdr0_cmd_addr;
+  wire [36*`QDR0_WIDTH_MULTIPLIER - 1:0] qdr0_wr_data;
+  wire [ 4*`QDR0_WIDTH_MULTIPLIER - 1:0] qdr0_wr_be;
+  wire qdr0_rd_valid;
+  wire qdr0_rd_ack;
+  wire [36*`QDR0_WIDTH_MULTIPLIER - 1:0] qdr0_rd_data;
+
+  wire qdr1_rdy;
+  wire qdr1_cmd_valid;
+  wire qdr1_cmd_ack;
+  wire qdr1_cmd_rnw;
+  wire [31:0] qdr1_cmd_addr;
+  wire [36*`QDR1_WIDTH_MULTIPLIER - 1:0] qdr1_wr_data;
+  wire [ 4*`QDR1_WIDTH_MULTIPLIER - 1:0] qdr1_wr_be;
+  wire qdr1_rd_valid;
+  wire qdr1_rd_ack;
+  wire [36*`QDR1_WIDTH_MULTIPLIER - 1:0] qdr1_rd_data;
+
+
 `ifdef ENABLE_QDR_INFRASTRUCTURE
-  wire qdr_clk_0, qdr_clk_180, qdr_clk_270;
+  /***************** QDR Common Infrastructure *********************/
+  wire qdr_clk0, qdr_clk180, qdr_clk270;
   wire qdr_pll_lock;
+
+  assign qdr_clk_0 = qdr_clk0;
+  assign qdr_clk_1 = qdr_clk0;
 
   qdr_infrastructure #(
     .CLK_FREQ(`QDR_CLK_FREQ)
   ) qdr_infrastructure_inst (
     .clk_in (dly_clk),
     .reset  (sys_reset),
-    .qdr_clk_0   (qdr_clk_0),
-    .qdr_clk_180 (qdr_clk_180),
-    .qdr_clk_270 (qdr_clk_270),
+    .qdr_clk_0   (qdr_clk0),
+    .qdr_clk_180 (qdr_clk180),
+    .qdr_clk_270 (qdr_clk270),
     .pll_lock    (qdr_pll_lock)
   );
 `endif
@@ -1389,6 +1426,7 @@ module toplevel(
   wire qdr0_usr_reset;
   wire qdr0_phy_rdy;
   wire qdr0_cal_fail;
+  assign qdr0_rdy = qdr0_phy_rdy;
 
   wire [31:0] qdr0_cmd_addr_master;
   wire qdr0_rd_strb_master;
@@ -1407,9 +1445,9 @@ module toplevel(
   ) qdr_controller_0 (
     .reset (sys_reset || qdr0_usr_reset || !qdr_pll_lock || !idelay_ready),
 
-    .clk0    (qdr_clk_0),
-    .clk180  (qdr_clk_180),
-    .clk270  (qdr_clk_270),
+    .clk0    (qdr_clk0),
+    .clk180  (qdr_clk180),
+    .clk270  (qdr_clk270),
     .div_clk (sys_clk),
 
     .qdr_d         (qdr0_d),
@@ -1471,7 +1509,7 @@ module toplevel(
     .mem_wb_ack_o (wb_ack_i[QDR0_SLI]),
     //qdr interface
 
-    .qdr_clk_i (qdr_clk_0),
+    .qdr_clk_i (qdr_clk0),
     .qdr_rst_o (qdr0_usr_reset),
 
     .qdr_phy_rdy  (qdr0_phy_rdy),
@@ -1490,16 +1528,16 @@ module toplevel(
     .C_WIDE_DATA    (`QDR0_WIDTH_MULTIPLIER == 2)
   ) multiport_qdr_0 (
    // System inputs
-   .clk (qdr_clk_0),
+   .clk (qdr_clk0),
    .rst (qdr0_usr_reset | reset),
 
    // Memory interface in 0 (non-shared)
    .in0_cmd_addr (qdr0_cmd_addr),
    .in0_cmd_ack  (qdr0_cmd_ack),
-   .in0_wr_strb  (qdr0_wr_strb),
+   .in0_wr_strb  (qdr0_cmd_valid && !qdr0_cmd_rnw),
    .in0_wr_data  (qdr0_wr_data),
    .in0_wr_be    (qdr0_wr_be),
-   .in0_rd_strb  (qdr0_rd_strb),
+   .in0_rd_strb  (qdr0_cmd_valid &&  qdr0_cmd_rnw),
    .in0_rd_dvld  (qdr0_rd_valid),
    .in0_rd_data  (qdr0_rd_data),
 
@@ -1568,9 +1606,9 @@ module toplevel(
   ) qdr_controller_1 (
     .reset (sys_reset || qdr1_usr_reset || !qdr_pll_lock || !idelay_ready),
 
-    .clk0    (qdr_clk_0),
-    .clk180  (qdr_clk_180),
-    .clk270  (qdr_clk_270),
+    .clk0    (qdr_clk0),
+    .clk180  (qdr_clk180),
+    .clk270  (qdr_clk270),
     .div_clk (sys_clk),
 
     .qdr_d         (qdr1_d),
@@ -1598,7 +1636,6 @@ module toplevel(
     .usr_addr    (qdr1_cmd_addr_master)
   );
 
-  wire [31:0] qdr1_cmd_addr_cpu;
   wire qdr1_cmd_ack_cpu; //unused
   wire qdr1_rd_strb_cpu;
   wire qdr1_rd_valid_cpu;
@@ -1633,7 +1670,7 @@ module toplevel(
     .mem_wb_ack_o (wb_ack_i[QDR1_SLI]),
     //qdr interface
 
-    .qdr_clk_i (qdr_clk_0),
+    .qdr_clk_i (qdr_clk0),
     .qdr_rst_o (qdr1_usr_reset),
 
     .qdr_phy_rdy  (qdr1_phy_rdy),
@@ -1652,16 +1689,16 @@ module toplevel(
     .C_WIDE_DATA    (`QDR1_WIDTH_MULTIPLIER == 2)
   ) multiport_qdr_1 (
    // System inputs
-   .clk (qdr_clk_0),
+   .clk (qdr_clk0),
    .rst (reset | qdr1_usr_reset),
 
    // Memory interface in 0 (non-shared)
    .in0_cmd_addr (qdr1_cmd_addr),
    .in0_cmd_ack  (qdr1_cmd_ack),
-   .in0_wr_strb  (qdr1_wr_strb),
+   .in0_wr_strb  (qdr1_cmd_valid && !qdr1_cmd_rnw),
    .in0_wr_data  (qdr1_wr_data),
    .in0_wr_be    (qdr1_wr_be),
-   .in0_rd_strb  (qdr1_rd_strb),
+   .in0_rd_strb  (qdr1_cmd_valid &&  qdr1_cmd_rnw),
    .in0_rd_dvld  (qdr1_rd_valid),
    .in0_rd_data  (qdr1_rd_data),
 
@@ -1707,6 +1744,11 @@ module toplevel(
 `endif
 
 /********************* IADC0 *********************/
+
+  /* ADC0 Fabric interface */
+  wire [63:0] adc0_data;
+  wire  [3:0] adc0_sync;
+  wire  [3:0] adc0_outofrange;
 
 `ifdef ENABLE_IADC_0
   /****** ADC external signals ******/
@@ -1764,9 +1806,6 @@ module toplevel(
 
   /****** ADC internal signals ******/
   wire adc0_clk_90;
-  wire adc0_sync;
-  wire  [3:0] adc0_outofrange;
-  wire [63:0] adc0_data;
   wire adc0_ddrb;
   wire adc0_dcm_reset;
 
@@ -1817,7 +1856,10 @@ module toplevel(
     .adc_mode              (adc0_mode_int)
   );
 
-  iadc_controller iadc_controller_inst_0(
+  /*TODO: make buffer optional, pass through ADC signals */
+  iadc_controller #(
+    .ENABLE_DATA_BUFFER(1)
+  ) iadc_controller_inst_0 (
     /* Wishbone Interface */
     .wb_clk_i (wb_clk),
     .wb_rst_i (sys_reset),
@@ -1831,7 +1873,6 @@ module toplevel(
     .wb_ack_o (wb_ack_i[ADC0_SLI]),
     /* ADC inputs */
     .adc_clk_0      (adc0_clk_0),
-    .adc_clk_90     (adc0_clk_90),
     .adc_data       (adc0_data),
     .adc_sync       (adc0_sync),
     .adc_outofrange (adc0_outofrange),
@@ -1851,6 +1892,13 @@ module toplevel(
   assign wb_dat_i[16*(ADC0_SLI + 1) - 1: 16*ADC0_SLI] = 16'b0;
   assign wb_ack_i[ADC0_SLI] = 1'b0;
 `endif
+
+/********************* IADC1 *********************/
+
+  /* ADC1 Fabric interface */
+  wire [63:0] adc1_data;
+  wire  [3:0] adc1_sync;
+  wire  [3:0] adc1_outofrange;
 
 
 `ifdef ENABLE_IADC_1
@@ -1909,9 +1957,6 @@ module toplevel(
 
   /****** ADC internal signals ******/
   wire adc1_clk_90;
-  wire adc1_sync;
-  wire  [3:0] adc1_outofrange;
-  wire [63:0] adc1_data;
   wire adc1_ddrb;
   wire adc1_dcm_reset;
 
@@ -1960,6 +2005,7 @@ module toplevel(
     .adc_mode              (adc1_mode_int)
   );
 
+  /*TODO: make buffer optional, pass through ADC signals */
   iadc_controller iadc_controller_inst_1(
     /* Wishbone Interface */
     .wb_clk_i (wb_clk),
@@ -1974,7 +2020,6 @@ module toplevel(
     .wb_ack_o (wb_ack_i[ADC1_SLI]),
     /* ADC inputs */
     .adc_clk_0      (adc1_clk_0),
-    .adc_clk_90     (adc1_clk_90),
     .adc_data       (adc1_data),
     .adc_sync       (adc1_sync),
     .adc_outofrange (adc1_outofrange),
@@ -1998,27 +2043,6 @@ module toplevel(
 
 `endif
 
-
-  /********************* Incomplete *****************/
-  /* Other Slave assignments */
-
-
-  assign wb_dat_i[16*(BLOCKRAM_SLI + 1) - 1: 16*BLOCKRAM_SLI] = 16'b0;
-  assign wb_ack_i[BLOCKRAM_SLI] = 1'b0;
-
-  assign wb_dat_i[16*(APP_SLI + 1) - 1: 16*APP_SLI] = 16'b0;
-  assign wb_ack_i[APP_SLI] = 1'b0;
-
-  assign wb_dat_i[16*(RSRVD1_SLI + 1) - 1: 16*RSRVD1_SLI] = 16'b0;
-  assign wb_ack_i[RSRVD1_SLI] = 1'b0;
-
-  assign wb_dat_i[16*(RSRVD0_SLI + 1) - 1: 16*RSRVD0_SLI] = 16'b0;
-  assign wb_ack_i[RSRVD0_SLI] = 1'b0;
-
-  assign wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI] = 16'b0;
-  assign wb_ack_i[TESTING_SLI] = 1'b0;
-
-
   /******************* GPIO ***********************/
 
   /******** Single Ended **********/
@@ -2039,6 +2063,208 @@ module toplevel(
   assign se_gpio_b[6] = 1'b0;
   assign se_gpio_b[7] = dram_rd_valid_master;
 
+
+/******************* ROACH Application *****************/
+
+`ifdef ENABLE_APPLICATION
+
+  roach_app #(
+    .DRAM_WIDTH_MULTIPLIER(`DRAM_WIDTH_MULTIPLIER),
+    .QDR0_WIDTH_MULTIPLIER(`QDR0_WIDTH_MULTIPLIER),
+    .QDR1_WIDTH_MULTIPLIER(`QDR1_WIDTH_MULTIPLIER)
+  ) roach_app_inst (
+    .sys_reset(sys_reset),
+
+    /* input clocks */
+    .sys_clk  (sys_clk),
+    .dram_clk (dram_clk),
+    .qdr0_clk (qdr_clk_0),
+    .qdr1_clk (qdr_clk_0),
+    .adc0_clk (adc0_clk),
+    .adc1_clk (adc1_clk),
+    .tge_clk  (mgt_clk_0),
+    .aux_clk  ({aux_clk_1, aux_clk_0}),
+    .aux_sync ({aux_clk_1, aux_clk_0}),
+
+    /* Wishbone Interface */
+    .wb_clk_i (wb_clk),
+    .wb_rst_i (sys_reset),
+    .wb_cyc_i (wb_cyc_o[APP_SLI]),
+    .wb_stb_i (wb_stb_o[APP_SLI]),
+    .wb_sel_i (wb_sel_o),
+    .wb_we_i  (wb_we_o),
+    .wb_adr_i (wb_adr_o),
+    .wb_dat_i (wb_dat_o),
+    .wb_dat_o (wb_dat_i[16*(APP_SLI + 1) - 1: 16*APP_SLI]),
+    .wb_ack_o (wb_ack_i[APP_SLI]),
+
+    /* 4 x TGE interfaces */
+    .tge_usr_clk         ({        tge_usr_clk[3],         tge_usr_clk[2],         tge_usr_clk[1],         tge_usr_clk[0]}),
+    .tge_usr_rst         ({        tge_usr_rst[3],         tge_usr_rst[2],         tge_usr_rst[1],         tge_usr_rst[0]}),
+    .tge_tx_valid        ({       tge_tx_valid[3],        tge_tx_valid[2],        tge_tx_valid[1],        tge_tx_valid[0]}),
+    .tge_tx_ack          ({         tge_tx_ack[3],          tge_tx_ack[2],          tge_tx_ack[1],          tge_tx_ack[0]}),
+    .tge_tx_end_of_frame ({tge_tx_end_of_frame[3], tge_tx_end_of_frame[2], tge_tx_end_of_frame[1], tge_tx_end_of_frame[0]}),
+    .tge_tx_discard      ({     tge_tx_discard[3],      tge_tx_discard[2],      tge_tx_discard[1],      tge_tx_discard[0]}),
+    .tge_tx_data         ({        tge_tx_data[3],         tge_tx_data[2],         tge_tx_data[1],         tge_tx_data[0]}),
+    .tge_tx_dest_ip      ({     tge_tx_dest_ip[3],      tge_tx_dest_ip[2],      tge_tx_dest_ip[1],      tge_tx_dest_ip[0]}),
+    .tge_tx_dest_port    ({   tge_tx_dest_port[3],    tge_tx_dest_port[2],    tge_tx_dest_port[1],    tge_tx_dest_port[0]}),
+    .tge_rx_valid        ({       tge_rx_valid[3],        tge_rx_valid[2],        tge_rx_valid[1],        tge_rx_valid[0]}),
+    .tge_rx_ack          ({         tge_rx_ack[3],          tge_rx_ack[2],          tge_rx_ack[1],          tge_rx_ack[0]}),
+    .tge_rx_data         ({        tge_rx_data[3],         tge_rx_data[2],         tge_rx_data[1],         tge_rx_data[0]}),
+    .tge_rx_end_of_frame ({tge_rx_end_of_frame[3], tge_rx_end_of_frame[2], tge_rx_end_of_frame[1], tge_rx_end_of_frame[0]}),
+    .tge_rx_size         ({        tge_rx_size[3],         tge_rx_size[2],         tge_rx_size[1],         tge_rx_size[0]}),
+    .tge_rx_source_ip    ({   tge_rx_source_ip[3],    tge_rx_source_ip[2],    tge_rx_source_ip[1],    tge_rx_source_ip[0]}),
+    .tge_rx_source_port  ({ tge_rx_source_port[3],  tge_rx_source_port[2],  tge_rx_source_port[1],  tge_rx_source_port[0]}),
+    .tge_led_up          ({         tge_led_up[3],          tge_led_up[2],          tge_led_up[1],          tge_led_up[0]}),
+    .tge_led_rx          ({         tge_led_rx[3],          tge_led_rx[2],          tge_led_rx[1],          tge_led_rx[0]}),
+    .tge_led_tx          ({         tge_led_tx[3],          tge_led_tx[2],          tge_led_tx[1],          tge_led_tx[0]}),
+
+    /* DRAM Interfaces */
+    .dram_usrclk (), /* TODO: implement fifo to cross between DDR2 clk and user clk */
+
+    .dram_rdy       (dram_rdy),
+    .dram_cmd_valid (dram_cmd_valid),
+    .dram_cmd_ack   (dram_cmd_ack),
+    .dram_cmd_rnw   (dram_cmd_rnw),
+    .dram_cmd_addr  (dram_cmd_addr),
+    .dram_wr_data   (dram_wr_data),
+    .dram_wr_be     (dram_wr_be),
+    .dram_rd_valid  (dram_rd_valid),
+    .dram_rd_ack    (dram_rd_ack),
+    .dram_rd_data   (dram_rd_data),
+
+    /* QDR0 Interfaces */
+    .qdr0_usrclk(), /* TODO: implement qdr clock infrastucture at usr_clk freq */
+                    /* TODO: implement alternate qdr implementation with fifo
+                     * to cross between QDR clk and user clk*/
+
+    .qdr0_rdy       (qdr0_rdy),
+    .qdr0_cmd_valid (qdr0_cmd_valid),
+    .qdr0_cmd_ack   (qdr0_cmd_ack),
+    .qdr0_cmd_rnw   (qdr0_cmd_rnw),
+    .qdr0_cmd_addr  (qdr0_cmd_addr),
+    .qdr0_wr_data   (qdr0_wr_data),
+    .qdr0_wr_be     (qdr0_wr_be),
+    .qdr0_rd_valid  (qdr0_rd_valid),
+    .qdr0_rd_ack    (qdr0_rd_ack),
+    .qdr0_rd_data   (qdr0_rd_data),
+
+    /* QDR1 Interfaces */
+    .qdr1_usrclk(), /* TODO: implement qdr clock infrastucture at usr_clk freq */
+                    /* TODO: implement alternate qdr implementation with fifo
+                     * to cross between QDR clk and user clk*/
+
+    .qdr1_rdy       (qdr1_rdy),
+    .qdr1_cmd_valid (qdr1_cmd_valid),
+    .qdr1_cmd_ack   (qdr1_cmd_ack),
+    .qdr1_cmd_rnw   (qdr1_cmd_rnw),
+    .qdr1_cmd_addr  (qdr1_cmd_addr),
+    .qdr1_wr_data   (qdr1_wr_data),
+    .qdr1_wr_be     (qdr1_wr_be),
+    .qdr1_rd_valid  (qdr1_rd_valid),
+    .qdr1_rd_ack    (qdr1_rd_ack),
+    .qdr1_rd_data   (qdr1_rd_data),
+
+    /* ADC0 */
+    .adc0_data       (adc0_data),
+    .adc0_sync       (adc0_sync),
+    .adc0_outofrange (adc0_outofrange),
+
+    /* ADC1 */
+    .adc1_data       (adc1_data),
+    .adc1_sync       (adc1_sync),
+    .adc1_outofrange (adc1_outofrange),
+
+    /* GPIO */
+    .gpio_a    (),
+    .gpio_a_oe (),
+    .gpio_b    (),
+    .gpio_b_oe (), /* TODO: give se gpio to application */
+
+    /* Diff GPIO */
+    .diff_gpio_a_n     (diff_gpio_a_n),
+    .diff_gpio_a_p     (diff_gpio_a_p),
+    .diff_gpio_a_clk_n (diff_gpio_a_clk_n), 
+    .diff_gpio_a_clk_p (diff_gpio_a_clk_p), 
+    .diff_gpio_b_n     (diff_gpio_b_n),
+    .diff_gpio_b_p     (diff_gpio_b_p),
+    .diff_gpio_b_clk_n (diff_gpio_b_clk_n), 
+    .diff_gpio_b_clk_p (diff_gpio_b_clk_p), 
+
+    /* Misc */
+    .led (leddies),
+    .irq (app_irq)
+  );
+  
+  // synthesis attribute box_type of roach_app is "black_box";
+
+
+`else
+  /* tie off various signals */
+  assign wb_dat_i[16*(APP_SLI + 1) - 1: 16*APP_SLI] = 16'b0;
+  assign wb_ack_i[APP_SLI] = 1'b0;
+
+  assign tge_usr_clk[0]         = 1'b0;
+  assign tge_usr_rst[0]         = 1'b0;
+  assign tge_tx_valid[0]        = 1'b0;
+  assign tge_tx_end_of_frame[0] = 1'b0;
+  assign tge_tx_discard[0]      = 1'b0;
+  assign tge_tx_data[0]         = 64'b0; 
+  assign tge_tx_dest_ip[0]      = 32'b0;
+  assign tge_tx_dest_port[0]    = 16'b0;
+  assign tge_rx_ack[0]          = 1'b0;
+
+  assign tge_usr_clk[1]         = 1'b0;
+  assign tge_usr_rst[1]         = 1'b0;
+  assign tge_tx_valid[1]        = 1'b0;
+  assign tge_tx_end_of_frame[1] = 1'b0;
+  assign tge_tx_discard[1]      = 1'b0;
+  assign tge_tx_data[1]         = 64'b0; 
+  assign tge_tx_dest_ip[1]      = 32'b0;
+  assign tge_tx_dest_port[1]    = 16'b0;
+  assign tge_rx_ack[1]          = 1'b0;
+
+  assign tge_usr_clk[2]         = 1'b0;
+  assign tge_usr_rst[2]         = 1'b0;
+  assign tge_tx_valid[2]        = 1'b0;
+  assign tge_tx_end_of_frame[2] = 1'b0;
+  assign tge_tx_discard[2]      = 1'b0;
+  assign tge_tx_data[2]         = 64'b0; 
+  assign tge_tx_dest_ip[2]      = 32'b0;
+  assign tge_tx_dest_port[2]    = 16'b0;
+  assign tge_rx_ack[2]          = 1'b0;
+
+  assign tge_usr_clk[3]         = 1'b0;
+  assign tge_usr_rst[3]         = 1'b0;
+  assign tge_tx_valid[3]        = 1'b0;
+  assign tge_tx_end_of_frame[3] = 1'b0;
+  assign tge_tx_discard[3]      = 1'b0;
+  assign tge_tx_data[3]         = 64'b0; 
+  assign tge_tx_dest_ip[3]      = 32'b0;
+  assign tge_tx_dest_port[3]    = 16'b0;
+  assign tge_rx_ack[3]          = 1'b0;
+
+  assign dram_cmd_valid = 1'b0;
+  assign dram_cmd_rnw   = 1'b0;
+  assign dram_cmd_addr  = 32'b0;
+  assign dram_cmd_tag   = 32'b0;
+  assign dram_wr_data   = {144*`DRAM_WIDTH_MULTIPLIER{1'b0}};
+  assign dram_wr_be     = { 18*`DRAM_WIDTH_MULTIPLIER{1'b0}};
+
+  assign qdr0_cmd_valid = 1'b0;
+  assign qdr0_cmd_rnw   = 1'b0;
+  assign qdr0_cmd_addr  = 32'b0;
+  assign qdr0_wr_data   = {36*`QDR0_WIDTH_MULTIPLIER{1'b0}};
+  assign qdr0_wr_be     = { 4*`QDR0_WIDTH_MULTIPLIER{1'b0}};
+  assign qdr0_rd_ack    = 1'b0;
+
+  assign qdr1_cmd_valid = 1'b0;
+  assign qdr1_cmd_rnw   = 1'b0;
+  assign qdr1_cmd_addr  = 32'b0;
+  assign qdr1_wr_data   = {36*`QDR1_WIDTH_MULTIPLIER{1'b0}};
+  assign qdr1_wr_be     = { 4*`QDR1_WIDTH_MULTIPLIER{1'b0}};
+  assign qdr1_rd_ack    = 1'b0;
+
   /******** Differential **********/
   assign diff_gpio_a_n     = {19{1'bz}};
   assign diff_gpio_a_p     = {19{1'bz}};
@@ -2049,26 +2275,28 @@ module toplevel(
   assign diff_gpio_b_clk_n = 1'bz;
   assign diff_gpio_b_clk_p = 1'bz;
 
+`endif
+
+
+/********************* Incomplete WB Slaves *******************/
+  /* Other Slave assignments */
+
+
+  assign wb_dat_i[16*(BLOCKRAM_SLI + 1) - 1: 16*BLOCKRAM_SLI] = 16'b0;
+  assign wb_ack_i[BLOCKRAM_SLI] = 1'b0;
+
+
+  assign wb_dat_i[16*(RSRVD1_SLI + 1) - 1: 16*RSRVD1_SLI] = 16'b0;
+  assign wb_ack_i[RSRVD1_SLI] = 1'b0;
+
+  assign wb_dat_i[16*(RSRVD0_SLI + 1) - 1: 16*RSRVD0_SLI] = 16'b0;
+  assign wb_ack_i[RSRVD0_SLI] = 1'b0;
+
+  assign wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI] = 16'b0;
+  assign wb_ack_i[TESTING_SLI] = 1'b0;
+
   /************************* LEDs ************************/
 
-  reg [27:0] counter [3:0];
-
-  assign led_n = ~{tge_led_up[0] && tge_led_up[1] && tge_led_up[2] && tge_led_up[3], dram_phy_ready, qdr0_phy_rdy && !qdr0_cal_fail, qdr1_phy_rdy && !qdr1_cal_fail};
-
-  always @(posedge sys_clk) begin
-    counter[0] <= counter[0] + 1;
-  end
-
-  always @(posedge adc0_clk_0) begin
-    counter[1] <= counter[1] + 1;
-  end
-
-  always @(posedge adc1_clk_0) begin
-    counter[2] <= counter[2] + 1;
-  end
-
-  always @(posedge mgt_clk_0) begin
-    counter[3] <= counter[3] + 1;
-  end
+  assign led_n = ~{leddies};
 
 endmodule
