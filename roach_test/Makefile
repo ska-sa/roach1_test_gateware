@@ -30,7 +30,7 @@ synth: build_parameters
 	   GEN_DIR=../$(NETLIST_DIR)
 
 build_parameters:
-	@echo "note: no build parameters implemented"
+	@true
 
 
 clean:

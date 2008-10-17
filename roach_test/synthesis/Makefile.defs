@@ -28,7 +28,7 @@ XST_ARGS=run,\
 -fsm_style lut,\
 -mux_extract YES,\
 -resource_sharing YES,\
--iobuf YES,\
+-iobuf NO,\
 -opt_level 2,\
 -opt_mode speed,\
 -optimize_primitives NO,\
