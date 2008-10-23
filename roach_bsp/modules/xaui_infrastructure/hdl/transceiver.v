@@ -198,8 +198,8 @@ module transceiver(
     wire               RXCDRRESET0_IN;
     wire               RXCDRRESET1_IN;
     /* HACK: use rx_reset */
-    assign RXCDRRESET0_IN = 1'b0; //rx_reset;
-    assign RXCDRRESET1_IN = 1'b0; //rx_reset;
+    assign RXCDRRESET0_IN = rx_reset;
+    assign RXCDRRESET1_IN = rx_reset;
     wire               RXN0_IN;
     wire               RXN1_IN;
     wire               RXP0_IN;
