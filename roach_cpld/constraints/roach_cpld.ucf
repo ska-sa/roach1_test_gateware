@@ -122,10 +122,10 @@ NET "config_dip<1>" IOSTANDARD = LVCMOS33 | LOC = "91";
 NET "config_dip<0>" IOSTANDARD = LVCMOS33 | LOC = "92";
 
 # System Config outputs
-NET "boot_conf<2>"  IOSTANDARD = LVCMOS33 | LOC = "126";
-NET "boot_conf<1>"  IOSTANDARD = LVCMOS33 | LOC = "128";
-NET "boot_conf<0>"  IOSTANDARD = LVCMOS33 | LOC = "129";
-NET "boot_conf_en"  IOSTANDARD = LVCMOS33 | LOC = "71";
+NET "boot_conf<2>"   IOSTANDARD = LVCMOS33 | LOC = "126";
+NET "boot_conf<1>"   IOSTANDARD = LVCMOS33 | LOC = "128";
+NET "boot_conf<0>"   IOSTANDARD = LVCMOS33 | LOC = "129";
+NET "boot_conf_en_n" IOSTANDARD = LVCMOS33 | LOC = "71";
 
 NET "eeprom_0_wp"   IOSTANDARD = LVCMOS33 | LOC = "46";
 NET "eeprom_1_wp"   IOSTANDARD = LVCMOS33 | LOC = "48";

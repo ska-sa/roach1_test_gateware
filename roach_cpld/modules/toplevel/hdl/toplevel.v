@@ -24,7 +24,7 @@ module toplevel(
     /* system configuration inputs */
     sys_config, user_dip, config_dip,
     /* system configuration outputs */
-    boot_conf, boot_conf_en,
+    boot_conf, boot_conf_en_n,
     eeprom_0_wp, eeprom_1_wp,
     /* system status outputs */
     sys_led_n, user_led_n,
@@ -67,7 +67,7 @@ module toplevel(
   input  [3:0] config_dip;
   
   output [2:0] boot_conf;
-  output boot_conf_en;
+  output boot_conf_en_n;
   output eeprom_0_wp, eeprom_1_wp;
 
   output [1:0] sys_led_n;
@@ -151,7 +151,7 @@ module toplevel(
                          sys_config[1] ? 3'b111 :
                                          3'b010;
 `endif
-  assign boot_conf_en = 1'b1;
+  assign boot_conf_en_n = 1'b0;
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
 
