@@ -2,8 +2,7 @@ module iadc_infrastructure(
     reset,
     clk_lock,
 
-    adc_clk_n,
-    adc_clk_p,
+    adc_clk,
 
     adc_sync_n,
     adc_sync_p,
@@ -47,9 +46,7 @@ module iadc_infrastructure(
   input  reset;
   output clk_lock;
 
-  /* FPGA Ports */
-  input  adc_clk_n, adc_clk_p;
-
+  input  adc_clk;
   input  adc_sync_n, adc_sync_p;
 
   input  adc_outofrange_i_n, adc_outofrange_i_p;
@@ -88,14 +85,6 @@ module iadc_infrastructure(
   /* diff input buffer */
   wire adc_clk_int;
 
-  IBUFGDS #(
-    .IOSTANDARD("LVDS_25"),
-    .DIFF_TERM("TRUE")
-  ) ibufgds_clk (
-    .I(adc_clk_p), .IB(adc_clk_n),
-    .O(adc_clk_int)
-  );
-
   DCM_BASE #(
     .CLKIN_PERIOD          (3.3),
     .DESKEW_ADJUST         ("SYSTEM_SYNCHRONOUS"),
@@ -114,7 +103,7 @@ module iadc_infrastructure(
     .CLKFX180(),
     .LOCKED(clk_lock),
     .CLKFB(adc_clk_0),
-    .CLKIN(adc_clk_int),
+    .CLKIN(adc_clk),
     .RST(reset || adc_dcm_reset)
   );
 

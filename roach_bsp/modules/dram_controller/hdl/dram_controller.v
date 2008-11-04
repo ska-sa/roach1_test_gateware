@@ -247,4 +247,12 @@ module dram_controller #(
   );
   assign cal_fail = 1'b0;
 
+generate if (CLK_WIDTH < 3) begin : clk_gen
+  OBUFDS obufds_inst[3 - CLK_WIDTH - 1:0](
+    .O( {dram_ck[2:CLK_WIDTH]}),
+    .OB({dram_ck_n[2:CLK_WIDTH]}),
+    .I({3 - CLK_WIDTH{1'b0}})
+  );
+end endgenerate
+
 endmodule

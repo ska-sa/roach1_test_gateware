@@ -26,6 +26,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/wbs_arbiter/hdl/wbs_arbiter.v \
     ./modules/wbs_arbiter/hdl/timeout.v \
     ./modules/sys_block/hdl/sys_block.v \
+    ./modules/sys_block/hdl/v5_sysmon.v \
     ./modules/xaui_infrastructure/hdl/xaui_infrastructure.v \
     ./modules/xaui_infrastructure/hdl/transceiver_bank.v \
     ./modules/xaui_infrastructure/hdl/transceiver.v \

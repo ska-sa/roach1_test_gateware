@@ -36,26 +36,57 @@ module sys_block(
 
   reg wb_ack_o;
   reg  [3:0] wb_dat_o_sel;
-  reg [15:0] scratch_pad;
+  reg [31:0] scratch_pad;
+
+  /* V5 System Monitor Signals */
+  reg  mon_strb;
+  reg  mon_we;
+  reg   [6:0] mon_addr;
+  reg  [15:0] mon_data;
+  wire [15:0] mon_datai;
+  wire mon_rdy;
+  wire mon_busy;
 
   assign wb_dat_o = wb_dat_o_sel == `REG_BOARD_ID     ? BOARD_ID              :
                     wb_dat_o_sel == `REG_REV_MAJOR    ? REV_MAJOR             :
                     wb_dat_o_sel == `REG_REV_MINOR    ? REV_MINOR             :
                     wb_dat_o_sel == `REG_REV_RCS      ? REV_RCS               :
                     wb_dat_o_sel == `REG_RCS_UPTODATE ? {15'b0, RCS_UPTODATE} :
-                    wb_dat_o_sel == `REG_SCRATCHPAD   ? scratch_pad           :
+                    wb_dat_o_sel == `REG_SCRATCHPAD1  ? scratch_pad[31:16]    :
+                    wb_dat_o_sel == `REG_SCRATCHPAD0  ? scratch_pad[15:0]     :
                     wb_dat_o_sel == `REG_SOFT_RESET   ? {15'b0, soft_reset}   :
-                    wb_dat_o_sel == `REG_USER_IRQ     ? {15'b0, irq_n}     :
+                    wb_dat_o_sel == `REG_USER_IRQ     ? {15'b0, irq_n}        :
+                    wb_dat_o_sel == `REG_MON_ADDR     ? {9'b0, mon_addr}      :
+                    wb_dat_o_sel == `REG_MON_DATA     ? mon_data              :
+                    wb_dat_o_sel == `REG_MON_STATUS   ? {15'b0, mon_busy}     :
                     16'b0;
 
+  reg mon_wait; // wait state for monitor
   always @(posedge wb_clk_i) begin
     wb_ack_o <= 1'b0;
+    mon_strb <= 1'b0;
     if (wb_rst_i) begin
       soft_reset <= 1'b0;
       irq_n      <= 1'b1;
+      mon_wait   <= 1'b0;
+      mon_we     <= 1'b0;
     end else begin
+      if (mon_wait && mon_rdy) begin
+        mon_wait <= 1'b0;
+        wb_ack_o <= 1'b1;
+        if (!mon_we) //if we are reading latch the incoming data
+          mon_data <= mon_datai;
+      end
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
-        wb_ack_o     <= 1'b1;
+        if (wb_adr_i[4:1] == `REG_MON_DATA) begin
+          mon_we   <= wb_we_i;
+          mon_strb <= 1'b1;
+          mon_wait <= 1'b1;
+          wb_ack_o <= 1'b0;
+        end else begin
+          mon_wait <= 1'b0;
+          wb_ack_o <= 1'b1;
+        end
         wb_dat_o_sel <= wb_adr_i[4:1];
 
         case (wb_adr_i[4:1])
@@ -69,7 +100,15 @@ module sys_block(
           end
           `REG_RCS_UPTODATE: begin
           end
-          `REG_SCRATCHPAD: begin
+          `REG_SCRATCHPAD1: begin
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                scratch_pad[23:16] <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                scratch_pad[31:24] <= wb_dat_i[15:8];
+            end
+          end
+          `REG_SCRATCHPAD0: begin
             if (wb_we_i) begin
               if (wb_sel_i[0])
                 scratch_pad[7:0] <= wb_dat_i[7:0];
@@ -87,9 +126,38 @@ module sys_block(
               irq_n <= wb_dat_i[0];
             end
           end
+          `REG_MON_ADDR: begin
+            if (wb_we_i && wb_sel_i[0]) begin
+              mon_addr <= wb_dat_i[6:0];
+            end
+          end
+          `REG_MON_DATA: begin
+            if (wb_we_i) begin
+              if (wb_sel_i[0])
+                mon_data[7:0]  <= wb_dat_i[7:0];
+              if (wb_sel_i[1])
+                mon_data[15:8] <= wb_dat_i[15:8];
+            end
+          end
+          `REG_MON_STATUS: begin
+          end
         endcase
       end
     end
   end
+
+  v5_sysmon v5_sysmon(
+    .clk   (wb_clk_i),
+    .reset (wb_rst_i),
+
+    .drp_den   (mon_strb),
+    .drp_dwe   (mon_we),
+    .drp_daddr (mon_addr),
+    .drp_datai (mon_data),
+    .drp_datao (mon_datai),
+    .drp_drdy  (mon_rdy), 
+
+    .port_busy (mon_busy)
+  );
 
 endmodule

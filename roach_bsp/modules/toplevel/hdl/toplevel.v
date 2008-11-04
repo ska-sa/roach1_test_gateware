@@ -173,15 +173,15 @@ module toplevel(
   wire sys_clk, dly_clk, epb_clk, mgt_clk_0, mgt_clk_1, aux_clk_0, aux_clk_1;
   wire dram_clk;
   wire qdr_clk_0,  qdr_clk_1;  
-  wire adc0_clk_0, adc1_clk_0;
+  wire adc0_clk, adc1_clk;
 
   // Ensure that the above nets are not synthesized away
   // synthesis attribute KEEP of sys_clk    is TRUE
   // synthesis attribute KEEP of mgt_clk_0  is TRUE
   // synthesis attribute KEEP of mgt_clk_1  is TRUE
   // synthesis attribute KEEP of epb_clk    is TRUE
-  // synthesis attribute KEEP of adc0_clk_0 is TRUE
-  // synthesis attribute KEEP of adc1_clk_0 is TRUE
+  // synthesis attribute KEEP of adc0_clk   is TRUE
+  // synthesis attribute KEEP of adc1_clk   is TRUE
 
   /* global system reset on sys_clk domain */
   wire sys_reset;  
@@ -210,14 +210,23 @@ module toplevel(
     .epb_clk_buf (epb_clk_buf),
     .epb_clk     (epb_clk),
 
-    .idelay_rst (sys_reset),
-    .idelay_rdy (idelay_ready),
     .aux_clk0_n (aux_clk0_n),
     .aux_clk0_p (aux_clk0_p),
     .aux_clk_0  (aux_clk_0),
     .aux_clk1_n (aux_clk1_n),
     .aux_clk1_p (aux_clk1_p),
-    .aux_clk_1  (aux_clk_1)
+    .aux_clk_1  (aux_clk_1),
+
+    .adc_clk_0_n (zdok0_clk1_n),
+    .adc_clk_0_p (zdok0_clk1_p),
+    .adc_clk_0   (adc0_clk),
+
+    .adc_clk_1_n (zdok1_clk1_n),
+    .adc_clk_1_p (zdok1_clk1_p),
+    .adc_clk_1   (adc1_clk),
+
+    .idelay_rst (sys_reset),
+    .idelay_rdy (idelay_ready)
   );
 
   /******************** Reset Block *********************/
@@ -1767,8 +1776,6 @@ module toplevel(
   wire adc0_ctrl_clk, adc0_ctrl_data, adc0_ctrl_strobe_n, adc0_mode;
 
   /* Assign ZDOK signals */
-  assign adc0_clk_n = zdok0_clk1_n;
-  assign adc0_clk_p = zdok0_clk1_p;
  // zdok0_clk0_n and zdok0_clk0_p unassigned
 
   assign zdok0_dp_n[8]       = adc0_ctrl_clk;
@@ -1817,8 +1824,8 @@ module toplevel(
     .clk_lock  (adc0_clk_lock),
 
     /* External Signals */
-    .adc_clk_n         (adc0_clk_n),
-    .adc_clk_p         (adc0_clk_p),
+    .adc_clk           (adc0_clk),
+
     .adc_sync_n        (adc0_sync_n),
     .adc_sync_p        (adc0_sync_p),
     .adc_outofrange_i_n(adc0_outofrange_i_n),
@@ -1918,8 +1925,6 @@ module toplevel(
   wire adc1_ctrl_clk, adc1_ctrl_data, adc1_ctrl_strobe_n, adc1_mode;
 
   /* Assign ZDOK signals */
-  assign adc1_clk_n = zdok1_clk1_n;
-  assign adc1_clk_p = zdok1_clk1_p;
  // zdok1_clk0_n and zdok1_clk0_p unassigned
 
   assign zdok1_dp_n[8]       = adc1_ctrl_clk;
@@ -1967,8 +1972,7 @@ module toplevel(
     .reset    (sys_reset),
     .clk_lock (adc1_clk_lock),
     /* External Signals */
-    .adc_clk_n          (adc1_clk_n),
-    .adc_clk_p          (adc1_clk_p),
+    .adc_clk            (adc1_clk),
     .adc_sync_n         (adc1_sync_n),
     .adc_sync_p         (adc1_sync_p),
     .adc_outofrange_i_n (adc1_outofrange_i_n),
@@ -2056,14 +2060,14 @@ module toplevel(
 
   assign se_gpio_b_oen_n = 1'b0;
 
-  assign se_gpio_b[0] = dram_cmd_valid_master;
-  assign se_gpio_b[1] = dram_cmd_rnw_master;
-  assign se_gpio_b[2] = |dram_wr_be_master;
+  assign se_gpio_b[0] = 1'b0;
+  assign se_gpio_b[1] = 1'b0;
+  assign se_gpio_b[2] = 1'b0;
   assign se_gpio_b[3] = serial_out;
   assign se_gpio_b[4] = 1'b0;
   assign se_gpio_b[5] = 1'b0;
   assign se_gpio_b[6] = 1'b0;
-  assign se_gpio_b[7] = dram_rd_valid_master;
+  assign se_gpio_b[7] = 1'b0;
 
 
 /******************* ROACH Application *****************/

@@ -3,10 +3,10 @@ VSIM=vvp
 
 PARAM_V=$(INCDIR)/build_parameters.v
 
-DEFINES=-DREV_MAJOR=$(REV_MAJOR) \
-        -DREV_MINOR=$(REV_MINOR) \
-        -DREV_RCS=$(REV_RCS) \
-        -DRCS_UPTODATE=$(RCS_UPTODATE) \
+DEFINES=-DREV_MAJOR=\"$(REV_MAJOR)\" \
+        -DREV_MINOR=\"$(REV_MINOR)\" \
+        -DREV_RCS=\"$(REV_RCS)\" \
+        -DRCS_UPTODATE=\"$(RCS_UPTODATE)\" \
 
 pre_support:
 

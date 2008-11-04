@@ -17,11 +17,11 @@ TIMESPEC TS_dly_n_clk = PERIOD dly_clk_n 200 MHz;
 Net epb_clk TNM_NET = epb_clk;
 TIMESPEC TS_epb_clk = PERIOD epb_clk 88 MHz;
 
-Net adc0_clk_0 TNM_NET = adc0_clk_0;
-TIMESPEC TS_adc0_clk_0 = PERIOD adc0_clk_0 150 MHz;
+Net adc0_clk TNM_NET = adc0_clk;
+TIMESPEC TS_adc0_clk = PERIOD adc0_clk 150 MHz;
 
-Net adc1_clk_0 TNM_NET = adc1_clk_0;
-TIMESPEC TS_adc1_clk_0 = PERIOD adc1_clk_0 150 MHz;
+Net adc1_clk TNM_NET = adc1_clk;
+TIMESPEC TS_adc1_clk = PERIOD adc1_clk 150 MHz;
 
 
 ###################ROACH constraints
@@ -577,31 +577,32 @@ NET "dram_odt_0"   IOSTANDARD = SSTL18_II | LOC = AN20;
 NET "dram_odt_1"   IOSTANDARD = SSTL18_II | LOC = AM20;
 NET "dram_ck_0_n"  IOSTANDARD = DIFF_SSTL18_II | LOC = AF5;
 NET "dram_ck_0_p"  IOSTANDARD = DIFF_SSTL18_II | LOC = AG5;
-NET "dram_ck_1_n"  IOSTANDARD = SSTL18_II | LOC = AL16;
-NET "dram_ck_1_p"  IOSTANDARD = SSTL18_II | LOC = AK16;
-NET "dram_ck_2_n"  IOSTANDARD = SSTL18_II | LOC = AH8;
-NET "dram_ck_2_p"  IOSTANDARD = SSTL18_II | LOC = AG8;
+NET "dram_ck_1_n"  IOSTANDARD = DIFF_SSTL18_II | LOC = AL16;
+NET "dram_ck_1_p"  IOSTANDARD = DIFF_SSTL18_II | LOC = AK16;
+NET "dram_ck_2_n"  IOSTANDARD = DIFF_SSTL18_II | LOC = AH8;
+NET "dram_ck_2_p"  IOSTANDARD = DIFF_SSTL18_II | LOC = AG8;
 NET "dram_scl"     IOSTANDARD = SSTL18_II | LOC = AP20;
 NET "dram_sda"     IOSTANDARD = SSTL18_II | LOC = AP19;
 NET "dram_par_in"  IOSTANDARD = SSTL18_II | LOC = AN18;
 NET "dram_par_out" IOSTANDARD = SSTL18_II | LOC = AD7;
 
-# MIG 2.1: Eliminate Timegroup definitions for CLK0, and CLK90. Instead trace
-# #          multicycle paths from originating flip-flop to ANY destination
-# #          flip-flop (or in some cases, it can also be a BRAM)
-# # MUX Select for either rising/falling CLK0 for 2nd stage read capture
+#MIG 2.1: Eliminate Timegroup definitions for CLK0, and CLK90. Instead trace
+#          multicycle paths from originating flip-flop to ANY destination
+#          flip-flop (or in some cases, it can also be a BRAM)
+# MUX Select for either rising/falling CLK0 for 2nd stage read capture
+
 INST "*/u_phy_calib/gen_rd_data_sel*.u_ff_rd_data_sel" TNM = "TNM_RD_DATA_SEL";
 TIMESPEC "TS_MC_RD_DATA_SEL" = FROM "TNM_RD_DATA_SEL" TO FFS 10 NS;
-# MUX select for read data - optional delay on data to account for byte skews
+ MUX select for read data - optional delay on data to account for byte skews
 INST "*/u_usr_rd/gen_rden_sel_mux*.u_ff_rden_sel_mux" TNM = "TNM_RDEN_SEL_MUX";
 TIMESPEC "TS_MC_RDEN_SEL_MUX" = FROM "TNM_RDEN_SEL_MUX" TO FFS 10 NS;
-# Calibration/Initialization complete status flag (for PHY logic only) - can
-# be used to drive both flip-flops and BRAMs
+ Calibration/Initialization complete status flag (for PHY logic only) - can
+ be used to drive both flip-flops and BRAMs
 INST "*/u_phy_init/u_ff_phy_init_data_sel" TNM = "TNM_PHY_INIT_DATA_SEL";
 TIMESPEC "TS_MC_PHY_INIT_DATA_SEL_0" = FROM "TNM_PHY_INIT_DATA_SEL" TO FFS 10 NS;
 TIMESPEC "TS_MC_PHY_INIT_DATA_SEL_90" = FROM "TNM_PHY_INIT_DATA_SEL" TO RAMS 10 NS;
-# Select (address) bits for SRL32 shift registers used in stage3/stage4
-# calibration
+ Select (address) bits for SRL32 shift registers used in stage3/stage4
+ calibration
 INST "*/u_phy_calib/gen_gate_dly*.u_ff_gate_dly" TNM = "TNM_GATE_DLY";
 TIMESPEC "TS_MC_GATE_DLY" = FROM "TNM_GATE_DLY" TO FFS 10 NS;
 INST "*/u_phy_calib/gen_rden_dly*.u_ff_rden_dly" TNM = "TNM_RDEN_DLY";
