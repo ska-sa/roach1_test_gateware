@@ -33,7 +33,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/xaui_phy/hdl/xaui_phy.v \
     ./modules/xaui_phy/hdl/xaui_v7_2.v \
     ./modules/ten_gig_eth/hdl/ten_gb_eth.vhd \
-    ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB.vhd \
+    ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB_softcrc.vhd \
     ./modules/ten_gig_eth/hdl/wb_attach.v \
     ./modules/ten_gig_eth/hdl/retimer.vhd \
     ./modules/ten_gig_eth/hdl/addr_fifo.v \
@@ -77,13 +77,14 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/iadc_controller/hdl/fifo_72.v \
     ./modules/iadc_infrastructure/hdl/iadc_infrastructure.v \
     ./include/parameters.v \
-    ./include/mem_layout.v
+    ./include/mem_layout.v \
+    ./support/roach_app.v
 
 
 NETLIST_DIRS=./modules/xaui_phy/netlist \
              ./modules/ten_gig_eth/netlist \
              ./modules/iadc_controller/netlist \
-	     ./modules/roach_app/netlist
+	           ./modules/roach_app/netlist
 
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel
