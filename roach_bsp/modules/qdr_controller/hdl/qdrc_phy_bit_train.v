@@ -14,19 +14,23 @@ module qdrc_phy_bit_train(
     dly_rst,
     aligned
   );
-  parameter CLK_FREQ = 200;
-  parameter BYPASS   = 1;
+  parameter DATA_WIDTH = 18;
+  parameter CLK_FREQ   = 200;
+  parameter BYPASS     = 1;
 
   input  clk, reset;
 
   input  train_start;
   output train_done, train_fail;
 
-  input  q_rise, q_fall;
+  input  [17:0] q_rise;
+  input  [17:0] q_fall;
 
-  output dly_inc_dec_n, dly_en, dly_rst;
+  output [17:0] dly_inc_dec_n;
+  output [17:0] dly_en;
+  output [17:0] dly_rst;
 
-  output aligned;
+  output [17:0] aligned;
 
   /* DLY_DELTA is the delay increment when the IDELAY_CONF is configured
    * with a 200 MHz clock in ps*/
@@ -59,8 +63,12 @@ module qdrc_phy_bit_train(
 
   /* Registers referenced by the state machine */
 
-  reg dly_inc_dec_n, dly_en, dly_rst;
+  reg [17:0] dly_inc_dec_n;
+  reg [17:0] dly_en;
+  reg dly_rst_reg;
+  assign dly_rst = {18{dly_rst_reg}};
   reg train_fail;
+  reg train_done;
 
   reg [1:0] curr_reg; /* Async register for capturing IDDR data */
   // synthesis attribute ASYNC_REG of curr_reg[0] is true 
@@ -77,35 +85,40 @@ module qdrc_phy_bit_train(
   reg [5:0] acquire_progress;
   localparam ACQUIRE_THRESHOLD = 16;
 
+  reg [4:0] bit_index;
   reg [5:0] progress;
   reg [5:0] baddies;
 
-  reg aligned;
+  reg [17:0] aligned;
 
   always @(posedge clk) begin
     /* Single cycle outputs */
-    dly_en   <= 1'b0;
-    dly_rst  <= 1'b0;
+    dly_en       <= 18'b0;
+    dly_rst_reg  <= 1'b0;
 
     /* async registered iddr data */
-    curr_reg <= {q_rise, q_fall};
+    curr_reg <= {q_rise[bit_index], q_fall[bit_index]};
 
     if (reset) begin
       state      <= BYPASS ? STATE_DONE : STATE_IDLE;
       mode       <= MODE_DEFAULT;
       train_fail <= 1'b0;
-      aligned <= 1'b1;
+      train_done <= 1'b0;
+
+      aligned    <= {18{1'b1}};
+
       progress         <= 6'b0;
       acquire_progress <= 0;
 
       baddies     <= 6'b0;
 
-      dly_rst    <= 1'b1;
+      dly_rst_reg <= 1'b1;
 
       prev       <= 2'b0;
       hist0      <= 2'b0;
       hist1      <= 2'b0;
       hist2      <= 2'b0;
+      bit_index  <= 5'b0;
     end else begin
       case (mode)
         MODE_DEFAULT: begin
@@ -146,13 +159,13 @@ module qdrc_phy_bit_train(
                   state       <= STATE_ALIGN;
                   progress    <= 4;
                   train_fail  <= 1'b1;
-                  dly_rst     <= 1'b1;
+                  dly_rst_reg <= 1'b1;
                 end else begin
                   mode             <= MODE_ACQUIRE;
                   acquire_progress <= 0;
                   progress      <= progress + 1;
-                  dly_inc_dec_n <= 1'b1;
-                  dly_en        <= 1'b1;
+                  dly_inc_dec_n[bit_index] <= 1'b1;
+                  dly_en[bit_index]        <= 1'b1;
 
                   if (valid(curr) && history_stable) begin
                     prev <= curr;
@@ -175,8 +188,8 @@ module qdrc_phy_bit_train(
 
                 progress      <= progress - 1;
 
-                dly_inc_dec_n <= 1'b0;
-                dly_en        <= 1'b1;
+                dly_inc_dec_n[bit_index] <= 1'b0;
+                dly_en[bit_index]        <= 1'b1;
               end else begin
                 state       <= STATE_ALIGN;
                 progress    <= 4;
@@ -196,8 +209,8 @@ module qdrc_phy_bit_train(
 
                 progress      <= progress - 1;
 
-                dly_inc_dec_n <= 1'b1;
-                dly_en        <= 1'b1;
+                dly_inc_dec_n[bit_index] <= 1'b1;
+                dly_en[bit_index]        <= 1'b1;
               end else begin
                 state       <= STATE_ALIGN;
                 progress    <= 4;
@@ -212,10 +225,27 @@ module qdrc_phy_bit_train(
               end else begin
                 state    <= STATE_DONE;
                 if (!curr_reg[1])
-                  aligned <= 1'b0;
+                  aligned[bit_index] <= 1'b0;
               end
             end
             STATE_DONE:    begin
+              if (bit_index < DATA_WIDTH - 1) begin
+                state       <= STATE_SEARCH;
+                mode        <= MODE_ACQUIRE;
+
+                progress         <= 6'b0;
+                acquire_progress <= 0;
+
+                baddies     <= 6'b0;
+
+                prev       <= 2'b0;
+                hist0      <= 2'b0;
+                hist1      <= 2'b0;
+                hist2      <= 2'b0;
+                bit_index  <= bit_index + 1;
+              end else begin
+                train_done <= 1'b1;
+              end
             end
           endcase
         end
@@ -247,8 +277,5 @@ module qdrc_phy_bit_train(
       endcase
     end
   end
-
-  /* Assignments based on the state machine */
-  assign train_done = state == STATE_DONE;
 
 endmodule

@@ -1450,7 +1450,8 @@ module toplevel(
     .BW_WIDTH     (2),
     .ADDR_WIDTH   (21),
     .BURST_LENGTH (4),
-    .CLK_FREQ     (`QDR_CLK_FREQ)
+    .CLK_FREQ     (`QDR_CLK_FREQ),
+    .USE_XILINX_CORE (0)
   ) qdr_controller_0 (
     .reset (sys_reset || qdr0_usr_reset || !qdr_pll_lock || !idelay_ready),
 
@@ -1495,7 +1496,7 @@ module toplevel(
 
   qdr_cpu_interface #(
     .CLK_FREQ(`QDR_CLK_FREQ)
-  ) qdr_cpu_interface_inst (
+  ) qdr_cpu_interface_0 (
     //memory wb slave IF
     .wb_clk_i (wb_clk),
     .wb_rst_i (sys_reset),
@@ -1534,7 +1535,8 @@ module toplevel(
   );
 
   multiport_qdr #(
-    .C_WIDE_DATA    (`QDR0_WIDTH_MULTIPLIER == 2)
+    .C_WIDE_DATA     (`QDR0_WIDTH_MULTIPLIER == 2),
+    .QDR_ADD_LATENCY (`QDR0_ADD_LATENCY)
   ) multiport_qdr_0 (
    // System inputs
    .clk (qdr_clk0),
@@ -1597,6 +1599,7 @@ module toplevel(
   wire qdr1_usr_reset;
   wire qdr1_phy_rdy;
   wire qdr1_cal_fail;
+  assign qdr1_rdy = qdr1_phy_rdy;
 
   wire [31:0] qdr1_cmd_addr_master;
   wire qdr1_rd_strb_master;
@@ -1611,7 +1614,8 @@ module toplevel(
     .BW_WIDTH     (2),
     .ADDR_WIDTH   (21),
     .BURST_LENGTH (4),
-    .CLK_FREQ     (`QDR_CLK_FREQ)
+    .CLK_FREQ     (`QDR_CLK_FREQ),
+    .USE_XILINX_CORE (0)
   ) qdr_controller_1 (
     .reset (sys_reset || qdr1_usr_reset || !qdr_pll_lock || !idelay_ready),
 
@@ -1645,6 +1649,7 @@ module toplevel(
     .usr_addr    (qdr1_cmd_addr_master)
   );
 
+  wire [31:0] qdr1_cmd_addr_cpu;
   wire qdr1_cmd_ack_cpu; //unused
   wire qdr1_rd_strb_cpu;
   wire qdr1_rd_valid_cpu;
@@ -1695,7 +1700,8 @@ module toplevel(
   );
 
   multiport_qdr #(
-    .C_WIDE_DATA    (`QDR1_WIDTH_MULTIPLIER == 2)
+    .C_WIDE_DATA     (`QDR1_WIDTH_MULTIPLIER == 2),
+    .QDR_ADD_LATENCY (`QDR1_ADD_LATENCY)
   ) multiport_qdr_1 (
    // System inputs
    .clk (qdr_clk0),
@@ -2069,7 +2075,6 @@ module toplevel(
   assign se_gpio_b[6] = 1'b0;
   assign se_gpio_b[7] = 1'b0;
 
-
 /******************* ROACH Application *****************/
 
 `ifdef ENABLE_APPLICATION
@@ -2203,6 +2208,7 @@ module toplevel(
   );
   
   // synthesis attribute box_type of roach_app is "user_black_box";
+  // synthesis attribute read_cores of roach_app is "No";
 
 
 `else
@@ -2303,6 +2309,7 @@ module toplevel(
 
   /************************* LEDs ************************/
 
-  assign led_n = ~{leddies};
+ // assign led_n = ~{leddies};
+  assign led_n = ~{qdr0_phy_rdy, qdr1_phy_rdy, qdr0_cal_fail, qdr1_cal_fail};
 
 endmodule

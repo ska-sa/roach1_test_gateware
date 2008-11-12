@@ -32,7 +32,10 @@ module multiport_qdr(
    out_rd_dvld,
    out_rd_data
   );
-  parameter C_WIDE_DATA = 0;
+  parameter C_WIDE_DATA     = 0;
+  parameter QDR_ADD_LATENCY = 0;
+
+  localparam QDR_LATENCY = 7 + QDR_ADD_LATENCY;
 
   input clk, rst;
 
@@ -62,38 +65,27 @@ module multiport_qdr(
   input  out_rd_dvld; //this is currently unused as the timing is fixed...
   input  [36*(1+C_WIDE_DATA) - 1:0] out_rd_data;
 
-  localparam QDR_LATENCY = 8;
   reg [QDR_LATENCY - 1:0] in0_rd_pipe;
   reg [QDR_LATENCY - 1:0] in1_rd_pipe;
 
-  reg write_busy;
-  reg read_busy;
-
-  assign in0_cmd_wr  = in0_wr_strb && !write_busy;
-  assign in0_cmd_rd  = in0_rd_strb && !read_busy  && !in0_cmd_wr;
-  assign in1_cmd_wr  = in1_wr_strb && !write_busy && !in0_cmd_wr && !in0_cmd_rd;
-  assign in1_cmd_rd  = in1_rd_strb && !read_busy  && !in0_cmd_wr && !in0_cmd_rd && !in1_cmd_wr ;
+  assign in0_cmd_wr  = in0_wr_strb;
+  assign in0_cmd_rd  = in0_rd_strb;
   assign in0_cmd_ack = in0_cmd_wr || in0_cmd_rd;
+  /* TODO: check if this becomes problematic at higher frequencies */
+  assign in1_cmd_wr  = in1_wr_strb && !(in0_cmd_ack);
+  assign in1_cmd_rd  = in1_rd_strb && !(in0_cmd_ack);
   assign in1_cmd_ack = in1_cmd_wr || in1_cmd_rd;
 
   reg in0_cmd_wr_z;
 
   always @(posedge clk) begin
-    in0_cmd_wr_z <= in0_cmd_wr;
 
-    write_busy <= 1'b0;
-    read_busy  <= 1'b0;
     if (rst) begin
+      in0_cmd_wr_z <= 1'b0;
       in0_rd_pipe <= {QDR_LATENCY{1'b0}};
       in1_rd_pipe <= {QDR_LATENCY{1'b0}};
     end else begin
-      if (in0_cmd_wr || in1_cmd_wr) begin
-        write_busy <= 1'b1;
-      end
-      if (in0_cmd_rd || in1_cmd_rd) begin
-        read_busy  <= 1'b1;
-      end
-
+      in0_cmd_wr_z <= in0_cmd_wr;
       in0_rd_pipe <= {in0_rd_pipe[QDR_LATENCY - 2:0], in0_cmd_rd};
       in1_rd_pipe <= {in1_rd_pipe[QDR_LATENCY - 2:0], in1_cmd_rd};
     end

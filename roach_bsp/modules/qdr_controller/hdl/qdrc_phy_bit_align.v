@@ -97,8 +97,8 @@ end else begin                  :include_bit_align
 /******************** INCLUDE PHY ****************************/
 
   reg train_start;
-  wire [DATA_WIDTH - 1:0] train_done;
-  wire [DATA_WIDTH - 1:0] train_fail;
+  wire train_done;
+  wire train_fail;
   wire [DATA_WIDTH - 1:0] aligned;
 
   reg [3:0] train_start_stretch;
@@ -130,7 +130,7 @@ end else begin                  :include_bit_align
   qdrc_phy_bit_train #(
     .CLK_FREQ (CLK_FREQ),
     .BYPASS   (1'b0)
-  ) qdrc_phy_bit_train_inst[DATA_WIDTH - 1:0] (
+  ) qdrc_phy_bit_train_inst (
     .clk   (div_clk),
     .reset (reset_div_clk),
 
@@ -183,8 +183,8 @@ end else begin                  :include_bit_align
           end
         end
         STATE_TRAIN: begin
-        if (train_done == {DATA_WIDTH{1'b1}}) begin
-            if (train_fail != {DATA_WIDTH{1'b0}}) begin
+        if (train_done) begin
+            if (train_fail) begin
               bit_align_fail_reg <= 1'b1;
             end
             state <= STATE_ALIGN;

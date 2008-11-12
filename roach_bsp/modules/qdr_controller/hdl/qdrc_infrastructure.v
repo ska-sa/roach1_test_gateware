@@ -177,18 +177,14 @@ module qdrc_infrastructure(
   reg   [BW_WIDTH - 1:0] qdr_bw_n_fall_reg;
 
   always @(posedge clk0) begin
-  /* Sample DDR signals onto clk270 domain.
-   * The 270 clock is used to let the data lead the clock by
-   * 90 degrees behind the clock. The signals are registered
-   * to ease timing requirements.
-   */
+  /* Delay the write data by one cycle */
     qdr_d_rise_reg0     <= qdr_d_rise;
     qdr_d_fall_reg0     <= qdr_d_fall;
     qdr_bw_n_rise_reg0  <= qdr_bw_n_rise;
     qdr_bw_n_fall_reg0  <= qdr_bw_n_fall;
   end
 
-  always @(posedge clk270) begin /* TODO : is this redundant ? */
+  always @(posedge clk270) begin
   /* Sample DDR signals onto clk270 domain.
    * The 270 clock is used to let the data lead the clock by
    * 90 degrees behind the clock. The signals are registered
@@ -199,7 +195,6 @@ module qdrc_infrastructure(
     qdr_bw_n_rise_reg  <= qdr_bw_n_rise_reg0;
     qdr_bw_n_fall_reg  <= qdr_bw_n_fall_reg0;
   end
-  /* TODO: placement constraints ? */
 
   ODDR #(
     .DDR_CLK_EDGE ("SAME_EDGE"),
@@ -268,8 +263,7 @@ module qdrc_infrastructure(
     .INIT_Q2 (1'b0),
     .SRTYPE ("SYNC")
   ) IDDR_qdrq [DATA_WIDTH - 1:0] (
-    .C  (clk270), //thismay work if training failed
-  //  .C  (clk0),
+    .C  (clk0),
     .CE (1'b1),
     .D  (qdr_q_iodelay),
     .R  (1'b0),
@@ -278,22 +272,8 @@ module qdrc_infrastructure(
     .Q2 (qdr_q_fall_int)
   );
 
-generate if (Q_CLK_270) begin : use_clk270
   assign qdr_q_rise = qdr_q_rise_int;
   assign qdr_q_fall = qdr_q_fall_int;
-end else begin                   : use_clk0
-
-  reg [17:0] qdr_q_rise_reg_180;
-  reg [17:0] qdr_q_fall_reg_180;
-
-  always @(posedge clk180) begin
-    qdr_q_rise_reg_180 <= qdr_q_rise_int;
-    qdr_q_fall_reg_180 <= qdr_q_fall_int;
-  end
-
-  assign qdr_q_rise = qdr_q_rise_reg_180;
-  assign qdr_q_fall = qdr_q_fall_reg_180;
-end endgenerate
 
   /******************* SDR Inputs ********************
    * IODELAY for training

@@ -167,7 +167,7 @@ module qdrc_phy(
     .ADDR_WIDTH   (ADDR_WIDTH),
     .CLK_FREQ     (CLK_FREQ),
     .BURST_LENGTH (BURST_LENGTH),
-    .BYPASS       (1'b1)
+    .BYPASS       (1'b0)
   ) qdrc_phy_burst_align_inst (
     /* Misc signals */
     .clk   (clk0),

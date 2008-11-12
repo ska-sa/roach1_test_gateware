@@ -68,6 +68,30 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/qdr_controller/hdl/qdrc_phy_bit_align.v \
     ./modules/qdr_controller/hdl/qdrc_phy.v \
     ./modules/qdr_controller/hdl/qdrc_phy_sm.v \
+    ./modules/qdr_controller/hdl/qdrc_top.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_addr_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_bw_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_clk_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_cq_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_d_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_dly_cal_sm.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_en.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_init_sm.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_q_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_read.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_v5_q_io.v \
+    ./modules/qdr_controller/hdl/qdrii_phy_write.v \
+    ./modules/qdr_controller/hdl/qdrii_top.v \
+    ./modules/qdr_controller/hdl/qdrii_top_ctrl_sm.v \
+    ./modules/qdr_controller/hdl/qdrii_top_phy.v \
+    ./modules/qdr_controller/hdl/qdrii_top_rd_addr_interface.v \
+    ./modules/qdr_controller/hdl/qdrii_top_rd_interface.v \
+    ./modules/qdr_controller/hdl/qdrii_top_user_interface.v \
+    ./modules/qdr_controller/hdl/qdrii_top_wr_addr_interface.v \
+    ./modules/qdr_controller/hdl/qdrii_top_wr_data_interface.v \
+    ./modules/qdr_controller/hdl/qdrii_top_wr_interface.v \
+    ./modules/qdr_controller/hdl/qdrii_top_wrdata_bw_fifo.v \
+    ./modules/qdr_controller/hdl/qdrii_top_wrdata_fifo.v \
     ./modules/qdr_controller/hdl/qdr_controller.v \
     ./modules/qdr_infrastructure/hdl/qdr_infrastructure.v \
     ./modules/qdr_cpu_interface/hdl/qdr_cpu_interface.v \
