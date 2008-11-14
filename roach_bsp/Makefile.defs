@@ -33,7 +33,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/xaui_phy/hdl/xaui_phy.v \
     ./modules/xaui_phy/hdl/xaui_v7_2.v \
     ./modules/ten_gig_eth/hdl/ten_gb_eth.vhd \
-    ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB_softcrc.vhd \
+    ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB.vhd \
     ./modules/ten_gig_eth/hdl/wb_attach.v \
     ./modules/ten_gig_eth/hdl/retimer.vhd \
     ./modules/ten_gig_eth/hdl/addr_fifo.v \
