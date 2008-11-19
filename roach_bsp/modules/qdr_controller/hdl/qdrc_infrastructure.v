@@ -120,12 +120,8 @@ module qdrc_infrastructure(
   reg qdr_r_n_reg;
   reg qdr_dll_off_n_reg;
 
-  always @(posedge clk180) begin 
-  /* Sample SDR signals onto clk180 domain.
-   * The 180 clock is used to let the data lead the clock
-   * by 180 degrees behind the clock. The signals are registered
-   * to ease timing requirements.
-   */
+  always @(posedge clk0) begin 
+  /* Add delay to ease timing */
     qdr_sa_reg        <= qdr_sa_buf;
     qdr_w_n_reg       <= qdr_w_n_buf;
     qdr_r_n_reg       <= qdr_r_n_buf;
