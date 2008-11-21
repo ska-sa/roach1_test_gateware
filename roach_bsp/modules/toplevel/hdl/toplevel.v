@@ -1458,7 +1458,7 @@ module toplevel(
     .clk0    (qdr_clk0),
     .clk180  (qdr_clk180),
     .clk270  (qdr_clk270),
-    .div_clk (sys_clk),
+    .div_clk (epb_clk),
 
     .qdr_d         (qdr0_d),
     .qdr_q         (qdr0_q),
@@ -1622,7 +1622,7 @@ module toplevel(
     .clk0    (qdr_clk0),
     .clk180  (qdr_clk180),
     .clk270  (qdr_clk270),
-    .div_clk (sys_clk),
+    .div_clk (epb_clk),
 
     .qdr_d         (qdr1_d),
     .qdr_q         (qdr1_q),
