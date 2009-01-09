@@ -16,7 +16,8 @@ build:
 	   echo "error: svn not up-to-date"; \
 	   false; \
 	   fi
-	@make -C . bits
+	@make -C . bits \
+	   RCS_UPTODATE=1 REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
 
 build_parameters: 
 	@make -C $(SUPPORT_DIR) build_parameters \

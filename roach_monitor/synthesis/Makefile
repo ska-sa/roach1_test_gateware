@@ -1,12 +1,11 @@
 include Makefile.defs
 
-
 default:
 	@echo "not implemented"
 
 $(SYNTH_F): $(SYNTH_SCRIPT)
 	rm -f $@
-	synplify $(SYNTH_SCRIPT) && test -f $@
+	synplify -runall $(SYNTH_SCRIPT) && test -f $@
 
 $(SYNTH_SCRIPT): $(SRC)
 	@> $@

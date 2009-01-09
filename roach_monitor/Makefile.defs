@@ -1,8 +1,9 @@
 MODULE_ID=roach_monitor
 REV_MAJOR=3
 REV_MINOR=0
-REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
-PROJECT=$(MODULE_ID)_$(REV_MAJOR)
+REV_RCS=0
+RCS_UPTODATE=0
+PROJECT=$(MODULE_ID)_$(REV_MAJOR)_$(REV_MINOR)_$(REV_RCS)
 
 # Directory Defines
 SYNTH_DIR=synthesis
@@ -63,9 +64,6 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./include/parameters.v \
     ./include/memlayout.v \
     ./include/build_parameters.v
-
-
-
 
 FLASHROM_F = $(PROJECT).ufc
 FLASHMEM_F = $(PROJECT).efc

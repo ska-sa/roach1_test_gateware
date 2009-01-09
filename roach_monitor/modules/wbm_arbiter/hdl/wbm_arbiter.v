@@ -18,7 +18,8 @@ module wbm_arbiter(
   );
   parameter NUM_MASTERS = 4;
 `ifdef  __ICARUS__
-  localparam NUM_MASTERS_BITS = NUM_MASTERS;
+  //localparam NUM_MASTERS_BITS = NUM_MASTERS;
+  localparam NUM_MASTERS_BITS = `LOG2(NUM_MASTERS - 1) + 1;
 `else
   localparam NUM_MASTERS_BITS = `LOG2(NUM_MASTERS - 1) + 1;
 `endif
@@ -44,7 +45,7 @@ module wbm_arbiter(
   output [NUM_MASTERS_BITS - 1:0] wbm_id;
   input  [NUM_MASTERS - 1 :0] wbm_mask;
 
-  reg [NUM_MASTERS_BITS -1:0]  active_master;
+  wire [NUM_MASTERS_BITS -1:0]  active_master;
 
   genvar gen_i, gen_j;
 
@@ -63,7 +64,7 @@ module wbm_arbiter(
   genvar gen_k, gen_l;
 
   generate for (gen_k=0; gen_k < 16; gen_k=gen_k+1) begin : G2
-    assign wbs_adr_o[gen_k] = wbm_adr_i[16*active_master + gen_k];
+    assign wbs_adr_o[gen_k] = wbm_adr_i[32*active_master + gen_k];
   end endgenerate
 
   generate for (gen_l=0; gen_l < 16; gen_l=gen_l+1) begin : G3
@@ -80,10 +81,11 @@ module wbm_arbiter(
 
   reg wb_busy;
 
-  function [NUM_MASTERS - 1:0] sel_active_master;
+  function [NUM_MASTERS_BITS - 1:0] sel_active_master;
     input [NUM_MASTERS - 1:0] pending_i;
-    reg [NUM_MASTERS - 1:0] j;
+    integer j;
     begin
+      sel_active_master = 0; //default is zero
       for (j=0; j < NUM_MASTERS; j=j+1) begin
         if (pending_i[j]) begin
           sel_active_master = j; //last master gets preference
@@ -92,31 +94,39 @@ module wbm_arbiter(
     end
   endfunction
 
+  assign active_master = sel_active_master(pending);
+  
+  wire [NUM_MASTERS - 1:0] bit_to_clear = {{NUM_MASTERS - 1{1'b0}}, (wbs_ack_i || wbs_err_i)} << active_master;
+  wire [NUM_MASTERS - 1:0] bits_to_set  = wbm_cyc_i & wbm_stb_i & wbm_mask;
+  
+  //set takes preference: new transfer implies old transfer forgotten
+  wire [NUM_MASTERS - 1:0] next_pending = (pending & ~bit_to_clear) | bits_to_set;
+
   always @(posedge wb_clk_i) begin
     wbs_cyc_o <= 1'b0;
     if (wb_rst_i) begin
       pending <= {NUM_MASTERS{1'b0}};
       wb_busy <= 1'b0;
-      active_master <= 1'b1;
     end else begin
+      pending <= next_pending;
 
-      pending <= pending | wbm_cyc_i & wbm_stb_i & wbm_mask;
-
-      if (wbs_ack_i | wbs_err_i) begin
-        pending[active_master] <= 1'b0;
+      if (wbs_ack_i || wbs_err_i) begin
         wb_busy <= 1'b0;
 `ifdef DEBUG
-        $display("arb: got response, clearing pending on %d", active_master);
+        $display("arb: got response, clearing pending on %d, %x", active_master, pending);
 `endif
       end
-
-      if (~wb_busy) begin
-        if (pending) begin
-          wbs_cyc_o <= 1'b1;
-          wb_busy <= 1'b1;
-          active_master <= sel_active_master(pending);
-        end
+`ifdef DEBUG
+      if (bits_to_set) begin
+        $display("arb: got request", active_master, pending);
       end
+`endif
+
+      if ((!wb_busy || wbs_ack_i || wbs_err_i) && next_pending) begin
+        wbs_cyc_o <= 1'b1;
+        wb_busy   <= 1'b1;
+      end
+
     end
   end
 
