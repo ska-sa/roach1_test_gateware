@@ -16,6 +16,8 @@ build:
 	   echo "error: svn not up-to-date"; \
 	   false; \
 	   fi
+	@echo "Updating RCS"
+	@svn up
 	@make -C . bits \
 	   RCS_UPTODATE=1 REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
 
