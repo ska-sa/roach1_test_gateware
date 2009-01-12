@@ -15,7 +15,7 @@ PAR_COMMANDS=new_design -name $(PROJECT) -family FUSION;\
              -format EDIF -edif_flavor GENERIC {$(SYNTH_F)};\
              compile -pdc_abort_on_error off;\
              layout -incremental OFF;\
-	     report -type "timing" -sortby "actual" -maxpaths "100" {report_timing.txt};\
+             report -type "timing" -sortby "actual" -maxpaths "100" {report_timing.txt};\
              save_design {$(PAR_F)};\
              close_design
 
@@ -34,7 +34,6 @@ PROG_COMMANDS=open_design {$(PAR_F)} ; \
               -from_content ufc \
               -io_present Z\
               {$(BIT_FILE)}; \
-              save_design {$(PAR_F)};\
               close_design
 
 #PROG_COMMANDS=open_design {$(PAR_F)} ; \

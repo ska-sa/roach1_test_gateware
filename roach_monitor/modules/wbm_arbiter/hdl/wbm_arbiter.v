@@ -64,7 +64,7 @@ module wbm_arbiter(
   genvar gen_k, gen_l;
 
   generate for (gen_k=0; gen_k < 16; gen_k=gen_k+1) begin : G2
-    assign wbs_adr_o[gen_k] = wbm_adr_i[32*active_master + gen_k];
+    assign wbs_adr_o[gen_k] = wbm_adr_i[16*active_master + gen_k];
   end endgenerate
 
   generate for (gen_l=0; gen_l < 16; gen_l=gen_l+1) begin : G3
