@@ -7,7 +7,6 @@
 /************* GENERIC Parameters ***************/
 `define BOARD_ID           16'hbe_ef
 `define MASTER_CLOCK_RATE  40_000_000
-`define DEFAULT_SYS_CONFIG 8'b1
 
 /********** WishbBone Masters' Interface Parameters *********/
 `define ENABLE_DEBUG_INTERFACE

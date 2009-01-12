@@ -79,27 +79,30 @@ module toplevel(
   wire gclk10, gclk40, gclk100;
   wire pll_lock;
 
-  /* Debounce chassis switches */
-  wire chs_powerdown, chs_reset_n;
-
   wire soft_reset;
-
-  debouncer #(
-    .DELAY(32'h0020_0000)
-  ) debouncer_inst[1:0] (  
-    .clk(gclk40),
-    .in_switch({!CHS_POWERDOWN_N, CHS_RESET_N}), .out_switch({chs_powerdown, chs_reset_n})
-  );
 
   /* Reset Control */
   reset_block #(
-    .DELAY(10000),
+    .DELAY(0),
     .WIDTH(32'h400_0000)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(~pll_lock),
-    .reset_i(!chs_reset_n || (XPORT_GPIO == 3'b000)),
+    .async_reset_i(1'b0),
+    .reset_i((!CHS_RESET_N) || XPORT_GPIO == 3'b101),
     .reset_o(hard_reset)
+  );
+  assign XPORT_RESET_N = 1'b1;
+
+  /* Debounce chassis switches */
+  wire chs_powerdown;
+
+  debouncer #(
+    .DELAY(32'h0020_0000)
+  ) debouncer_inst (  
+    .clk(gclk40),
+    .rst(hard_reset),
+    .in_switch(!CHS_POWERDOWN_N), .out_switch(chs_powerdown)
+   // .in_switch(!CHS_POWERDOWN_N), .out_switch(chs_powerdown)
   );
 
   /*********************** Global Infrastructure ************************/
@@ -111,7 +114,7 @@ module toplevel(
     .gclk40(gclk40),.gclk100(gclk100),.gclk10(gclk10),
     .PLL_LOCK(pll_lock),
     .PUB(PUB), .FPGAGOOD(nc_fpgagood), .XTLCLK(XTLCLK),
-    .RTCCLK(rtcclk), .SELMODE(selmode), .RTC_MODE(rtc_mode)
+    .RTCCLK(rtcclk), .SELMODE(selmode), .RTC_MODE(rtc_mode), .vcc_good(AUX_3V3_PG)
   );
 
 
@@ -410,11 +413,11 @@ module toplevel(
   assign SYS_CONFIG = sys_config_vector;
 
   sys_config #( 
-    .BOARD_ID(`BOARD_ID),
-    .REV_MAJOR(`REV_MAJOR),
-    .REV_MINOR(`REV_MINOR),
-    .REV_RCS(`REV_RCS),
-    .DEFAULT_SYS_CONFIG(`DEFAULT_SYS_CONFIG)
+    .BOARD_ID     (`BOARD_ID),
+    .REV_MAJOR    (`REV_MAJOR),
+    .REV_MINOR    (`REV_MINOR),
+    .REV_RCS      (`REV_RCS),
+    .RCS_UPTODATE (`RCS_UPTODATE)
   ) sys_config_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[0]), .wb_stb_i(wbs_stb_o[0]), .wb_we_i(wbs_we_o),
@@ -580,14 +583,16 @@ module toplevel(
 
   reg [26:0] counter;
   always @(posedge gclk40) begin
-    counter <= counter + 1;
+    if (!hard_reset) begin
+      counter <= counter + 1;
+    end
   end
   wire bad_power_down = no_power_cause == 2'b01 || no_power_cause == 2'b10;
   wire power_led  = power_ok ? 1'b1 :
                     bad_power_down ? counter[24] :
                     1'b0;
   wire action_led = power_ok ? CONTROLLER_IRQ : counter[26];
-  assign CHS_LED_N = ~{action_led, power_led};
+  assign CHS_LED_N = hard_reset ? 2'b00 : ~{action_led, power_led};
 
   assign cold_start = ~sys_config_vector[0];
   assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,

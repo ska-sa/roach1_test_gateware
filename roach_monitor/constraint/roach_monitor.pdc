@@ -12,9 +12,6 @@ set_iobank Bank2 -vcci 3.30
 set_iobank Bank1 -vcci 3.30
 set_iobank Bank0 -vcci 3.30
 
-#set_io CHS_LED\[0\]  -pinname N2 -fixed yes -iostd LVTTL -SLEW Low 
-#set_io CHS_LED\[1\]  -pinname D1 -fixed yes -iostd LVTTL -SLEW Low 
-
 #
 # Analogue Signals
 #

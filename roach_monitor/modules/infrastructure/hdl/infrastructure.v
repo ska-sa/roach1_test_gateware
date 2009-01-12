@@ -3,7 +3,8 @@ module infrastructure(
     gclk40,gclk100,gclk10,
     PLL_LOCK,
     PUB, FPGAGOOD, XTLCLK,
-    RTCCLK, SELMODE, RTC_MODE
+    RTCCLK, SELMODE, RTC_MODE,
+    vcc_good
   );
   output gclk40,gclk100,gclk10;
   output PLL_LOCK;
@@ -14,6 +15,7 @@ module infrastructure(
   output RTCCLK;
   input  SELMODE;
   input  [1:0] RTC_MODE;
+  input  vcc_good;
 
   //clock infrastructure 
   wire rcclk;
@@ -23,7 +25,7 @@ module infrastructure(
   );
 
   clocks clocks(
-    .POWERDOWN(1'b1),
+    .POWERDOWN(vcc_good), //active low
     .CLKA(rcclk),
     .GLA(gclk100),.GLB(gclk40),.GLC(gclk10),
     .OADIVRST(1'b0),
@@ -39,7 +41,7 @@ module infrastructure(
   
   // Voltage regulator monitor
   vrpsm vrpsm_0(
-    .PUB(PUB),.VRPU(1'b1),.FPGAGOOD(FPGAGOOD),.RTCPSMMATCH(1'b0)
+    .PUB(PUB),.VRPU(vcc_good),.FPGAGOOD(FPGAGOOD),.RTCPSMMATCH(1'b0)
   );
 
 endmodule

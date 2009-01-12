@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-`define DEBOUNCE_TIMEOUT 10
+`define DEBOUNCE_TIMEOUT 5
 `define HLF_DEBOUNCE_TIMEOUT 5
 `define SWITCHES 5
 
@@ -12,16 +12,21 @@ module TB_debouncer();
     .DELAY(`DEBOUNCE_TIMEOUT)
   ) debouncer [`SWITCHES - 1 : 0] (
     .clk(clk),
+    .rst(reset),
     .in_switch(swin),
     .out_switch(swout)
   );
 
+  reg runt_check;
+
   initial begin
+    $dumpvars;
 `ifdef DEBUG
     $display("starting sim");
 `endif
     clk<=1'b0;
     reset<=1'b1;
+    runt_check <= 1'b0;
     swin<=`SWITCHES'b0;
     #9 reset<=1'b0;
 
@@ -34,7 +39,7 @@ module TB_debouncer();
     swin<=swout;
 
     #10 swin<=~swin;
-    #2 
+    #7 
     if (swout!=~(`SWITCHES'b0)) begin
       $display("FAILED: did not react");
     $finish;
@@ -47,6 +52,12 @@ module TB_debouncer();
     $finish;
       end
 
+    runt_check <= 1'b1;
+    #1
+    swin<=`SWITCHES'b1;
+    #3
+    swin<=`SWITCHES'b0;
+
 
     #1 $display("PASSED");
     $finish;
@@ -54,5 +65,14 @@ module TB_debouncer();
 
   always begin
      #1 clk<=~clk;
+  end
+
+  always @(*) begin
+    if (runt_check) begin
+      if (swout != `SWITCHES'b0) begin
+        $display("FAILED: got a runt pulse");
+        $finish;
+      end
+    end
   end
 endmodule
