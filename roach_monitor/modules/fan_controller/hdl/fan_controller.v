@@ -30,9 +30,9 @@ module fan_controller(
   reg  [2:0] wb_dat_sel;
   reg [15:0] wb_dat_o;
 
-  reg  [7:0] fan_pwm_0;
-  reg  [7:0] fan_pwm_1;
-  reg  [7:0] fan_pwm_2;
+  reg  [8:0] fan_pwm_0;
+  reg  [8:0] fan_pwm_1;
+  reg  [8:0] fan_pwm_2;
 
   reg  [7:0] fan_speed_0;
   reg  [7:0] fan_speed_1;
@@ -43,9 +43,9 @@ module fan_controller(
       0: wb_dat_o <= {8'b0, fan_speed_0};
       1: wb_dat_o <= {8'b0, fan_speed_1};
       2: wb_dat_o <= {8'b0, fan_speed_2};
-      3: wb_dat_o <= {8'b0, fan_pwm_0};
-      4: wb_dat_o <= {8'b0, fan_pwm_1};
-      5: wb_dat_o <= {8'b0, fan_pwm_2};
+      3: wb_dat_o <= {7'b0, fan_pwm_0};
+      4: wb_dat_o <= {7'b0, fan_pwm_1};
+      5: wb_dat_o <= {7'b0, fan_pwm_2};
       default: wb_dat_o <= 16'b0;
     endcase
   end
@@ -54,9 +54,9 @@ module fan_controller(
     //strobes
     wb_ack_o <= 1'b0;
     if (wb_rst_i) begin
-      fan_pwm_0 <= 8'hff;
-      fan_pwm_1 <= 8'hff;
-      fan_pwm_2 <= 8'hff;
+      fan_pwm_0 <= 9'h100;
+      fan_pwm_1 <= 9'h100;
+      fan_pwm_2 <= 9'h100;
     end else begin
       if (wb_cyc_i & wb_stb_i & ~wb_ack_o) begin
         wb_ack_o   <= 1'b1;
@@ -74,15 +74,15 @@ module fan_controller(
           /* Fan CTRL 0-2 (rd/wr) */
           3'd3: begin
             if (wb_we_i)
-              fan_pwm_0 <= wb_dat_i[7:0];
+              fan_pwm_0 <= wb_dat_i[8:0];
           end
           3'd4: begin
             if (wb_we_i)
-              fan_pwm_1 <= wb_dat_i[7:0];
+              fan_pwm_1 <= wb_dat_i[8:0];
           end
           3'd5: begin
             if (wb_we_i)
-              fan_pwm_2 <= wb_dat_i[7:0];
+              fan_pwm_2 <= wb_dat_i[8:0];
           end
         endcase
       end
@@ -115,9 +115,9 @@ module fan_controller(
     end
   end
 
-  assign fan_control[0] = pwm_progress < fan_pwm_0;
-  assign fan_control[1] = pwm_progress < fan_pwm_1;
-  assign fan_control[2] = pwm_progress < fan_pwm_2;
+  assign fan_control[0] = {1'b0, pwm_progress} < fan_pwm_0;
+  assign fan_control[1] = {1'b0, pwm_progress} < fan_pwm_1;
+  assign fan_control[2] = {1'b0, pwm_progress} < fan_pwm_2;
 
 /*********** Fan Speed Sense Logic *************/
 
