@@ -4,7 +4,7 @@ default:
 	@echo "not implemented"
 
 $(SYNTH_F): $(SYNTH_SCRIPT)
-	rm -f $@
+	@rm -f $@
 	synplify -runall $(SYNTH_SCRIPT) && test -f $@
 
 $(SYNTH_SCRIPT): $(SRC)

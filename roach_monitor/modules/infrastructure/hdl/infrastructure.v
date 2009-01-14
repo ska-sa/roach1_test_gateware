@@ -1,12 +1,12 @@
 `timescale 1ns/10ps
 module infrastructure(
-    gclk40,gclk100,gclk10,
+    gclk40,gclk100,gclk10,gclk_xtal,
     PLL_LOCK,
     PUB, FPGAGOOD, XTLCLK,
     RTCCLK, SELMODE, RTC_MODE,
     vcc_good
   );
-  output gclk40,gclk100,gclk10;
+  output gclk40,gclk100,gclk10,gclk_xtal;
   output PLL_LOCK;
 
   input  PUB;
@@ -36,7 +36,8 @@ module infrastructure(
   xtalclk xtalclk(
     .XTL(XTLCLK),
     .CLKOUT(RTCCLK),
-    .SELMODE(SELMODE), .RTC_MODE(RTC_MODE)
+    .SELMODE(SELMODE), .RTC_MODE(RTC_MODE),
+    .gclk_xtal(gclk_xtal)
   );
   
   // Voltage regulator monitor

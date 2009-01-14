@@ -1,11 +1,15 @@
 module TB_as_wb_bridge();
+
+  localparam TEST_LENGTH = 32;
+
   reg clk, reset;
 
-  reg  s_busy;
-  wire s_ostrb;
-  reg  s_gotdata;
-  reg  [7:0] s_data_i;
-  wire [7:0] s_data_o; 
+  reg  [7:0] as_data_i;
+  wire [7:0] as_data_o;
+  reg  as_dstrb_i;
+  wire as_busy_i;
+  wire as_busy_o; 
+  wire as_dstrb_o;
 
   wire wb_cyc_o, wb_stb_o, wb_we_o; 
   wire [15:0] wb_adr_o;
@@ -14,8 +18,16 @@ module TB_as_wb_bridge();
   reg  wb_ack_i;
   
   as_wb_bridge as_wb_bridge(
-    .clk(clk), .reset(reset),
-    .as_data_i(s_data_i),.as_data_o(s_data_o),.as_dstrb_i(s_gotdata),.as_busy_i(s_busy),.as_dstrb_o(s_ostrb),
+    .clk   (clk),
+    .reset (reset),
+
+    .as_data_i  (as_data_i), 
+    .as_data_o  (as_data_o),
+    .as_dstrb_i (as_dstrb_i),
+    .as_busy_i  (as_busy_i),
+    .as_busy_o  (as_busy_o),
+    .as_dstrb_o (as_dstrb_o),
+
     .wb_stb_o(wb_stb_o), .wb_cyc_o(wb_cyc_o), .wb_we_o(wb_we_o),
     .wb_adr_o(wb_adr_o), .wb_dat_o(wb_dat_o), .wb_dat_i(wb_dat_i),
     .wb_ack_i(wb_ack_i), .wb_err_i(1'b0)
@@ -25,193 +37,232 @@ module TB_as_wb_bridge();
   reg got_something;
 
   initial begin
-    readback_command<=1'b0;
     clk<=1'b0;
-    got_something<=1'b0;
     reset<=1'b1;
-`ifdef DEBUG
-    $display("starting sim");
-`endif
     #5 reset<=1'b0;
 `ifdef DEBUG
-    $display("clearing reset");
+    $display("sim: clearing reset");
 `endif
-    #8000
-    readback_command<=1'b1;
-    #8000 
-    if (~got_something) begin
-      $display("FAILED: got nothing");
-    end else
-      $display("PASSED");
+    #80000
+    $display("FAILED: simulation timed out");
     $finish;
-
   end
 
   always begin
     #1 clk <=~clk;
   end
 
-/*serial interface*/
-  reg [2:0] serial_test_state;
-  reg s_ostrb_fresh,readback_mode;
-  reg [5:0] read_wait;
-  reg [5:0] write_wait;
-  reg [15:0] wr_addr;
-  reg [15:0] wr_data;
-/*delays for read/write: these are needed in the design.*/
-`define SERIAL_READ_WAIT 6'd10 /*absolute minimum 7*/
-`define SERIAL_WRITE_WAIT 6'd10 /*absolute minimum 7*/
+  /* Mode Control */
 
-`define S_STATE_COMMAND 3'd0
-`define S_STATE_ADDRESS0 3'd1
-`define S_STATE_ADDRESS1 3'd2
-`define S_STATE_DATA0 3'd3
-`define S_STATE_DATA1 3'd4
+  reg mode;
+  localparam MODE_WRITE = 1'b0;
+  localparam MODE_READ  = 1'b1;
+
+  wire [1:0] mode_done;
+
+  reg [15:0] mode_mem [TEST_LENGTH-1:0];
+
+  reg [31:0] write_acks;
+
+  integer i;
 
   always @ (posedge clk) begin
     if (reset) begin
-      wr_addr<=16'hffff;
-      s_ostrb_fresh<=1'b1;
-      read_wait<=6'b0;
-      write_wait<=6'b0;
-      s_busy<=1'b0;
-      s_gotdata<=1'b0;
-      readback_mode<=1'b0;
-      serial_test_state<=`S_STATE_COMMAND;
-/*command 2xADDRESS READ/WRITE*/
+      mode <= MODE_WRITE;
     end else begin
-      case (serial_test_state) 
-	`S_STATE_COMMAND: begin
-          if (~readback_mode & readback_command & write_wait == 6'b0) begin
-            readback_mode<=1'b1;
-            wr_addr<=16'hffff;
-`ifdef DEBUG
-	    $display("READBACK_MODE");
-`endif
-          end else begin
-            if (!s_gotdata && write_wait == `SERIAL_WRITE_WAIT) begin
-              s_data_i<=(readback_mode ? 8'b1 : 8'b10);          
-              s_gotdata<=1'b1;
-              wr_addr<=wr_addr+16'b1;
-              wr_data<=wr_addr+16'b1;
-`ifdef DEBUG 
-              if (readback_mode)
-                $display("serial read command");
-	      else
-                $display("serial write command");
-`endif
-            end else if (s_gotdata) begin
-              write_wait<=6'b0;
-              serial_test_state<=`S_STATE_ADDRESS0;
-              s_gotdata<=1'b0;
-            end else
-              write_wait<=write_wait + 6'b1;
+      case (mode)
+        MODE_WRITE: begin
+          if (mode_done[MODE_WRITE]) begin
+            mode <= MODE_READ;
           end
         end
-        `S_STATE_ADDRESS0: begin
-          if (!s_gotdata && write_wait == `SERIAL_WRITE_WAIT) begin
-            s_data_i<=wr_addr[7:0];          
-            s_gotdata<=1'b1;
-          end else if (s_gotdata) begin
-            s_gotdata<=1'b0;
-            serial_test_state<=`S_STATE_ADDRESS1;
-            write_wait<=6'b0;
-          end else
-            write_wait<=write_wait + 6'b1;
-        end
-        `S_STATE_ADDRESS1: begin
-          if (!s_gotdata && write_wait == `SERIAL_WRITE_WAIT) begin
-            s_data_i<=wr_addr[15:8];          
-            s_gotdata<=1'b1;
-`ifdef DEBUG 
-              $display("serial sent addr: %x",wr_addr);
-`endif
-          end else if (s_gotdata) begin
-            write_wait<=6'b0;
-            s_gotdata<=1'b0;
-            serial_test_state<=`S_STATE_DATA0;
-          end else
-            write_wait<=write_wait + 6'b1;
-        end
-        `S_STATE_DATA0: begin
-          if (~readback_mode) begin
-            if (!s_gotdata && write_wait == `SERIAL_WRITE_WAIT) begin
-              s_data_i<=wr_data[7:0];          
-              s_gotdata<=1'b1;
-            end else if (s_gotdata) begin
-              s_gotdata<=1'b0;
-              write_wait<=6'b0;
-              serial_test_state<=`S_STATE_DATA1;
-            end else
-              write_wait<=write_wait + 6'b1;
-          end else begin
-            if (~s_ostrb & ~s_ostrb_fresh)
-               s_ostrb_fresh<=1'b1;
-            if (s_ostrb & s_ostrb_fresh) begin
-              s_ostrb_fresh<=1'b0;
-	      s_busy<=1'b1;
-	      read_wait<=6'b0;
-	      wr_data[7:0] <= s_data_o;
-            end
-            if (s_busy) begin
-              if (read_wait==`SERIAL_READ_WAIT) begin
-                read_wait<=6'b0;
-                s_busy<=1'b0;
-                serial_test_state<=`S_STATE_DATA1;
-              end else begin
-                read_wait<=read_wait + 6'b1;
+        MODE_READ: begin
+          if (mode_done[MODE_READ]) begin
+            for (i = 0; i < TEST_LENGTH; i=i+1) begin
+              if (mode_mem[i] !== ~(i[15:0]))  begin
+                $display("FAILED: data mismatch - got %x, expected %x", mode_mem[i], ~(i[15:0]));
+                $finish;
               end
             end
+            $display("PASSED");
+            $finish;
           end
         end
-        `S_STATE_DATA1: begin
-           if (~readback_mode) begin
-            if (!s_gotdata && write_wait == `SERIAL_WRITE_WAIT) begin
-              s_data_i<=wr_data[15:8];          
-`ifdef DEBUG 
-              $display("serial wrote data: %x",wr_data);
-`endif
-              s_gotdata<=1'b1;
-            end else if(s_gotdata) begin
-              s_gotdata<=1'b0;
-              write_wait<=6'b0;
-              serial_test_state<=`S_STATE_COMMAND;
-            end else
-              write_wait<=write_wait + 6'b1;
-          end else begin
-            if (~s_ostrb & ~s_ostrb_fresh)
-               s_ostrb_fresh<=1'b1;
-            if (s_ostrb & s_ostrb_fresh) begin
-              s_ostrb_fresh<=1'b0;
-	      s_busy<=1'b1;
-	      read_wait<=6'b0;
-	      if ({s_data_o,wr_data[7:0]} == wr_addr) begin
-	        got_something<=1'b1;
-`ifdef DEBUG 
-	        $display("serial got data: %x",{s_data_o,wr_data[7:0]});
-`endif
-	      end else begin
-	        $display("FAILED: data mismatch");
-	      end
-            end
-            if (s_busy) begin
-              if (read_wait==`SERIAL_READ_WAIT) begin
-                read_wait<=6'b0;
-                s_busy<=1'b0;
-                serial_test_state<=`S_STATE_COMMAND;
-              end else begin
-                read_wait<=read_wait + 6'b1;
-              end
-            end
-          end
-        end       
       endcase
     end
   end
+
+  /* Serial Write */
+
+  reg  [2:0] write_state;
+  reg [31:0] write_progress;
+  reg [31:0] read_progress;
+
+  always @(*) begin
+    if (mode == MODE_WRITE) begin
+      as_dstrb_i <= write_progress < TEST_LENGTH;
+    end
+    if (mode == MODE_READ) begin
+      as_dstrb_i <= read_progress < TEST_LENGTH;
+    end
+    case (write_state)
+      0: begin
+        if (mode == MODE_WRITE) begin
+          as_data_i <= 8'd2;
+        end
+        if (mode == MODE_READ) begin
+          as_data_i <= 8'd1;
+        end
+      end
+      1: begin
+        if (mode == MODE_READ) begin
+          as_data_i <= read_progress[7:0];
+        end else begin
+          as_data_i <= write_progress[7:0];
+        end
+      end
+      2: begin
+        if (mode == MODE_READ) begin
+          as_data_i <= read_progress[15:8];
+        end else begin
+          as_data_i <= write_progress[15:8];
+        end
+      end
+      3: begin
+        as_data_i <= ~write_progress[7:0];
+      end
+      4: begin
+        as_data_i <= ~write_progress[15:8];
+      end
+      default: begin
+      end
+    endcase
+  end
+
+  always @(posedge clk) begin
+    if (reset) begin
+      read_progress  <= 32'd0;
+      write_progress <= 32'd0;
+      write_state    <=  3'd0;
+    end else begin
+
+      /* issue write commands over as interface */
+      if (mode == MODE_WRITE && !as_busy_o) begin
+
+        case (write_state)
+          3'd0: begin
+            if (write_progress < TEST_LENGTH) begin
+              write_state <= 3'd1;
+            end
+          end
+          3'd1: begin
+            write_state <= 3'd2;
+          end
+          3'd2: begin
+            write_state <= 3'd3;
+          end
+          3'd3: begin
+            write_state <= 3'd4;
+          end
+          3'd4: begin
+            write_state <= 3'd0;
+            write_progress <= write_progress + 1;
+          end
+        endcase
+      end
+      /* issue write commands over as interface */
+      if (mode == MODE_READ && !as_busy_o) begin
+
+        case (write_state)
+          3'd0: begin
+            if (read_progress < TEST_LENGTH) begin
+              write_state <= 3'd1;
+            end
+          end
+          3'd1: begin
+            write_state <= 3'd2;
+          end
+          3'd2: begin
+            read_progress <= read_progress + 1;
+            write_state   <= 3'd0;
+          end
+        endcase
+      end
+    end
+  end
+
+  /* Serial Read */
+
+  reg [3:0] busy_timer;
+
+  reg [1:0] read_state;
+
+  reg  [7:0] read_buff;
+  reg [31:0] s_read_progress;
+
+  assign mode_done[MODE_WRITE] = write_state == 2'd0 && write_progress == TEST_LENGTH && as_dstrb_o;
+  /* */
+
+  always @(posedge clk) begin
+    if (reset) begin
+      busy_timer <= 3'b0;
+      write_acks <= 32'd0;
+      read_state <= 2'b0;
+      s_read_progress <= 32'b0;
+    end else begin
+      if (busy_timer) begin
+        busy_timer <= busy_timer - 1;
+      end else begin
+        if (as_dstrb_o && mode == MODE_WRITE) begin
+          if (as_data_o === 8'd1) begin
+            write_acks <= write_acks + 1;
+`ifdef DEBUG
+            $display("serial_read: got ack in MODE_WRITE");
+`endif
+          end else begin
+            $display("ERROR: expected ack (%x) in write mode, got %x", 8'h1, as_data_o);
+            $finish;
+          end
+        end
+
+        if (as_dstrb_o && mode == MODE_READ) begin
+          case (read_state)
+            0: begin
+              if (as_data_o === 8'd1) begin
+                read_state <= 2'd1;
+`ifdef DEBUG
+                $display("serial_read: got ack in MODE_READ");
+`endif
+              end else begin
+                $display("ERROR: expected ack (%x) in write mode, got %x", 8'h1, as_data_o);
+                $finish;
+              end
+            end
+            1: begin
+              read_buff  <= as_data_o;
+              read_state <= 2'd2;
+            end
+            2: begin
+              read_state <= 2'd0;
+              mode_mem[s_read_progress] <= {as_data_o, read_buff};
+              s_read_progress <= s_read_progress + 1;
+`ifdef DEBUG
+              $display("serial_read: got read - data = %x", {as_data_o, read_buff});
+`endif
+            end
+          endcase
+        end
+      end
+    end
+  end
+  assign as_busy_i = busy_timer != 0;
+  assign mode_done[MODE_READ] = read_state == 2'd0 && s_read_progress == TEST_LENGTH;
+  /* */
   
+  /* WishBone Slave */
   
-  reg [15:0] mem_dump [65535:0];
-/*bus element*/
+  reg [15:0] mem_dump [TEST_LENGTH-1:0];
+
   always @ (posedge clk) begin
     if (reset) begin
       wb_ack_i<=1'b0;

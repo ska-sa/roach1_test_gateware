@@ -97,9 +97,9 @@ set_io AUX_3V3_PG     -pinname M5  -fixed yes -iostd LVTTL
 
 set_io XPORT_SERIAL_IN  -pinname D9 -fixed yes -iostd LVTTL
 set_io XPORT_SERIAL_OUT -pinname D8 -fixed yes -iostd LVTTL -SLEW Low  
-set_io XPORT_GPIO\[0\]    -pinname D7 -fixed yes -iostd LVTTL 
-set_io XPORT_GPIO\[1\]    -pinname D6 -fixed yes -iostd LVTTL 
-set_io XPORT_GPIO\[2\]    -pinname C6 -fixed yes -iostd LVTTL 
+set_io XPORT_GPIO\[0\]  -pinname D7 -fixed yes -iostd LVTTL -SLEW Low -RES_PULL Up
+set_io XPORT_GPIO\[1\]  -pinname D6 -fixed yes -iostd LVTTL -SLEW Low -RES_PULL Up
+set_io XPORT_GPIO\[2\]  -pinname C6 -fixed yes -iostd LVTTL -SLEW Low -RES_PULL Up
 set_io XPORT_RESET_N    -pinname C7 -fixed yes -iostd LVTTL -SLEW Low
 
 #

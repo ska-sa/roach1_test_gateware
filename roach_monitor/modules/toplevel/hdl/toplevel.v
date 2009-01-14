@@ -110,13 +110,13 @@ module toplevel(
   wire rtcclk, selmode;
   wire [1:0] rtc_mode;
 
+  wire gclk_xtal;
   infrastructure infrastructure_inst(
-    .gclk40(gclk40),.gclk100(gclk100),.gclk10(gclk10),
+    .gclk40(gclk40),.gclk100(gclk100),.gclk10(gclk10),.gclk_xtal(gclk_xtal),
     .PLL_LOCK(pll_lock),
     .PUB(PUB), .FPGAGOOD(nc_fpgagood), .XTLCLK(XTLCLK),
     .RTCCLK(rtcclk), .SELMODE(selmode), .RTC_MODE(rtc_mode), .vcc_good(AUX_3V3_PG)
   );
-
 
   /********************* WishBone Master signals ***********************/
   wire debug_wb_we_o, debug_wb_cyc_o, debug_wb_stb_o;
@@ -159,8 +159,7 @@ module toplevel(
     .clk(gclk40), .reset(hard_reset),
     .serial_in(DEBUG_SERIAL_IN), .serial_out(DEBUG_SERIAL_OUT),
     .as_data_i(ds_as_data_i),  .as_data_o(ds_as_data_o),
-    .as_dstrb_i(ds_as_dstrb_i), .as_busy_o(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_o),
-    .status(uart_status)
+    .as_dstrb_i(ds_as_dstrb_i), .as_busy_o(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_o)
   );
 
   /* Debug WB bridge */
@@ -183,13 +182,10 @@ module toplevel(
 `endif
 
   /********* XPORT Interface ***********/
-  //assign XPORT_RESET_N = ~hard_reset;
 `ifdef ENABLE_XPORT_INTERFACE
   wire [7:0] xp_as_data_i;
   wire [7:0] xp_as_data_o;
   wire xp_as_dstrb_i, xp_as_busy_o, xp_as_dstrb_o;
-
- // assign XPORT_SERIAL_OUT = XPORT_SERIAL_IN;
 
   /* XPORT UART */
   serial_uart #(
@@ -423,7 +419,8 @@ module toplevel(
     .wb_cyc_i(wbs_cyc_o[0]), .wb_stb_i(wbs_stb_o[0]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(0 + 1) - 1:16*0]),
     .wb_ack_o(wbs_ack_i[0]),
-    .sys_config_vector(sys_config_vector)
+    .sys_config_vector(sys_config_vector),
+    .xtal_clk(gclk_xtal)
   );
 
   /************** FlashROM Controller ***************/
@@ -672,9 +669,7 @@ module toplevel(
     .bm_timeout(bm_timeout),
     .bm_wbm_id(bm_wbm_id),
     .bm_addr(bm_addr),
-    .bm_we(bm_we),
-
-    .uart_status(uart_status)
+    .bm_we(bm_we)
   );
 
   /************* FlashMem Controller *****************/

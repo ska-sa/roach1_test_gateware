@@ -11,10 +11,8 @@ module bus_monitor(
     bm_timeout,
     bm_wbm_id,
     bm_addr,
-    bm_we,
-    uart_status
+    bm_we
   );
-  input  uart_status;
   input  wb_clk_i, wb_rst_i;
   input  wb_stb_i, wb_cyc_i, wb_we_i;
   input  [15:0] wb_adr_i;
@@ -41,7 +39,7 @@ module bus_monitor(
                     wb_dat_src == 3'd1 ? {11'b0, bm_status[4:0]} :
                     wb_dat_src == 3'd2 ? timeout_count :
                     wb_dat_src == 3'd3 ? memv_count :
-                    wb_dat_src == 3'd4 ? {15'b0, uart_status} :
+                    wb_dat_src == 3'd4 ? {15'b0, 1'b1} :
                     16'hdead;
 
   always @(posedge wb_clk_i) begin
