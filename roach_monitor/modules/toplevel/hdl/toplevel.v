@@ -73,6 +73,12 @@ module toplevel(
   input  XTLCLK, PUB;
   inout  VAREF;
 
+
+  /************ XPORT GPIO Decode ************/
+  wire XPORT_SERIAL_RTS = XPORT_GPIO[0];
+  wire XPORT_RESET      = XPORT_GPIO[1];
+  wire XPORT_SERIAL_CTS = XPORT_GPIO[2];
+
   /*************** Global Nets ***************/
 
   wire hard_reset;
@@ -88,7 +94,7 @@ module toplevel(
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(1'b0),
-    .reset_i((!CHS_RESET_N) || XPORT_GPIO == 3'b101),
+    .reset_i((!CHS_RESET_N) || XPORT_RESET),
     .reset_o(hard_reset)
   );
   assign XPORT_RESET_N = 1'b1;
@@ -157,19 +163,33 @@ module toplevel(
     .CLOCK_RATE(`MASTER_CLOCK_RATE)
   ) serial_uart_debug (
     .clk(gclk40), .reset(hard_reset),
-    .serial_in(DEBUG_SERIAL_IN), .serial_out(DEBUG_SERIAL_OUT),
-    .as_data_i(ds_as_data_i),  .as_data_o(ds_as_data_o),
-    .as_dstrb_i(ds_as_dstrb_i), .as_busy_o(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_o)
+    .serial_in  (DEBUG_SERIAL_IN),   .serial_out(DEBUG_SERIAL_OUT),
+    .serial_rts (1'b1),  .serial_cts(),
+
+    /* rx */
+    .as_data_i  (ds_as_data_i),
+    .as_dstrb_i (ds_as_dstrb_i),
+    .as_busy_i  (ds_as_busy_i),
+
+    /* tx */
+    .as_data_o  (ds_as_data_o),
+    .as_dstrb_o (ds_as_dstrb_o),
+    .as_busy_o  (ds_as_busy_o)
   );
 
   /* Debug WB bridge */
   as_wb_bridge as_wb_bridge_debug(
-    .clk(gclk40), .reset(hard_reset), 
-    .as_data_i(ds_as_data_o), .as_data_o(ds_as_data_i),
-    .as_dstrb_i(ds_as_dstrb_o), .as_busy_i(ds_as_busy_o), .as_dstrb_o(ds_as_dstrb_i),
-    .wb_we_o(debug_wb_we_o), .wb_cyc_o(debug_wb_cyc_o), .wb_stb_o(debug_wb_stb_o),
-    .wb_adr_o(debug_wb_adr_o), .wb_dat_o(debug_wb_dat_o), .wb_dat_i(debug_wb_dat_i),
-    .wb_ack_i(debug_wb_ack_i), .wb_err_i(debug_wb_err_i)
+    .clk(gclk40),
+    .reset(hard_reset), 
+    .as_data_i  (ds_as_data_o),
+    .as_dstrb_i (ds_as_dstrb_o),
+    .as_busy_o  (ds_as_busy_i),
+    .as_dstrb_o (ds_as_dstrb_i),
+    .as_data_o  (ds_as_data_i),
+    .as_busy_i  (ds_as_busy_o),
+    .wb_we_o  (debug_wb_we_o),  .wb_cyc_o (debug_wb_cyc_o), .wb_stb_o (debug_wb_stb_o),
+    .wb_adr_o (debug_wb_adr_o), .wb_dat_o (debug_wb_dat_o), .wb_dat_i (debug_wb_dat_i),
+    .wb_ack_i (debug_wb_ack_i), .wb_err_i (debug_wb_err_i)
   );
 
 `else
@@ -189,23 +209,36 @@ module toplevel(
 
   /* XPORT UART */
   serial_uart #(
-    .BAUD(`XPORT_SERIAL_BAUD),
-    .CLOCK_RATE(`MASTER_CLOCK_RATE)
+    .BAUD       (`XPORT_SERIAL_BAUD),
+    .CLOCK_RATE (`MASTER_CLOCK_RATE)
   ) serial_uart_xport (
-    .clk(gclk40), .reset(hard_reset),
-    .serial_in(XPORT_SERIAL_IN), .serial_out(XPORT_SERIAL_OUT),
-    .as_data_i(xp_as_data_i),  .as_data_o(xp_as_data_o),
-    .as_dstrb_i(xp_as_dstrb_i), .as_busy_o(xp_as_busy_o), .as_dstrb_o(xp_as_dstrb_o)
+    .clk   (gclk40),
+    .reset (hard_reset),
+    .serial_in  (XPORT_SERIAL_IN),  .serial_out (XPORT_SERIAL_OUT),
+    .serial_rts (XPORT_SERIAL_RTS), .serial_cts (XPORT_SERIAL_CTS),
+    .as_data_i  (xp_as_data_i),
+    .as_dstrb_i (xp_as_dstrb_i),
+    .as_busy_o  (xp_as_busy_o),
+    .as_data_o  (xp_as_data_o),
+    .as_dstrb_o (xp_as_dstrb_o),
+    .as_busy_i  (xp_as_busy_i)
   );
 
   /* XPORT WB bridge */
   as_wb_bridge as_wb_bridge_xport(
-    .clk(gclk40), .reset(hard_reset), 
-    .as_data_i(xp_as_data_o), .as_data_o(xp_as_data_i),
-    .as_dstrb_i(xp_as_dstrb_o), .as_busy_i(xp_as_busy_o), .as_dstrb_o(xp_as_dstrb_i),
-    .wb_we_o(xport_wb_we_o), .wb_cyc_o(xport_wb_cyc_o), .wb_stb_o(xport_wb_stb_o),
-    .wb_adr_o(xport_wb_adr_o), .wb_dat_o(xport_wb_dat_o), .wb_dat_i(xport_wb_dat_i),
-    .wb_ack_i(xport_wb_ack_i), .wb_err_i(xport_wb_err_i)
+    .clk   (gclk40),
+    .reset (hard_reset), 
+
+    .as_data_i  (xp_as_data_o),
+    .as_dstrb_i (xp_as_dstrb_o),
+    .as_busy_o  (xp_as_busy_i),
+    .as_data_o  (xp_as_data_i),
+    .as_dstrb_o (xp_as_dstrb_i),
+    .as_busy_i  (xp_as_busy_o),
+
+    .wb_we_o  (xport_wb_we_o),  .wb_cyc_o (xport_wb_cyc_o), .wb_stb_o (xport_wb_stb_o),
+    .wb_adr_o (xport_wb_adr_o), .wb_dat_o (xport_wb_dat_o), .wb_dat_i (xport_wb_dat_i),
+    .wb_ack_i (xport_wb_ack_i), .wb_err_i (xport_wb_err_i)
   );
 `else
   assign xport_wb_we_o  = 1'b0;
@@ -214,6 +247,7 @@ module toplevel(
   assign xport_wb_adr_o = 16'b0;
   assign xport_wb_dat_o = 16'b0;
   assign XPORT_SERIAL_OUT = 1'b0;
+  assign XPORT_SERIAL_CTS = 1'b1;
 `endif
 
   /********* Controller Interface ***********/

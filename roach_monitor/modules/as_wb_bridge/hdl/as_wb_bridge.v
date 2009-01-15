@@ -30,6 +30,7 @@ module as_wb_bridge(
 
   localparam RESPONSE_ACK      = 8'd1;
   localparam RESPONSE_PING     = 8'd8;
+  localparam RESPONSE_CMDERROR = 8'd253;
   localparam RESPONSE_BUSERROR = 8'd254;
   localparam RESPONSE_OVERFLOW = 8'd255;
 
@@ -62,12 +63,14 @@ module as_wb_bridge(
   reg [15:0] cmd_data; 
 
   reg  [2:0] collect_progress;
-  reg  [2:0] response_progress;
 
   reg  [7:0] resp_type;
   reg [15:0] resp_data;
 
   reg datai_overflow_reg;
+
+  wire response_ack;
+  /* ack from response transmission logic */
 
   always @(posedge clk) begin
     /* Single-cycle strobes */
@@ -76,7 +79,6 @@ module as_wb_bridge(
     if (reset) begin
       state              <= STATE_COMMAND;
       collect_progress   <= 3'b0;
-      response_progress  <= 3'b0;
       datai_overflow_reg <= 1'b0;
     end else begin
       datai_overflow_reg <= datai_overflow_reg | datai_overflow;
@@ -86,7 +88,6 @@ module as_wb_bridge(
         /* Command Type Processing */
         STATE_COMMAND: begin
           collect_progress  <= 3'b0;
-          response_progress <= 3'b0;
           cmd_type          <= datai;
 
           if (datai_overflow_reg) begin
@@ -108,6 +109,8 @@ module as_wb_bridge(
                 state     <= STATE_RESPONSE;
               end
               default: begin
+                resp_type <= RESPONSE_CMDERROR;
+                state     <= STATE_RESPONSE;
               end
             endcase
           end
@@ -151,30 +154,65 @@ module as_wb_bridge(
           end
         end
         STATE_RESPONSE: begin
-          if (datao_ready) begin
-            response_progress <= response_progress + 1;
-            case (response_progress)
-              0: begin
-                if (cmd_type != COMMAND_READ) begin
-                  state <= STATE_COMMAND;
-                end
-              end
-              1: begin
-              end
-              2: begin
-                state <= STATE_COMMAND;
-              end
-            endcase
+          if (response_ack) begin
+            state     <= STATE_COMMAND;
           end
         end
       endcase
     end
   end 
 
-  assign datao_valid = state == STATE_RESPONSE;
-  assign datao       = response_progress == 0 ? resp_type     :
-                       response_progress == 1 ? resp_data[7:0] :
-                                                resp_data[15:8];
+  /* Response transmission logic */
+
+  reg response_state;
+  reg  [2:0] response_progress;
+
+  reg  [7:0] cmd_type_buf;
+  reg  [7:0] resp_type_buf;
+  reg [15:0] resp_data_buf;
+
+  assign response_ack = response_state == 1'b0;
+
+  always @(posedge clk) begin
+    if (reset) begin
+      response_state <= 1'b0;
+      response_progress <= 3'd0;
+    end else begin
+      case (response_state)
+        0: begin
+          response_progress <= 3'd0;
+          if (state == STATE_RESPONSE) begin
+            cmd_type_buf  <= cmd_type;
+            resp_data_buf <= resp_data;
+            resp_type_buf <= resp_type;
+            response_state <= 1;
+          end
+        end
+        1: begin
+          if (datao_ready) begin
+            response_progress <= response_progress + 1;
+            case (response_progress)
+              0: begin
+                if (cmd_type_buf != COMMAND_READ) begin
+                  response_state <= 0;
+                end
+              end
+              1: begin
+              end
+              2: begin
+                response_state <= 0;
+              end
+            endcase
+          end
+        end
+      endcase
+    end
+  end
+
+  assign datao_valid = response_state == 1'b1;
+  assign datao       = response_progress == 0 ? resp_type_buf     :
+                       response_progress == 1 ? resp_data_buf[7:0] :
+                                                resp_data_buf[15:8];
 
   /* Wishbone Assignments */
 

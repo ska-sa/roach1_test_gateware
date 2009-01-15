@@ -1,13 +1,16 @@
 `include "log2.v"
 `timescale 1ns/10ps
 module serial_uart(
-    clk, reset,
-    serial_in, serial_out,
-    as_data_i,  as_data_o,
-    as_dstrb_i, as_busy_o, as_dstrb_o
+    clk,
+    reset,
+    serial_in,  serial_out,
+    serial_rts, serial_cts,
+    as_data_i, as_dstrb_i, as_busy_o,
+    as_data_o, as_dstrb_o, as_busy_i
   );
   parameter BAUD        = 115200;
   parameter CLOCK_RATE  = 10000000;
+
   /*
    * serial/serial side signals
    */
@@ -17,26 +20,37 @@ module serial_uart(
   
   input  serial_in;
   output serial_out;
+  input  serial_rts;
+  output serial_cts;
+
   /*
    * Host signals
    */
-  output [7:0] as_data_o;
+
   input  [7:0] as_data_i;
   input  as_dstrb_i;
   output as_busy_o;
+  output [7:0] as_data_o;
   output as_dstrb_o;
+  input  as_busy_i;
   
   localparam SERIAL_BITWIDTH = CLOCK_RATE / BAUD;
   localparam SERIAL_BITWIDTH_DIV_2 = SERIAL_BITWIDTH / 2;
 `ifdef __ICARUS__
   localparam BITWIDTH_BITS = 32;
 `else
-  localparam BITWIDTH_BITS = 32;
-  //localparam BITWIDTH_BITS = `LOG2(SERIAL_BITWIDTH-1) + 1;
+  localparam BITWIDTH_BITS = `LOG2(SERIAL_BITWIDTH-1) + 1;
 `endif
 
 
 /*********** Serial Input  ***********/
+   
+  /* Flow Control */
+
+  /* Active Low */
+  assign serial_cts = as_busy_i;
+
+
   localparam S_I_STATE_HUNT      = 2'd0;
   localparam S_I_STATE_STARTHALF = 2'd1;
   localparam S_I_STATE_DATA      = 2'd2;
