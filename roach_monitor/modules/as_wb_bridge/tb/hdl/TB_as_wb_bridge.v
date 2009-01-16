@@ -1,3 +1,4 @@
+`include "fusion.v"
 module TB_as_wb_bridge();
 
   localparam TEST_LENGTH = 32;
@@ -16,8 +17,11 @@ module TB_as_wb_bridge();
   wire [15:0] wb_dat_o;
   reg  [15:0] wb_dat_i;
   reg  wb_ack_i;
-  
-  as_wb_bridge as_wb_bridge(
+
+  as_wb_bridge #(
+    .USE_INPUT_FIFO  (1),
+    .USE_OUTPUT_FIFO (1)
+  ) as_wb_bridge_inst (
     .clk   (clk),
     .reset (reset),
 
