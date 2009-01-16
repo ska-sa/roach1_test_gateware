@@ -76,7 +76,7 @@ module toplevel(
 
   /************ XPORT GPIO Decode ************/
   wire XPORT_SERIAL_RTS = XPORT_GPIO[0];
-  wire XPORT_RESET      = XPORT_GPIO[1];
+  wire XPORT_RESET_N    = XPORT_GPIO[1];
   wire XPORT_SERIAL_CTS = XPORT_GPIO[2];
 
   /*************** Global Nets ***************/
@@ -94,7 +94,7 @@ module toplevel(
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(1'b0),
-    .reset_i((!CHS_RESET_N) || XPORT_RESET),
+    .reset_i((!CHS_RESET_N) || !XPORT_RESET_N),
     .reset_o(hard_reset)
   );
   assign XPORT_RESET_N = 1'b1;
@@ -623,6 +623,7 @@ module toplevel(
                     bad_power_down ? counter[24] :
                     1'b0;
   wire action_led = power_ok ? CONTROLLER_IRQ : counter[26];
+
   assign CHS_LED_N = hard_reset ? 2'b00 : ~{action_led, power_led};
 
   assign cold_start = ~sys_config_vector[0];

@@ -9,7 +9,7 @@
 `define MASTER_CLOCK_RATE  40_000_000
 
 /********** WishbBone Masters' Interface Parameters *********/
-`define ENABLE_DEBUG_INTERFACE
+//`define ENABLE_DEBUG_INTERFACE
 `define ENABLE_XPORT_INTERFACE
 `define ENABLE_CONTROLLER_INTERFACE
 `define ENABLE_DMA_ENGINE

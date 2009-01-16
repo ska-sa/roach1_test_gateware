@@ -112,7 +112,6 @@ module sys_config(
   reg rtc_got;
 
   always @(posedge xtal_clk) begin /* 32.768 kHz */
-    rtc_second_ticker <= rtc_second_ticker + 1;
     if (rtc_got) begin
       rtc_ack <= 1'b1;
       rtc_second_ticker <= 15'd0;
@@ -120,6 +119,7 @@ module sys_config(
     end else begin
       rtc_ack <= 1'b0;
       rtc_second_ticker <= rtc_second_ticker + 1;
+
       if (rtc_second_ticker == 15'h7f_ff) begin
         current_time <= current_time + 1;
       end
@@ -134,6 +134,7 @@ module sys_config(
     /* handshake for value loading */
     if (wb_rst_i) begin
       rtc_got <= 1'b0;
+      ticker_reg <= 7'b0001111;
     end else begin
       if (rtc_init_strb)
         rtc_got <= 1'b1;
