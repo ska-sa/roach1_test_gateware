@@ -224,17 +224,81 @@ module as_wb_bridge(
 
   /* AS interface <-> FIFOs Assignments */
 
+  parameter USE_INPUT_FIFO  = 0;
+  parameter USE_OUTPUT_FIFO = 0;
+
+  wire as_rx_busy = !(datai_valid && (state == STATE_COMMAND || state == STATE_COLLECT));
+
+generate if (USE_INPUT_FIFO) begin : input_fifo_enabled
+
+  /* FWFT */
+
+  wire in_fifo_empty;
+  wire in_fifo_afull;
+
+  fifo_512_8 data_fifo_in (
+    .reset   (reset),
+
+    .rd_clk    (clk),
+    .rd_data   (datai),
+    .rd_en     (datai_valid && !as_rx_busy),
+
+    .wr_clk    (clk),
+    .wr_data   (as_data_i),
+    .wr_en     (as_dstrb_i),
+
+    .empty     (in_fifo_empty),
+    .full      (),
+    .aempty    (),
+    .afull     (in_fifo_afull)
+  );
+
+  always @(*) begin
+    $display("%d : infifo - wrdata = %x, wr_en = %x, afull = %x", $time, as_data_i, as_dstrb_i, in_fifo_afull);
+    $display("%d : infifo - rddata = %x, rd_en = %x, empty = %x", $time, datai, datai_valid && !as_rx_busy, in_fifo_empty);
+  end
+
+  assign datai_valid = !in_fifo_empty;
+  assign as_busy_o   = in_fifo_afull;
+
+end else begin : input_fifo_disabled
   /* datai */
   assign datai          = as_data_i;
   assign datai_valid    = as_dstrb_i;
-  assign datai_rd       = datai_valid && !as_busy_o;
   assign datai_overflow = 1'b0;
-  assign as_busy_o      = !(datai_valid && (state == STATE_COMMAND || state == STATE_COLLECT));
+  assign as_busy_o      = as_rx_busy;
+end endgenerate
 
   /* datao */
 
+generate if (USE_OUTPUT_FIFO) begin : output_fifo_enabled
+
+  wire out_fifo_empty;
+  wire out_fifo_afull;
+
+  fifo_512_8 data_fifo_in (
+    .reset   (reset),
+
+    .rd_clk    (clk),
+    .rd_data   (as_data_o),
+    .rd_en     (as_dstrb_o && !as_busy_i),
+
+    .wr_clk    (clk),
+    .wr_data   (datao),
+    .wr_en     (datao_valid),
+
+    .empty     (out_fifo_empty),
+    .full      (),
+    .aempty    (),
+    .afull     (out_fifo_afull)
+  );
+  assign as_dstrb_o  = !out_fifo_empty;
+  assign datao_ready = !out_fifo_afull;
+  
+end else begin : output_fifo_disabled
   assign as_data_o   = datao;
   assign as_dstrb_o  = datao_valid;
   assign datao_ready = !as_busy_i;
+end endgenerate
 
 endmodule
