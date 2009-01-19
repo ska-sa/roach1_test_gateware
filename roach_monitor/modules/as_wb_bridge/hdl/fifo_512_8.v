@@ -27,8 +27,11 @@ module fifo_512_8 (
   assign write_data = {10'b0, wr_data};
   assign rd_data    = read_data[7:0];
 
+  /* signal for fake fwft mode */
+  wire true_empty, true_rd_en;
+
   FIFO4K18 fifo4k18_inst(
-    .RESET (reset),
+    .RESET (!reset), //active low
 
     .AEVAL11 (aempty_lev[11]), .AEVAL10 (aempty_lev[10]), .AEVAL9 (aempty_lev[9]),
     .AEVAL8  (aempty_lev[8]),  .AEVAL7  (aempty_lev[7]),  .AEVAL6 (aempty_lev[6]), 
@@ -54,13 +57,34 @@ module fifo_512_8 (
     .RD5  (read_data[5]),  .RD4  (read_data[4]),  .RD3  (read_data[3]),
     .RD2  (read_data[2]),  .RD1  (read_data[1]),  .RD0  (read_data[0]), 
 
-    .RCLK (rd_clk), .REN (rd_en), .RBLK (1'b0), .RPIPE (1'b0),
-    .WCLK (wr_clk), .WEN (wr_en), .WBLK (1'b0),
-    .FULL (full), .AFULL (afull), .EMPTY(empty), .AEMPTY(aempty),
+    .RCLK (rd_clk), .REN (true_rd_en), .RBLK (1'b0), .RPIPE (1'b0),
+    .WCLK (wr_clk), .WEN (!wr_en),     .WBLK (1'b0), //WEN active low
+    .FULL (full), .AFULL (afull), .EMPTY(true_empty), .AEMPTY(aempty),
 
     .WW2 (1'b0), .WW1 (1'b1), .WW0 (1'b1),
     .RW2 (1'b0), .RW1 (1'b1), .RW0 (1'b1),
     .ESTOP (1'b1), .FSTOP (1'b1)
    );
+
+   reg dvld;
+
+   always @(posedge rd_clk) begin
+     if (reset) begin
+       dvld <= 1'b0;
+     end else begin
+       if (dvld) begin
+         if (rd_en && true_empty) begin
+           dvld <= 1'b0;
+         end
+         if (rd_en && !true_empty) begin
+           dvld <= 1'b1;
+         end
+       end else if (!true_empty) begin
+         dvld <= 1'b1;
+       end
+     end
+   end
+   assign empty = !dvld;
+   assign true_rd_en = !dvld && !true_empty || dvld && rd_en && !true_empty;
 
 endmodule

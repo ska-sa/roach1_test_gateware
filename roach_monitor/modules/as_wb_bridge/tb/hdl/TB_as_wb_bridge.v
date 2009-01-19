@@ -1,4 +1,4 @@
-`include "fusion.v"
+`include "FIFO.v"
 module TB_as_wb_bridge();
 
   localparam TEST_LENGTH = 32;
@@ -41,6 +41,7 @@ module TB_as_wb_bridge();
   reg got_something;
 
   initial begin
+    $dumpvars;
     clk<=1'b0;
     reset<=1'b1;
     #5 reset<=1'b0;
@@ -78,6 +79,9 @@ module TB_as_wb_bridge();
         MODE_WRITE: begin
           if (mode_done[MODE_WRITE]) begin
             mode <= MODE_READ;
+`ifdef DEBUG
+            $display("mode: MODE_WRITE passed");
+`endif
           end
         end
         MODE_READ: begin
@@ -204,7 +208,6 @@ module TB_as_wb_bridge();
   reg  [7:0] read_buff;
   reg [31:0] s_read_progress;
 
-  assign mode_done[MODE_WRITE] = write_state == 2'd0 && write_progress == TEST_LENGTH && as_dstrb_o;
   /* */
 
   always @(posedge clk) begin
@@ -260,7 +263,8 @@ module TB_as_wb_bridge();
     end
   end
   assign as_busy_i = busy_timer != 0;
-  assign mode_done[MODE_READ] = read_state == 2'd0 && s_read_progress == TEST_LENGTH;
+  assign mode_done[MODE_READ]  = read_state == 2'd0 && s_read_progress == TEST_LENGTH;
+  assign mode_done[MODE_WRITE] = as_dstrb_o && mode == MODE_WRITE && as_data_o == 8'd1 && write_acks == TEST_LENGTH - 1;
   /* */
   
   /* WishBone Slave */

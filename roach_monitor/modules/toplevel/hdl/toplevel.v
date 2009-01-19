@@ -225,7 +225,10 @@ module toplevel(
   );
 
   /* XPORT WB bridge */
-  as_wb_bridge as_wb_bridge_xport(
+  as_wb_bridge #(
+    .USE_INPUT_FIFO  (0),
+    .USE_OUTPUT_FIFO (0)
+  ) as_wb_bridge_xport (
     .clk   (gclk40),
     .reset (hard_reset), 
 
@@ -283,8 +286,11 @@ module toplevel(
     .i2c_cmnd_strb_o(nc_i2c_cmnd_strb_o)
   );
 
-  /* Controller WB bridge */
-  as_wb_bridge as_wb_bridge_controller(
+  /* Controller (i2c) WB bridge */
+  as_wb_bridge #(
+    .USE_INPUT_FIFO  (1),
+    .USE_OUTPUT_FIFO (1)
+  ) as_wb_bridge_controller(
     .clk(gclk40), .reset(hard_reset), 
     .as_data_i(ctrl_as_data_o), .as_data_o(ctrl_as_data_i),
     .as_dstrb_i(ctrl_as_dstrb_o), .as_busy_i(ctrl_as_busy_o), .as_dstrb_o(ctrl_as_dstrb_i),

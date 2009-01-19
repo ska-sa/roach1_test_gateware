@@ -224,9 +224,6 @@ module as_wb_bridge(
 
   /* AS interface <-> FIFOs Assignments */
 
-  parameter USE_INPUT_FIFO  = 0;
-  parameter USE_OUTPUT_FIFO = 0;
-
   wire as_rx_busy = !(datai_valid && (state == STATE_COMMAND || state == STATE_COLLECT));
 
 generate if (USE_INPUT_FIFO) begin : input_fifo_enabled
@@ -252,11 +249,6 @@ generate if (USE_INPUT_FIFO) begin : input_fifo_enabled
     .aempty    (),
     .afull     (in_fifo_afull)
   );
-
-  always @(*) begin
-    $display("%d : infifo - wrdata = %x, wr_en = %x, afull = %x", $time, as_data_i, as_dstrb_i, in_fifo_afull);
-    $display("%d : infifo - rddata = %x, rd_en = %x, empty = %x", $time, datai, datai_valid && !as_rx_busy, in_fifo_empty);
-  end
 
   assign datai_valid = !in_fifo_empty;
   assign as_busy_o   = in_fifo_afull;
