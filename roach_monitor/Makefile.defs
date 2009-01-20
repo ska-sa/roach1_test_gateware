@@ -67,7 +67,6 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./include/build_parameters.v
 
 FLASHROM_F = $(PROJECT).ufc
-FLASHMEM_F = $(PROJECT).efc
 CHEADER_F  = $(PROJECT).h
 SYNTH_FILE = $(PROJECT).edn
 BIT_FILE   = $(PROJECT).stp

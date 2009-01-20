@@ -26,9 +26,6 @@ $(FLASHROM_MEM): $(FROM_SCRIPT)
 
 $(FLASHROM_F): $(FLASHROM_MEM) $(UFC_SCRIPT)
 	./$(UFC_SCRIPT) $< > $@
-	
-$(FLASHMEM_F):
-	@cp $(FLASHMEM_EFC) $@
 
 clean:
-	rm -rf $(FLASHMEM_F) $(CHEADER_F) $(FLASHROM_MEM)
+	rm -rf *.h *.ufc *.mem
