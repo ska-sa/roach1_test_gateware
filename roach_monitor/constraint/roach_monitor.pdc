@@ -150,3 +150,6 @@ set_io FAN3_CONTROL -pinname L14 -fixed yes -iostd LVTTL -SLEW Low
 
 set_io DEBUG_SERIAL_IN  -pinname G16 -fixed yes -iostd LVTTL
 set_io DEBUG_SERIAL_OUT -pinname H16 -fixed yes -iostd LVTTL -SLEW Low 
+
+# Fix location of the Flash Memory
+set_location flashmem_inst/NVM_inst -fixed yes 164 1

@@ -45,7 +45,7 @@ module toplevel(
 
   input  XPORT_SERIAL_IN;
   output XPORT_SERIAL_OUT;
-  input  [2:0] XPORT_GPIO;
+  inout [2:0] XPORT_GPIO;
   output XPORT_RESET_N;
 
   inout  CONTROLLER_I2C_SDA;
@@ -75,9 +75,10 @@ module toplevel(
 
 
   /************ XPORT GPIO Decode ************/
+  wire XPORT_SERIAL_CTS;
   wire XPORT_SERIAL_RTS = XPORT_GPIO[0];
   wire RESET_XPORT_N    = XPORT_GPIO[1];
-  wire XPORT_SERIAL_CTS = XPORT_GPIO[2];
+  assign XPORT_GPIO[2]  = XPORT_SERIAL_CTS;
 
   /*************** Global Nets ***************/
 
@@ -263,7 +264,6 @@ module toplevel(
   wire ctrl_sda_i, ctrl_sda_o, ctrl_sda_oen;
   /* Controller I2C Infrastructure */
   
-  wire [1:0] temp_led;
   i2c_infrastructure i2c_infrastructure_controller(
     .sda_i(ctrl_sda_i), .sda_o(ctrl_sda_o), .sda_oen(ctrl_sda_oen),
     .scl_i(ctrl_scl_i), .scl_o(ctrl_scl_o), .scl_oen(ctrl_scl_oen),
@@ -506,7 +506,7 @@ module toplevel(
     .SYS_CLK(gclk40),
     .AG(AG),.AG_EN(ag_en),.AV(AV),.AC(AC),.AT(AT),.ATRETURN(ATRET),
     .ADC_START(ADC_START),.ADC_SAMPLE(ADC_SAMPLE),.ADC_CHNUM(ADC_CHNUM),
-    .ADC_CALIBRATE(ADC_CALIBRATE),.ADC_BUSY(ADC_BUSY_nc),.ADC_DATAVALID(ADC_DATAVALID),
+    .ADC_CALIBRATE(ADC_CALIBRATE),.ADC_BUSY(ADC_BUSY),.ADC_DATAVALID(ADC_DATAVALID),
     .ADC_RESULT(ADC_RESULT),.ADCRESET(hard_reset),
     .ACM_DATAR(acm_datar),.ACM_DATAW(acm_dataw),.ACM_ADDR(acm_addr),
     .ACM_CLK(acm_clk),.ACM_WEN(acm_wen), .ACM_RESET(acm_reset),       
@@ -636,7 +636,6 @@ module toplevel(
   assign cold_start = ~sys_config_vector[0];
   assign ag_en = {   1'b0,   1'b0,    1'b0, 1'b0, 1'b0,
                   G3V3_EN, G5V_EN, G12V_EN, 1'b0, 1'b0};
-  //assign ag_en = 10'b0;
 
   power_manager #(
     .WATCHDOG_OVERFLOW_DEFAULT(`WATCHDOG_OVERFLOW_DEFAULT),

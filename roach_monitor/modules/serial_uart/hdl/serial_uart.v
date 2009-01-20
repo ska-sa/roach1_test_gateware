@@ -47,9 +47,8 @@ module serial_uart(
    
   /* Flow Control */
 
-  /* Active Low */
-  assign serial_cts = as_busy_i;
-
+  /* Active High */
+  assign serial_cts = !as_busy_i;
 
   localparam S_I_STATE_HUNT      = 2'd0;
   localparam S_I_STATE_STARTHALF = 2'd1;
