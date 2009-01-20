@@ -54,7 +54,7 @@ module fan_controller(
     //strobes
     wb_ack_o <= 1'b0;
     if (wb_rst_i) begin
-      fan_pwm_0 <= 9'h100;
+      fan_pwm_0 <= 9'h100; // default 100% PWM
       fan_pwm_1 <= 9'h100;
       fan_pwm_2 <= 9'h100;
     end else begin

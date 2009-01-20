@@ -136,7 +136,7 @@ module TB_adc_controller();
     .ADC_START(ADC_START), .ADC_CHNUM(ADC_CHNUM),
     .ADC_CALIBRATE(ADC_CALIBRATE), .ADC_DATAVALID(ADC_DATAVALID),
     .ADC_RESULT(ADC_RESULT), .ADC_BUSY(ADC_BUSY), .ADC_SAMPLE(ADC_SAMPLE),
-    .current_stb(current_stb), .temp_stb(temp_stb)
+    .current_stb(current_stb), .temp_stb(temp_stb), .fast_mode()
   );
 
   reg [7:0] clk_counter;
@@ -240,13 +240,13 @@ module TB_adc_controller();
                 30: expected_val = `RES_30;
                 31: expected_val = `RES_31;
               endcase
-              if (adc_mem[k] === expected_val) begin
+              if (adc_mem[k] === (expected_val)) begin
                 if (k == 31) begin 
                   $display("PASSED");
                   $finish;
                 end
               end else begin
-                $display("FAILED: invalid value on val %d - got %d, expected %d", k, adc_mem[k], expected_val);
+                $display("FAILED: invalid value on val %d - got %d, expected %d", k, adc_mem[k], (expected_val));
                 $finish;
               end
             end

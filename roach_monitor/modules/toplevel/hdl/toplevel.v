@@ -76,7 +76,7 @@ module toplevel(
 
   /************ XPORT GPIO Decode ************/
   wire XPORT_SERIAL_RTS = XPORT_GPIO[0];
-  wire XPORT_RESET_N    = XPORT_GPIO[1];
+  wire RESET_XPORT_N    = XPORT_GPIO[1];
   wire XPORT_SERIAL_CTS = XPORT_GPIO[2];
 
   /*************** Global Nets ***************/
@@ -94,7 +94,7 @@ module toplevel(
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(1'b0),
-    .reset_i((!CHS_RESET_N) || !XPORT_RESET_N),
+    .reset_i((!CHS_RESET_N) || !RESET_XPORT_N),
     .reset_o(hard_reset)
   );
   assign XPORT_RESET_N = 1'b1;
@@ -498,6 +498,7 @@ module toplevel(
   wire [9:0] cmstrb;
   wire [9:0] tmstrb;
   wire tmstrb_int;
+  wire adc_fast_mode;
 
   wire rtcmatch_nc, rtcpsmmatch_nc;
 
@@ -512,7 +513,7 @@ module toplevel(
     .RTCCLK(rtcclk),.SELMODE(selmode),
     .RTCMATCH(rtcmatch_nc),.RTCPSMMATCH(rtcpsmmatch_nc),.RTCXTLMODE(rtc_mode),
     .VAREF(VAREF),
-    .cmstrb(cmstrb), .tmstrb(tmstrb), .tmstrb_int(tmstrb_int)
+    .cmstrb(cmstrb), .tmstrb(tmstrb), .tmstrb_int(tmstrb_int), .fast_mode(adc_fast_mode)
   );
 
   acm_controller acm_controller_inst(
@@ -541,7 +542,7 @@ module toplevel(
     .ADC_CALIBRATE(ADC_CALIBRATE), .ADC_DATAVALID(ADC_DATAVALID),
     .ADC_SAMPLE(ADC_SAMPLE), .ADC_BUSY(ADC_BUSY),
     .ADC_RESULT(ADC_RESULT),
-    .current_stb(cmstrb), .temp_stb({tmstrb_int, tmstrb})
+    .current_stb(cmstrb), .temp_stb({tmstrb_int, tmstrb}), .fast_mode(adc_fast_mode)
   );
 
   /*************** Level Checker *********************/
