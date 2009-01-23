@@ -150,7 +150,7 @@ module level_checker(
   assign thresh_sel_pol  = check_type[0];
 
   reg wait_cycle;
-  reg [11:0] adc_result;
+  reg [11:0] adc_result_reg;
 
   always @(posedge wb_clk_i) begin
     soft_viol <= 1'b0;
