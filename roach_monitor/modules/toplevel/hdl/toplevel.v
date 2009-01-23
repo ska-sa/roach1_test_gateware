@@ -74,11 +74,6 @@ module toplevel(
   inout  VAREF;
 
 
-  /************ XPORT GPIO Decode ************/
-  wire XPORT_SERIAL_CTS;
-  wire XPORT_SERIAL_RTS = XPORT_GPIO[0];
-  wire RESET_XPORT_N    = XPORT_GPIO[1];
-  assign XPORT_GPIO[2]  = XPORT_SERIAL_CTS;
 
   /*************** Global Nets ***************/
 
@@ -88,14 +83,29 @@ module toplevel(
 
   wire soft_reset;
 
-  /* Reset Control */
+  /************ XPORT GPIO Decode ************/
+  wire XPORT_SERIAL_CTS;
+  wire XPORT_SERIAL_RTS = XPORT_GPIO[0];
+  wire RESET_XPORT_N    = XPORT_GPIO[1];
+  assign XPORT_GPIO[2]  = XPORT_SERIAL_CTS;
+
+
+  /*************** Reset Control ****************/
+
+  wire reset_xport;
+  reg RESET_XPORT_N_z;
+  always @(posedge gclk40) begin
+    RESET_XPORT_N_z <= RESET_XPORT_N;
+  end
+  assign reset_xport = RESET_XPORT_N_z != RESET_XPORT_N;
+
   reset_block #(
     .DELAY(0),
     .WIDTH(32'h400_0000)
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(1'b0),
-    .reset_i((!CHS_RESET_N) || !RESET_XPORT_N),
+    .reset_i((!CHS_RESET_N) || reset_xport),
     .reset_o(hard_reset)
   );
   assign XPORT_RESET_N = 1'b1;

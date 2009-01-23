@@ -150,6 +150,7 @@ module level_checker(
   assign thresh_sel_pol  = check_type[0];
 
   reg wait_cycle;
+  reg [11:0] adc_result;
 
   always @(posedge wb_clk_i) begin
     soft_viol <= 1'b0;
@@ -173,18 +174,19 @@ module level_checker(
             soft_viol_int <= 1'b0;
             check_type <= 2'b0;
             wait_cycle <= 1'b1;
+            adc_result_reg <= adc_result;
           end
         end
         STATE_CHECK: begin
           if (~ram_wb_r & ~wait_cycle) begin
             if (soft_thresh_valid & ~check_type[1]) begin
-              soft_viol_int <= soft_viol_int | (check_type[0] ? ram_rdata < adc_result : ram_rdata > adc_result);
+              soft_viol_int <= soft_viol_int | (check_type[0] ? ram_rdata < adc_result_reg : ram_rdata > adc_result_reg);
 `ifdef DEBUG
-              //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result);
+              //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result_reg = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result_reg);
 `endif
             end
             if (hard_thresh_valid & check_type[1]) begin
-              hard_viol_int <= hard_viol_int |  (check_type[0] ? ram_rdata < adc_result : ram_rdata > adc_result);
+              hard_viol_int <= hard_viol_int |  (check_type[0] ? ram_rdata < adc_result_reg : ram_rdata > adc_result_reg);
 `ifdef DEBUG
               //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result);
 `endif
