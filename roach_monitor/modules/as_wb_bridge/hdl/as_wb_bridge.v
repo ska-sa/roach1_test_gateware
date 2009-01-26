@@ -277,7 +277,7 @@ generate if (USE_OUTPUT_FIFO) begin : output_fifo_enabled
 
     .wr_clk    (clk),
     .wr_data   (datao),
-    .wr_en     (datao_valid),
+    .wr_en     (datao_valid && datao_ready),
 
     .empty     (out_fifo_empty),
     .full      (),

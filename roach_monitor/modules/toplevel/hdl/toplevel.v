@@ -246,6 +246,8 @@ module toplevel(
     .as_data_i  (xp_as_data_o),
     .as_dstrb_i (xp_as_dstrb_o),
     .as_busy_o  (xp_as_busy_i),
+    .as_data_o  (),
+    .as_dstrb_o (),
     .as_data_o  (xp_as_data_i),
     .as_dstrb_o (xp_as_dstrb_i),
     .as_busy_i  (xp_as_busy_o),
