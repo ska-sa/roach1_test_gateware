@@ -10,7 +10,7 @@ module power_manager(
     /* System Health */
     sys_health, unsafe_sys_health,
     /* Informational Signals */
-    power_ok,
+    power_ok, power_on,
     /* Control Signals */
     cold_start, dma_done, chs_power_button,
     soft_reset, crash, chs_powerdown_pending,
@@ -43,6 +43,7 @@ module power_manager(
   input  [31:0] sys_health;
   input  unsafe_sys_health;
   output power_ok;
+  output power_on;
   output [1:0] no_power_cause;
   input  cold_start, dma_done, chs_power_button;
   output soft_reset, crash, chs_powerdown_pending;
@@ -65,6 +66,8 @@ module power_manager(
   wire power_up_done;   //the power-sequencer has finished powering up
 
   reg  pre_check_pass; //pre power-up checks passed
+  reg  pre_check_fail; //pre power-up checks failed
+
   reg  post_check_pass; //post power-up checks passed
   reg  post_check_fail; //post power-up checks failed
 
@@ -102,10 +105,10 @@ module power_manager(
   assign power_up   = power_state == STATE_POWERING_UP || power_state == STATE_CHECK || power_state == STATE_POWERED_UP;
   assign power_down = !power_up;
 
+  assign power_on   = power_state == STATE_POWERED_UP || power_state == STATE_CHECK;
   assign power_ok   = power_state == STATE_POWERED_UP;
   reg soft_reset;
 
-  reg [31:0] powered_down_wait;
   reg crash;
 
   reg [1:0] no_power_cause;
@@ -120,16 +123,13 @@ module power_manager(
     soft_reset <= 1'b0;
 
     if (wb_rst_i) begin
-      powered_down_wait <= POWER_DOWN_WAIT;
       power_state       <= STATE_POWERED_DOWN;
       first             <= 1'b1;
       soft_reset        <= 1'b1;
     end else begin
       case (power_state)
         STATE_POWERED_DOWN: begin
-          if (powered_down_wait != 32'b0) begin
-            powered_down_wait <= powered_down_wait - 1;
-          end else if (pre_check_pass) begin
+          if (pre_check_pass) begin
             first <= 1'b0;
             if (cold_start && first) begin
               power_state <= STATE_NO_POWER;
@@ -137,6 +137,10 @@ module power_manager(
             end else begin
               power_state <= STATE_POWERING_UP;
             end
+          end
+          if (pre_check_fail) begin
+            power_state <= STATE_NO_POWER;
+            no_power_cause <= 2'b01;
           end
           if (chs_powerdown_force) begin
             no_power_cause <= 2'b11;
@@ -154,14 +158,13 @@ module power_manager(
         end
         STATE_CHECK: begin
           if (post_check_fail) begin
-            crash <= 1'b1;
+            crash       <= 1'b1;
+            soft_reset  <= 1'b1;
             if (unacked_crashes == MAX_UNACKED_CRASHES) begin
               power_state <= STATE_NO_POWER;
               no_power_cause <= 2'b01;
             end else begin
               power_state       <= STATE_POWERED_DOWN;
-              powered_down_wait <= POWER_DOWN_WAIT;
-              soft_reset        <= 1'b1;
             end
           end else if (post_check_pass) begin
             power_state <= STATE_POWERED_UP;
@@ -174,7 +177,6 @@ module power_manager(
         STATE_POWERED_UP: begin
           if (wb_reset_strb) begin //lowest priority
             power_state       <= STATE_POWERED_DOWN;
-            powered_down_wait <= POWER_DOWN_WAIT;
             soft_reset        <= 1'b1;
           end
           if (watchdog_overflow) begin
@@ -183,31 +185,28 @@ module power_manager(
               no_power_cause <= 2'b10;
             end else begin
               power_state       <= STATE_POWERED_DOWN;
-              powered_down_wait <= POWER_DOWN_WAIT;
               soft_reset        <= 1'b1;
             end
           end 
           if (unsafe_sys_health) begin
-            crash <= 1'b1;
+            crash      <= 1'b1;
+            soft_reset <= 1'b1;
             if (unacked_crashes == MAX_UNACKED_CRASHES) begin
               power_state    <= STATE_NO_POWER;
               no_power_cause <= 2'b01;
             end else begin
-              power_state       <= STATE_POWERED_DOWN;
-              powered_down_wait <= POWER_DOWN_WAIT;
-              soft_reset        <= 1'b1;
+              power_state    <= STATE_POWERED_DOWN;
             end
           end
-          if (chs_powerdown_force | chs_powerdown | wb_powerdown_strb) begin //highest priority
+          if (chs_powerdown_force || chs_powerdown || wb_powerdown_strb) begin //highest priority
             power_state    <= STATE_NO_POWER;
             no_power_cause <= 2'b11;
           end
         end
         STATE_NO_POWER: begin
-          if (chs_powerdown_strb | wb_powerup_strb) begin
-            power_state       <= STATE_POWERED_DOWN;
-            powered_down_wait <= POWER_DOWN_WAIT;
+          if ((chs_powerdown_strb || wb_powerup_strb) && dma_done) begin
             soft_reset        <= 1'b1;
+            power_state    <= STATE_POWERED_DOWN;
           end
         end
       endcase
@@ -215,15 +214,25 @@ module power_manager(
   end
 
   /************** Pre power-up checking ************************/
+  reg [31:0] powered_down_wait;
+
   always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
+    if (wb_rst_i || power_state != STATE_POWERED_DOWN) begin
       pre_check_pass <= 1'b0;
+      pre_check_fail <= 1'b0;
+      powered_down_wait <= POWER_DOWN_WAIT;
     end else begin
-      if (power_state != STATE_POWERED_DOWN) begin
-        pre_check_pass <= 1'b0;
+      if (powered_down_wait) begin
+        powered_down_wait <= powered_down_wait - 1;
       end else begin
-        if ((!(sys_health & ~SYS_HEALTH_POWERUP_MASK)) && dma_done) begin
-          pre_check_pass <= 1'b1;
+        if (dma_done) begin
+          /*if ((!(sys_health & ~SYS_HEALTH_POWERUP_MASK))) begin
+              pass <= 1'b1
+              else fail <= 1'b1
+           */
+            pre_check_pass <= 1'b1;
+
+
         end
       end
     end
@@ -232,14 +241,15 @@ module power_manager(
   /************** Post power-up checking ************************/
   reg [31:0] post_power_up_wait;
   always @(posedge wb_clk_i) begin
-    if (wb_rst_i | power_state != STATE_CHECK) begin
-      post_check_pass <= 1'b0;
-      post_check_fail <= 1'b0;
+    if (wb_rst_i || power_state != STATE_CHECK) begin
       post_power_up_wait <= POST_POWERUP_WAIT;
+      post_check_fail    <= 1'b0;
+      post_check_pass    <= 1'b0;
     end else begin
       if (post_power_up_wait) begin
         post_power_up_wait <= post_power_up_wait - 1;
       end else begin
+        
         if (unsafe_sys_health) begin
           post_check_fail <= 1'b1;
         end else begin
@@ -332,13 +342,13 @@ module power_manager(
   reg crash_ack;
 
   always @(posedge wb_clk_i) begin
-    if (crash_ack)
-      unacked_crashes <= 3'b0;
-
     if (wb_rst_i) begin
       unacked_crashes <= 3'b0;
     end else begin
-      if (crash && power_state == STATE_POWERED_UP) begin
+      if (crash_ack)
+        unacked_crashes <= 3'b0;
+
+      if (crash) begin
         unacked_crashes <= unacked_crashes + 1;
       end
     end

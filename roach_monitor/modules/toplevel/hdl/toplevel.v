@@ -323,14 +323,17 @@ module toplevel(
   wire dma_done, dma_crash;
 `ifdef ENABLE_DMA_ENGINE
   dma_engine #(
-    .FROM_ACM_A(`MEM_FROM_A + 64 + 1),
-    .FROM_LC_A(`MEM_FROM_A + 1),
-    .LC_THRESHS_A(`MEM_LEVCHK_A + 64),
-    .ACM_AQUADS_A(`MEM_ACM_A + 1),
-    .VS_INDIRECT_A(`MEM_VALS_A + 32),
-    .SYSCONFIG_A(`MEM_SYSCONF_A + 4),
-    .FLASH_A(`MEM_FLASHMEM_A + 64),
-    .FLASH_SYSCONFIG_A(`MEM_FLASHMEM_H)
+    .FROM_ACM_A        (`MEM_FROM_A + 64 + 1),
+    .FROM_LC_A         (`MEM_FROM_A + 1),
+    .LC_THRESHS_A      (`MEM_LEVCHK_A + 64),
+    .ACM_AQUADS_A      (`MEM_ACM_A + 1),
+    .VS_INDIRECT_A     (`MEM_VALS_A + 32),
+    .SYSCONFIG_A       (`MEM_SYSCONF_A + 5),
+    .SYSTIME_A         (`MEM_SYSCONF_A + 6),
+    .CRASHSRC_A        (`MEM_LEVCHK_A + 128 + 4),
+    .CRASHVAL_A        (`MEM_LEVCHK_A + 128 + 5),
+    .FLASH_A           (`MEM_FLASHMEM_A + 64),
+    .FLASH_SYSCONFIG_A (`MEM_FLASHMEM_H)
   ) dma_engine_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_o(dma_wb_cyc_o), .wb_stb_o(dma_wb_stb_o), .wb_we_o(dma_wb_we_o),
@@ -567,6 +570,8 @@ module toplevel(
   wire [11:0] lc_ram_wdata;
   wire lc_ram_wen;
 
+  wire power_ok, power_on;
+
   lc_infrastructure lc_infrastructure_inst(
     .clk(gclk40), .reset(hard_reset),
     .ram_raddr(lc_ram_raddr),
@@ -582,6 +587,7 @@ module toplevel(
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(4 + 1) - 1:16*4]),
     .wb_ack_o(wbs_ack_i[4]),
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
+    .soft_en(power_on), .hard_en(power_on),
     .soft_reset(soft_reset),
     .soft_viol(soft_viol), .hard_viol(hard_viol),
     .v_in_range(v_in_range),
@@ -624,7 +630,7 @@ module toplevel(
   /************* Power Manager *********************/
 
   wire chs_powerdown_pending;
-  wire power_ok, cold_start;
+  wire cold_start;
   wire [1:0] no_power_cause;
   wire G12V_EN, G5V_EN, G3V3_EN;
 
@@ -665,7 +671,7 @@ module toplevel(
     /* System Health */
     .sys_health(v_in_range), .unsafe_sys_health(hard_viol),
     /* Informational Signals */
-    .power_ok(power_ok), .no_power_cause(no_power_cause),
+    .power_ok(power_ok), .power_on(power_on), .no_power_cause(no_power_cause),
     /* Control Signals */
     .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
     .soft_reset(soft_reset), .crash(dma_crash), .chs_powerdown_pending(chs_powerdown_pending),

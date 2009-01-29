@@ -8,6 +8,7 @@ module level_checker(
     wb_ack_o,
     adc_result, adc_channel, adc_strb,
     soft_reset,
+    soft_en, hard_en,
     soft_viol, hard_viol,
     v_in_range,
     ram_raddr, ram_waddr,
@@ -27,6 +28,7 @@ module level_checker(
 
   input  soft_reset;
   output soft_viol, hard_viol;
+  input  soft_en, hard_en;
   output [31:0] v_in_range;
 
   output  [6:0] ram_raddr;
@@ -37,6 +39,7 @@ module level_checker(
 
   /************** Common Signals *****************/
   reg  hard_thresh_valid, soft_thresh_valid;
+  wire [4:0] adc_channel_src;
   wire thresh_sel_type; //level checker is checking hard or soft
   wire thresh_sel_pol;  //level checker is checking high or low
   wire wb_trans = wb_cyc_i & wb_stb_i & ~wb_ack_o;
@@ -49,39 +52,44 @@ module level_checker(
   reg bus_wait;
 
   assign ram_wb_r = wb_trans & wb_ram & ~wb_we_i | bus_wait; //the wishbone slave `takes` the ram read interface
-  assign ram_raddr = ram_wb_r ? wb_adr_i[6:0] : {thresh_sel_type, adc_channel, thresh_sel_pol};
+  assign ram_raddr = ram_wb_r ? wb_adr_i[6:0] : {thresh_sel_type, adc_channel_src, thresh_sel_pol};
 
   /******************** WB Slave ********************/
   reg wb_ack_o;
   reg [3:0] wb_dat_o_src;
 
-  reg  [5:0] soft_viol_source;
+  reg  [4:0] soft_viol_source;
   reg [11:0] soft_viol_value;
 
-  reg  [5:0] hard_viol_source;
+  reg  [4:0] hard_viol_source;
   reg [11:0] hard_viol_value;
+
+  reg [15:0] crash_counter;
+
+  reg soft_ack;
+  reg hard_ack;
 
   assign wb_dat_o = wb_dat_o_src == 4'd0 ? ram_rdata :
                     wb_dat_o_src == 4'd1 ? {15'b0, soft_thresh_valid} :
                     wb_dat_o_src == 4'd2 ? {15'b0, hard_thresh_valid} :
-                    wb_dat_o_src == 4'd3 ? {10'b0, soft_viol_source} :
+                    wb_dat_o_src == 4'd3 ? {11'b0, soft_viol_source} :
                     wb_dat_o_src == 4'd4 ?  {4'b0, soft_viol_value} :
-                    wb_dat_o_src == 4'd5 ? {10'b0, hard_viol_source} :
+                    wb_dat_o_src == 4'd5 ? {11'b0, hard_viol_source} :
                     wb_dat_o_src == 4'd6 ?  {4'b0, hard_viol_value} :
                     wb_dat_o_src == 4'd7 ? v_in_range[15:0] :
                     wb_dat_o_src == 4'd8 ? v_in_range[31:16] :
+                    wb_dat_o_src == 4'd9 ? crash_counter :
                     16'b0;
-
-  reg clear_soft_viol, clear_hard_viol;
 
   always @(posedge wb_clk_i) begin
     bus_wait <= 1'b0;
     wb_ack_o <= 1'b0;
-    clear_soft_viol <= 1'b0;
-    clear_hard_viol <= 1'b0;
+    hard_ack <= 1'b0;
+    soft_ack <= 1'b0;
 
     if (soft_reset) begin
       soft_thresh_valid <= 1'b0;
+      soft_ack <= 1'b1;
     end
 
     if (wb_rst_i) begin
@@ -108,14 +116,14 @@ module level_checker(
           end
           `REG_SOFT_VIOL_SOURCE: begin
             wb_dat_o_src <= 4'd3;
-            clear_soft_viol <= 1'b1;
+            soft_ack <= 1'b1;
           end
           `REG_SOFT_VIOL_VALUE: begin
             wb_dat_o_src <= 4'd4;
           end
           `REG_HARD_VIOL_SOURCE: begin
             wb_dat_o_src <= 4'd5;
-            clear_hard_viol <= 1'b1;
+            hard_ack <= 1'b1;
           end
           `REG_HARD_VIOL_VALUE: begin
             wb_dat_o_src <= 4'd6;
@@ -125,6 +133,9 @@ module level_checker(
           end
           `REG_VINRANGE_1: begin
             wb_dat_o_src <= 4'd8;
+          end
+          default : begin
+            wb_dat_o_src <= 4'd9;
           end
         endcase
       end
@@ -151,20 +162,26 @@ module level_checker(
 
   reg wait_cycle;
   reg [11:0] adc_result_reg;
+  reg  [4:0] adc_channel_reg;
+  assign adc_channel_src = adc_channel_reg;
+
+  reg hard_lock, soft_lock;
 
   always @(posedge wb_clk_i) begin
     soft_viol <= 1'b0;
     hard_viol <= 1'b0;
-    if (clear_soft_viol)
-      soft_viol_source <= 6'b0;
-    if (clear_hard_viol)
-      hard_viol_source <= 6'b0;
     wait_cycle <= 1'b0;
+    if (soft_reset)
+      soft_lock <= 1'b0;
 
     if (wb_rst_i) begin
       v_in_range <= 32'b0;
       state <= STATE_IDLE;
       check_type <= 2'b00;
+      adc_result_reg  <= 12'b0;
+      adc_channel_reg <= 5'b0;
+      hard_lock <= 1'b0;
+      soft_lock <= 1'b0;
     end else begin
       case (state)
         STATE_IDLE: begin
@@ -174,18 +191,19 @@ module level_checker(
             soft_viol_int <= 1'b0;
             check_type <= 2'b0;
             wait_cycle <= 1'b1;
-            adc_result_reg <= adc_result;
+            adc_result_reg  <= adc_result;
+            adc_channel_reg <= adc_channel;
           end
         end
         STATE_CHECK: begin
-          if (~ram_wb_r & ~wait_cycle) begin
-            if (soft_thresh_valid & ~check_type[1]) begin
+          if (!ram_wb_r && !wait_cycle) begin
+            if (soft_thresh_valid && !check_type[1]) begin
               soft_viol_int <= soft_viol_int | (check_type[0] ? ram_rdata < adc_result_reg : ram_rdata > adc_result_reg);
 `ifdef DEBUG
               //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result_reg = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result_reg);
 `endif
             end
-            if (hard_thresh_valid & check_type[1]) begin
+            if (hard_thresh_valid && check_type[1]) begin
               hard_viol_int <= hard_viol_int |  (check_type[0] ? ram_rdata < adc_result_reg : ram_rdata > adc_result_reg);
 `ifdef DEBUG
               //$display("lc: chan = %b, check_type = %b, ram_raddr = %h, ram_rdata = %h, adc_result = %h", adc_channel, check_type, ram_raddr, ram_rdata, adc_result);
@@ -203,29 +221,31 @@ module level_checker(
           soft_viol <= soft_viol_int;
           hard_viol <= hard_viol_int;
           if (hard_thresh_valid)
-            v_in_range[adc_channel] <= ~hard_viol_int;
+            v_in_range[adc_channel_reg] <= ~hard_viol_int;
 
-          if (hard_viol_int) begin
+          if (hard_viol_int && !hard_lock && hard_en) begin
 `ifdef DEBUG
             //$display("lc: hard viol");
 `endif
-            if (~hard_viol_source[5]) begin
-              hard_viol_source <= {1'b1, adc_channel};
-              hard_viol_value <= adc_result;
-            end
+            hard_viol_source <= adc_channel_reg;
+            hard_viol_value <= adc_result_reg;
+            crash_counter <= crash_counter + 1;
+            hard_lock <= 1'b1;
           end
-          if (soft_viol_int) begin
+          if (soft_viol_int && !soft_lock && soft_en) begin
 `ifdef DEBUG
             //$display("lc: soft viol");
 `endif
-            if (~soft_viol_source[5]) begin
-              soft_viol_source <= {1'b1, adc_channel};
-              soft_viol_value <= adc_result;
-            end
+            soft_viol_source <= adc_channel_reg;
+            soft_viol_value <= adc_result_reg;
           end
           state <= STATE_IDLE;
         end
       endcase
+      if (hard_ack)
+        hard_lock <= 1'b0;
+      if (soft_ack)
+        soft_lock <= 1'b0;
     end
   end
 

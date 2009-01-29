@@ -14,6 +14,9 @@ module adc_controller(
   );
   parameter DEFAULT_SAMPLE_AVERAGING = 1;
 
+  reg WTF_local, WTF_auto;
+  wire WTF = WTF_local || WTF_auto;
+
   /* Wishbone interface */
   input  wb_clk_i, wb_rst_i;
   input  wb_stb_i, wb_cyc_i, wb_we_i;
@@ -69,21 +72,23 @@ module adc_controller(
 
   wire strb_channel; /* is the channel a strobed channel (current or temp monitoring) */
 
+  reg ADC_START;
+
   always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
+    ADC_START <= 1'b0;
+    if (wb_rst_i || WTF) begin
       acquire_state  <= ACQ_STATE_IDLE;
       stb_counter    <= 8'd0;
     end else begin
       case (acquire_state)
         ACQ_STATE_IDLE: begin
           if (acquire_start) begin
-            if (ADC_CALIBRATE) begin
-              acquire_state <= ACQ_STATE_CALWAIT;
-            end else if (strb_channel) begin
+            if (strb_channel) begin
               stb_counter   <= STB_LOW_WIDTH;
               acquire_state <= ACQ_STATE_STRB_LOW;
             end else begin
               acquire_state <= ACQ_STATE_START;
+              ADC_START <= 1'b1;
             end
 `ifdef DESPERATE_DEBUG
             $display("adc_acq: got rqst, channel = %d",adc_channel);
@@ -97,6 +102,7 @@ module adc_controller(
               acquire_state <= ACQ_STATE_STRB_LOW;
             end else begin
               acquire_state <= ACQ_STATE_START;
+              ADC_START <= 1'b1;
             end
           end
         end
@@ -113,13 +119,12 @@ module adc_controller(
             stb_counter <= stb_counter - 1;
           end else begin
             acquire_state <= ACQ_STATE_START;
+              ADC_START <= 1'b1;
           end
         end
         ACQ_STATE_START: begin
-          if (ADC_BUSY || ADC_DATAVALID) begin
+          if (ADC_BUSY) begin
             /* When ADC_BUSY goes high we know the sample has taken.
-               However, if DATAVALID goes high something is up and we
-               should continue anyway. (this has fixed issue)
             */
                
             acquire_state <= ACQ_STATE_SAMPLE;
@@ -182,10 +187,10 @@ module adc_controller(
 
   /* ADC acquire assignments */
 
-  assign ADC_START = acquire_state == ACQ_STATE_START;
+  //assign ADC_START = acquire_state == ACQ_STATE_START;
   assign ADC_CHNUM = current_channel;
 
-  assign acquire_done   = acquire_state == ACQ_STATE_SAMPLE && ADC_DATAVALID;
+  assign acquire_done   = (acquire_state == ACQ_STATE_SAMPLE) && ADC_DATAVALID;
   assign acquire_result = ADC_RESULT;
 
   assign fast_mode = !strb_channel;
@@ -211,26 +216,32 @@ module adc_controller(
   wire [6:0] avrg_target;
 
   reg acquire_start_strb;
+  reg [6:0] meh;
+
+  reg [17:0] wtf_counter;
 
   always @(posedge wb_clk_i) begin
     acquire_start_strb <= 1'b0;
+    WTF_auto <= 1'b0;
 
-    if (wb_rst_i) begin
-      process_state <= PROC_STATE_START;
-      channel <= 5'd0;
+    if (wb_rst_i || WTF_local) begin
+      process_state    <= PROC_STATE_START;
+      channel          <= 5'd0;
       sample_accum_reg <= 15'd0;
       avrg_count       <=  6'd0;
+      meh <= 0;
     end else begin 
       case (process_state)
         PROC_STATE_START: begin
           if (adc_en) begin
-            if ( (32'b1 << channel) & channel_bypass) begin
+            if ( |((32'b1 << channel) & channel_bypass) ) begin
               channel <= channel + 1;
 `ifdef DESPERATE_DEBUG
               $display("adc_ctrl: bypassing channel %d", channel);
 `endif
             end else begin
               process_state      <= PROC_STATE_WAIT;
+              wtf_counter        <= 18'd0;
               acquire_start_strb <= 1'b1;
 `ifdef DESPERATE_DEBUG
               $display("adc_ctrl: asked for sample");
@@ -245,6 +256,11 @@ module adc_controller(
             $display("adc_ctrl: got data = %d", acquire_result);
 `endif
           end
+          wtf_counter <= wtf_counter + 1;
+          if (wtf_counter == {18{1'b1}}) begin
+            WTF_auto <= 1'b1;
+            process_state    <= PROC_STATE_START;
+          end  
         end
         PROC_STATE_CAL: begin
           cal_value     <= acquire_result;
@@ -262,6 +278,8 @@ module adc_controller(
             channel          <= channel + 1;
             avrg_count       <= 6'b0;
             sample_accum_reg <= 0;
+            if (channel == 31)
+              meh <= meh + 1;
           end else begin
             avrg_count <= avrg_count + 1;
           end
@@ -290,12 +308,13 @@ module adc_controller(
                     wb_dat_o_src == 3'd3 ? {5'b0, tmon_en} :
                     wb_dat_o_src == 3'd4 ? {15'b0, adc_en} :
                     wb_dat_o_src == 3'd5 ? {13'b0, sample_averaging} :
-                    wb_dat_o_src == 3'd6 ? {16'b0} :
+                    wb_dat_o_src == 3'd6 ? {8'b0, 1'b0, process_state, 1'b0, acquire_state} :
                     16'd0;
 
   always @(posedge wb_clk_i) begin
     //strobes
     wb_ack_o <= 1'b0;
+    WTF_local <= 1'b0;
     if (wb_rst_i) begin
       channel_bypass <= {32{1'b0}};
       cmon_en <= {10{1'b1}};
@@ -365,6 +384,8 @@ module adc_controller(
           end
           `REG_ADC_STATUS: begin
             wb_dat_o_src <= 3'd6;
+            if (wb_we_i)
+              WTF_local <= 1'b1;
           end
         endcase
       end

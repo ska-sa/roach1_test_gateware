@@ -12,7 +12,7 @@
 `define FLASH_A           16'd1024
 `define FLASH_SYSCONFIG_A 16'hffff
 
-`define DEFAULT_SYSCONFIG 16'heeee
+`define DEFAULT_SYSCONFIG 16'h00ee
 `define VS_INDIRECT_L     13'hfff
 
 module TB_dma_engine();
@@ -122,13 +122,13 @@ module TB_dma_engine();
         if (mode == MODE_CRASH) begin
           for (k=0; k <= `VS_INDIRECT_L; k=k+1) begin
             if (k == `VS_INDIRECT_L) begin
-              if (16'hffff !== flash_mem[k]) begin
-                $display("FAILED: mode = %d, flash invalid, expected %x - got %x", 16'hffff, mode, flash_mem[k]);
+              if (16'hffff !== flash_mem[k+6]) begin
+                $display("FAILED: mode = %d, flash invalid, expected %x - got %x", 16'hffff, mode, flash_mem[k+6]);
                 $finish;
               end
             end else begin
-              if (k !== flash_mem[k]) begin
-                $display("FAILED: mode = %d, flash invalid, expected %x - got %x", mode, k, flash_mem[k]);
+              if (k !== flash_mem[k+6]) begin
+                $display("FAILED: mode = %d, flash invalid, expected %x - got %x", mode, k, flash_mem[k+6]);
                 $finish;
               end
             end

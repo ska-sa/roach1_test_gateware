@@ -147,7 +147,8 @@ module analogue_infrastructure(
     .CALIBRATE(ADC_CALIBRATE), .SAMPLE(ADC_SAMPLE), .BUSY(ADC_BUSY),
     .DATAVALID(ADC_DATAVALID), .RESULT(ADC_RESULT),
     //Clock Divide control, Sample Time Control, Sample Mode
-    .TVC(adc_clkdivide), .STC(adc_sampletime), .MODE(4'b0001),
+    //.TVC(adc_clkdivide), .STC(adc_sampletime), .MODE(4'b1001),
+    .TVC(adc_clkdivide), .STC(adc_sampletime), .MODE(4'b0101),
     //Analog Configuration MUX [ACM] interface 
     .ACMRDATA(ACM_DATAR), .ACMWDATA(ACM_DATAW), .ACMADDR(ACM_ADDR), .ACMCLK(ACM_CLK), .ACMWEN(ACM_WEN), .ACMRESET(ACM_RESET),        
     //Real time clock pins
@@ -158,7 +159,7 @@ module analogue_infrastructure(
     .SYSCLK(SYS_CLK), .PWRDWN(1'b0)
   );
  
-  assign adc_clkdivide  = fast_mode ? 8'd0 : 8'd9;  /* quick */
+  assign adc_clkdivide  = fast_mode ? 8'd1 : 8'd9;  /* quick */
   assign adc_sampletime = fast_mode ? 8'd4 : 8'd18; /* 20us */
 
 

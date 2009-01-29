@@ -40,6 +40,7 @@ module TB_level_checker();
     .wb_ack_o(wb_ack_o),
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
     .soft_reset(1'b0),
+    .hard_en(1'b1), .soft_en(1'b1),
     .soft_viol(soft_viol), .hard_viol(hard_viol),
     .v_in_range(v_in_range),
     .ram_raddr(ram_raddr), .ram_waddr(ram_waddr),
