@@ -91,6 +91,7 @@ module TB_dma_engine();
     if (reset) begin
       mode <= MODE_POWERUP;
       mode_progress <= 1'b0;
+      soft_reset <= 1'b1;
     end else begin
       if (~dma_done)
         mode_progress <= 1'b1;

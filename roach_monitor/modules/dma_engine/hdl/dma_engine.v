@@ -16,6 +16,7 @@ module dma_engine(
   parameter SYSTIME_A         = 16'd8;
   parameter CRASHSRC_A        = 16'd12;
   parameter CRASHVAL_A        = 16'd13;
+  parameter LEVELSVALID_A     = 16'd14;
   parameter SYSCONFIG_A       = 16'd576;
   parameter FLASH_A           = 16'd1024;
   parameter FLASH_SYSCONFIG_A = 16'hffff;
@@ -335,9 +336,19 @@ module dma_engine(
             end
             3'd2: begin
               if (wb_ack_i || wb_err_i) begin
-                state <= 3'd0;
+                /* set hard levels valid */
+                state      <= 3'd3;
+                wb_cyc_o   <= 1'b1;
+                wb_we_o    <= 1'b1;
+                wb_adr_o   <= LEVELSVALID_A;
+                wb_dat_buf <= 16'd1;
+              end
+            end
+            3'd3: begin
+              if (wb_ack_i || wb_err_i) begin
+                state    <= 3'd0;
                 progress <= 14'd0;
-                mode <= MODE_DONE;
+                mode     <= MODE_DONE;
               end
             end
           endcase

@@ -329,6 +329,7 @@ module toplevel(
     .ACM_AQUADS_A      (`MEM_ACM_A + 1),
     .VS_INDIRECT_A     (`MEM_VALS_A + 32),
     .SYSCONFIG_A       (`MEM_SYSCONF_A + 5),
+    .LEVELSVALID_A     (`MEM_LEVCHK_A + 128 + 1),
     .SYSTIME_A         (`MEM_SYSCONF_A + 6),
     .CRASHSRC_A        (`MEM_LEVCHK_A + 128 + 4),
     .CRASHVAL_A        (`MEM_LEVCHK_A + 128 + 5),
