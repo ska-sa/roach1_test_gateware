@@ -225,7 +225,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
         attribute box_type of packet_buffer_cpu: component is "black_box"; 
 
 	-- address_fifos
-	component addr_fifo
+	component address_fifo
 		port (
 			din                             : in  std_logic_vector(63 downto 0);
 			rd_clk                          : in  std_logic;
@@ -239,7 +239,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 			full                            : out std_logic
 		);
 	end component;
-        attribute box_type of addr_fifo: component is "black_box"; 
+        attribute box_type of address_fifo: component is "black_box"; 
 
 	-- ARP cache
 	component arp_cache
@@ -576,7 +576,7 @@ tx_buffer_cpu: packet_buffer_cpu
 	);
 
 -- transmit address fifo
-tx_address_fifo: addr_fifo
+tx_address_fifo: address_fifo
 	port map (
 		rst      => rst,
 
@@ -922,7 +922,7 @@ rx_buffer_cpu: packet_buffer_cpu
 	);
 
 -- receive address fifos
-rx_address_fifo: addr_fifo
+rx_address_fifo: address_fifo
 	port map (
 		rst      => rst,
 
