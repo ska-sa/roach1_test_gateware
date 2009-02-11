@@ -12,17 +12,17 @@
 
 /*********** Individual Module Enables *************/
 
-//`define ENABLE_TEN_GB_ETH_0
-//`define ENABLE_TEN_GB_ETH_1
-//`define ENABLE_TEN_GB_ETH_2
-//`define ENABLE_TEN_GB_ETH_3
+`define ENABLE_TEN_GB_ETH_0
+`define ENABLE_TEN_GB_ETH_1
+`define ENABLE_TEN_GB_ETH_2
+`define ENABLE_TEN_GB_ETH_3
 `define ENABLE_DRAM
 `define ENABLE_QDR_INFRASTRUCTURE
 `define ENABLE_QDR0
 `define ENABLE_QDR1
-//`define ENABLE_IADC_0
-//`define ENABLE_IADC_1
-//`define ENABLE_APPLICATION
+`define ENABLE_IADC_0
+`define ENABLE_IADC_1
+`define ENABLE_APPLICATION
 
 /************** XAUI/TENGBE Defines ***************/
 
@@ -61,7 +61,7 @@
 
 /***************** QDR Defines ********************/
 
-`define QDR_CLK_FREQ          333
+`define QDR_CLK_FREQ          250
 `define QDR0_WIDTH_MULTIPLIER 1
 `define QDR1_WIDTH_MULTIPLIER 1
 `define QDR0_ADD_LATENCY    2

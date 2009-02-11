@@ -536,7 +536,7 @@ NET "dram_dqs_n<4>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AJ11;
 NET "dram_dqs_n<5>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AD11;
 NET "dram_dqs_n<6>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AD9;
 NET "dram_dqs_n<7>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = V7;
-NET "dram_dqs_n<8>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ15;
+NET "dram_dqs_n<8>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AJ15;
 NET "dram_dqs_p<0>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AM26;
 NET "dram_dqs_p<1>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AN25;
 NET "dram_dqs_p<2>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AL21;
@@ -545,7 +545,7 @@ NET "dram_dqs_p<4>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AK11;
 NET "dram_dqs_p<5>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AD10;
 NET "dram_dqs_p<6>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AE8;
 NET "dram_dqs_p<7>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = W7;
-NET "dram_dqs_p<8>" IOSTANDARD = DIFF_SSTL18_II | LOC = AJ16;
+NET "dram_dqs_p<8>" IOSTANDARD = DIFF_SSTL18_II_DCI | LOC = AJ16;
 NET "dram_a<15>"   IOSTANDARD = SSTL18_II | LOC = AE7;
 NET "dram_a<14>"   IOSTANDARD = SSTL18_II | LOC = AH7;
 NET "dram_a<13>"   IOSTANDARD = SSTL18_II | LOC = AC4;
@@ -609,10 +609,6 @@ INST "*/u_phy_calib/gen_rden_dly*.u_ff_rden_dly" TNM = "TNM_RDEN_DLY";
 TIMESPEC "TS_MC_RDEN_DLY" = FROM "TNM_RDEN_DLY" TO FFS 10 NS;
 INST "*/u_phy_calib/gen_cal_rden_dly*.u_ff_cal_rden_dly" TNM = "TNM_CAL_RDEN_DLY";
 TIMESPEC "TS_MC_CAL_RDEN_DLY" = FROM "TNM_CAL_RDEN_DLY" TO FFS 10 NS;
-
-# TODO: Need to add LOCS for tons of DRAM stuff...
-
-
 
 #
 # Differential GPIO
