@@ -33,6 +33,10 @@
 //how long the power manager waits before starting post power-up checks
 `define POST_POWERUP_WAIT         32'h00ff_ffff
 
+/************ ADC Controller Defaults ************/
+`define DEFAULT_SAMPLE_AVERAGING 3'b101 
+//2 ^ 3'b101 = 32
+
 /************ Value Storage Parameters ************/
 //the size of the ring buffer -- maximum for afs600 is 7
 `define RING_BUFFER_SIZE          (7*1024)

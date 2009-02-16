@@ -548,7 +548,9 @@ module toplevel(
   wire  [4:0] adc_channel;
   wire adc_strb;
 
-  adc_controller adc_controller_inst(
+  adc_controller #(
+    .DEFAULT_SAMPLE_AVERAGING(`DEFAULT_SAMPLE_AVERAGING)
+  ) adc_controller_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[3]), .wb_stb_i(wbs_stb_o[3]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(3 + 1) - 1:16*3]),
