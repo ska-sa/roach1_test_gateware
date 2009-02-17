@@ -145,14 +145,12 @@ module dma_engine(
                   wb_adr_o   <= FLASH_A + 3;
                   wb_dat_buf <= wb_dat_i; 
                   state      <= 3'd7;
-                  $display("meh0");
                 end
               end
               3'd7: begin
                 if (wb_ack_i || wb_err_i) begin
                   progress   <= 2;
                   state      <= 3'd0;
-                  $display("meh1");
                 end
               end
             endcase
