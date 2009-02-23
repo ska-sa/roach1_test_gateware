@@ -5,9 +5,9 @@
 # Project name
 
 PROJECT=roach_cpld
-REV_MAJOR=1
+REV_MAJOR=2
 REV_MINOR=0
-REV_RCS:=`svn info|grep Revision |cut -d ' ' -f 2`
+REV_RCS:=0
 
 # Pin Constraints
 PCFILE=constraints/$(PROJECT).ucf
@@ -33,7 +33,5 @@ PARTNUM=xc2c256-6-TQ144
 
 # Verilog Include Directory
 VINC=include
-
-
 
 GEN_DIR=gen
