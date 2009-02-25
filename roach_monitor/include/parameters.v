@@ -50,8 +50,8 @@
   low address  [16 bits]
 */
 
-`define TO_CONF_0 {20'h7_ff_ff, 16'hff_ff, 16'h0400}
-`define TO_CONF_1 {20'h7_ff_ff, 16'hff_ff, 16'h0400}
+`define TO_CONF_0 {20'h7_ff_ff, 16'hff_ff, 16'h03C0}
+`define TO_CONF_1 {20'h7_ff_ff, 16'hff_ff, 16'h03C0}
 `define TO_DEFAULT 20'd20
 
 /********* Memory Protection ************/
