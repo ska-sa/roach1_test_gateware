@@ -28,7 +28,7 @@ module sequencer(
   localparam STATE_POWERED_UP   = 3'd3;
 
   localparam TIME_0 = 32'd10;
-  localparam TIME_1 = 32'd100000;
+  localparam TIME_1 = 32'd100;
 
   reg [31:0] timer;
 

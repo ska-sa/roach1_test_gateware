@@ -590,7 +590,7 @@ module toplevel(
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(4 + 1) - 1:16*4]),
     .wb_ack_o(wbs_ack_i[4]),
     .adc_result(adc_result), .adc_channel(adc_channel), .adc_strb(adc_strb),
-    .soft_en(power_on), .hard_en(power_on),
+    .soft_en(power_ok), .hard_en(power_ok),
     .soft_reset(soft_reset),
     .soft_viol(soft_viol), .hard_viol(hard_viol),
     .v_in_range(v_in_range),

@@ -31,7 +31,7 @@
 //how long the power manager waits before entering the powered_up state
 `define POWER_DOWN_WAIT           32'h0003_ffff
 //how long the power manager waits before starting post power-up checks
-`define POST_POWERUP_WAIT         32'h007f_ffff
+`define POST_POWERUP_WAIT         32'h003f_ffff
 
 /************ ADC Controller Defaults ************/
 `define DEFAULT_SAMPLE_AVERAGING 3'b101
