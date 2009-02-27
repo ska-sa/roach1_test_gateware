@@ -1450,8 +1450,8 @@ module toplevel(
     .BW_WIDTH     (2),
     .ADDR_WIDTH   (21),
     .BURST_LENGTH (4),
-    .CLK_FREQ     (`QDR_CLK_FREQ),
-    .USE_XILINX_CORE (0)
+    .CLK_FREQ     (`QDR_CLK_FREQ)
+    //.USE_XILINX_CORE (0)
   ) qdr_controller_0 (
     .reset (sys_reset || qdr0_usr_reset || !qdr_pll_lock || !idelay_ready),
 
@@ -1535,8 +1535,7 @@ module toplevel(
   );
 
   multiport_qdr #(
-    .C_WIDE_DATA     (`QDR0_WIDTH_MULTIPLIER == 2),
-    .QDR_ADD_LATENCY (`QDR0_ADD_LATENCY)
+    .C_WIDE_DATA     (`QDR0_WIDTH_MULTIPLIER == 2)
   ) multiport_qdr_0 (
    // System inputs
    .clk (qdr_clk0),
@@ -1614,8 +1613,8 @@ module toplevel(
     .BW_WIDTH     (2),
     .ADDR_WIDTH   (21),
     .BURST_LENGTH (4),
-    .CLK_FREQ     (`QDR_CLK_FREQ),
-    .USE_XILINX_CORE (0)
+    .CLK_FREQ     (`QDR_CLK_FREQ)
+    //.USE_XILINX_CORE (0)
   ) qdr_controller_1 (
     .reset (sys_reset || qdr1_usr_reset || !qdr_pll_lock || !idelay_ready),
 
@@ -1700,8 +1699,7 @@ module toplevel(
   );
 
   multiport_qdr #(
-    .C_WIDE_DATA     (`QDR1_WIDTH_MULTIPLIER == 2),
-    .QDR_ADD_LATENCY (`QDR1_ADD_LATENCY)
+    .C_WIDE_DATA     (`QDR1_WIDTH_MULTIPLIER == 2)
   ) multiport_qdr_1 (
    // System inputs
    .clk (qdr_clk0),

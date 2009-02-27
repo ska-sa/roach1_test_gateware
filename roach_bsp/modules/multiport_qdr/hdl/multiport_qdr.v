@@ -32,10 +32,9 @@ module multiport_qdr(
    out_rd_dvld,
    out_rd_data
   );
-  parameter C_WIDE_DATA     = 0;
-  parameter QDR_ADD_LATENCY = 0;
+  parameter C_WIDE_DATA  = 0;
 
-  localparam QDR_LATENCY = 7 + QDR_ADD_LATENCY;
+  localparam QDR_LATENCY = 10;
 
   input clk, rst;
 

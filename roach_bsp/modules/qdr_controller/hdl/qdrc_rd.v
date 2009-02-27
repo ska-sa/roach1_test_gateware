@@ -38,11 +38,11 @@ module qdrc_rd(
   assign phy_strb = usr_strb;
   assign usr_data = phy_data;
 
-  localparam READ_LATENCY = 9;
+  localparam READ_LATENCY = 10;
   /* This is the default latency which includes:
    * 1 cycle due to sync interface
    * 1 cycle to ease timing on outputs
-   * 1 for output buffers
+   * 2 for output buffers
    * 2 cycles for chip response
    * 1 cycle for input buffer
    * 1 cycle for half offset correction
