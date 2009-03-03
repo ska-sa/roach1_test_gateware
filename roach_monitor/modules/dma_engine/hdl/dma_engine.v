@@ -6,7 +6,8 @@ module dma_engine(
     wb_adr_o, wb_dat_o, wb_dat_i,
     wb_ack_i, wb_err_i,
     soft_reset, dma_crash,
-    dma_done
+    dma_done,
+    disable_crashes
   );
   parameter FROM_ACM_A        = 16'd0;
   parameter FROM_LC_A         = 16'd40;
@@ -31,6 +32,7 @@ module dma_engine(
   input  soft_reset;
   input  dma_crash;
   output dma_done;
+  input  disable_crashes;
 
   reg [2:0] mode;
   localparam MODE_FLASH     = 3'd0;
@@ -339,7 +341,7 @@ module dma_engine(
                 wb_cyc_o   <= 1'b1;
                 wb_we_o    <= 1'b1;
                 wb_adr_o   <= LEVELSVALID_A;
-                wb_dat_buf <= 16'd1;
+                wb_dat_buf <= {15'b0, ~disable_crashes};
               end
             end
             3'd3: begin

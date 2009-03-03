@@ -340,7 +340,8 @@ module toplevel(
     .wb_cyc_o(dma_wb_cyc_o), .wb_stb_o(dma_wb_stb_o), .wb_we_o(dma_wb_we_o),
     .wb_adr_o(dma_wb_adr_o), .wb_dat_o(dma_wb_dat_o), .wb_dat_i(dma_wb_dat_i),
     .wb_ack_i(dma_wb_ack_i), .wb_err_i(dma_wb_err_i),
-    .dma_crash(dma_crash), .dma_done(dma_done), .soft_reset(soft_reset)
+    .dma_crash(dma_crash), .dma_done(dma_done), .soft_reset(soft_reset),
+    .disable_crashes(sys_config_vector[7])
   );
 `else
   assign dma_wb_we_o  = 1'b0;
