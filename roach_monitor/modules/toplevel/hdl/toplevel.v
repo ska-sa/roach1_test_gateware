@@ -648,10 +648,10 @@ module toplevel(
     end
   end
   wire bad_power_down = no_power_cause == 2'b01 || no_power_cause == 2'b10;
-  wire power_led  = power_ok ? 1'b1 :
+  wire power_led  = power_ok ? 1'b1 : counter[26];
+  wire action_led = power_ok ? CONTROLLER_IRQ :
                     bad_power_down ? counter[24] :
                     1'b0;
-  wire action_led = power_ok ? CONTROLLER_IRQ : counter[26];
 
   assign CHS_LED_N = hard_reset ? 2'b00 : ~{action_led, power_led};
 
