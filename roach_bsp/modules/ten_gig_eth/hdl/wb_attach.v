@@ -167,25 +167,28 @@ module wb_attach(
         wb_ack_o<=1'b1;
 
       // RX Buffer control handshake
-      if (~rx_cpu_buffer_cleared  & rx_cpu_new_buffer & ~rx_cpu_new_buffer_R) begin
+      if (!rx_cpu_buffer_cleared  && rx_cpu_new_buffer && !rx_cpu_new_buffer_R) begin
         rx_size <= rx_cpu_buffer_size;
         rx_cpu_buffer_select_int <= rx_cpu_buffer_select;
       end
-      if (~rx_cpu_buffer_cleared & rx_cpu_new_buffer & rx_cpu_new_buffer_R & rx_size == 8'h00) begin
+      if (!rx_cpu_buffer_cleared && rx_cpu_new_buffer && rx_cpu_new_buffer_R && rx_size == 8'h00) begin
         rx_cpu_buffer_cleared <= 1'b1;
       end
-      if (rx_cpu_buffer_cleared & ~rx_cpu_new_buffer) begin
+      if (rx_cpu_buffer_cleared && !rx_cpu_new_buffer) begin
         rx_cpu_buffer_cleared <= 1'b0;
       end
 
       // TX Buffer control handshake
-      if (~tx_cpu_buffer_filled & tx_cpu_free_buffer & ~tx_cpu_free_buffer_R) begin
+      if (!tx_cpu_buffer_filled && tx_cpu_free_buffer && !tx_cpu_free_buffer_R) begin
         tx_size <= 8'h00;
         tx_cpu_buffer_select_int <= tx_cpu_buffer_select;
       end
-      if (~tx_cpu_buffer_filled & tx_cpu_free_buffer & tx_cpu_free_buffer_R & tx_size != 8'h0) begin
+      if (!tx_cpu_buffer_filled && tx_cpu_free_buffer && tx_cpu_free_buffer_R && tx_size != 8'h0) begin
         tx_cpu_buffer_filled <= 1'b1;
         tx_cpu_buffer_size <= tx_size;
+      end
+      if (tx_cpu_buffer_filled && !tx_cpu_free_buffer) begin
+        tx_cpu_buffer_filled <= 1'b0;
       end
 
   /* most of the work is done in the next always block in coverting 16 bit to 64 bit buffer
