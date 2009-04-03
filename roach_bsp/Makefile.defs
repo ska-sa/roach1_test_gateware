@@ -33,6 +33,15 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/xaui_infrastructure/hdl/transceiver.v \
     ./modules/xaui_phy/hdl/xaui_phy.v \
     ./modules/xaui_phy/hdl/xaui_v7_2.v \
+    ./modules/xaui_phy/hdl/deskew_state.v \
+		./modules/xaui_phy/hdl/fix_term.v \
+		./modules/xaui_phy/hdl/pcs_deskew.v \
+		./modules/xaui_phy/hdl/pcs_rx.v \
+		./modules/xaui_phy/hdl/pcs_sync.v \
+		./modules/xaui_phy/hdl/pcs_tx.v \
+		./modules/xaui_phy/hdl/sync_state.v \
+		./modules/xaui_phy/hdl/tx_state.v \
+		./modules/xaui_phy/hdl/xaui_kat.v \
     ./modules/ten_gig_eth/hdl/ten_gb_eth.vhd \
     ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB.vhd \
     ./modules/ten_gig_eth/hdl/wb_attach.v \
