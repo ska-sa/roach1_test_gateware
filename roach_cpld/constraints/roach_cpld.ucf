@@ -44,7 +44,7 @@ NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
 #NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "120" | PULLUP;
 #NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "110" | PULLUP;
 #NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "111" | PULLUP;
-#NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121";
+#NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121" | PULLUP;
 #NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "116" | PULLUP;
 
 NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "116";
@@ -57,7 +57,7 @@ NET "mmc_data<3>" IOSTANDARD = LVCMOS33 | LOC = "112" | PULLUP;
 NET "mmc_data<2>" IOSTANDARD = LVCMOS33 | LOC = "111" | PULLUP;
 NET "mmc_data<1>" IOSTANDARD = LVCMOS33 | LOC = "120" | PULLUP;
 NET "mmc_data<0>" IOSTANDARD = LVCMOS33 | LOC = "119" | PULLUP;
-NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "110";
+NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "110" | PULLUP;
 NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121" | PULLUP;
 
 ################### Virtex5 Config #######################
