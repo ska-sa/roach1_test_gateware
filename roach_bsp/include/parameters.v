@@ -61,7 +61,7 @@
 
 /***************** QDR Defines ********************/
 
-`define QDR_CLK_FREQ          350
+`define QDR_CLK_FREQ          300
 `define QDR0_WIDTH_MULTIPLIER 1
 `define QDR1_WIDTH_MULTIPLIER 1
 
