@@ -22,7 +22,7 @@
 `define ENABLE_QDR1
 `define ENABLE_IADC_0
 `define ENABLE_IADC_1
-//`define ENABLE_APPLICATION
+`define ENABLE_APPLICATION
 
 /************** XAUI/TENGBE Defines ***************/
 
