@@ -44,7 +44,7 @@ module pcs_deskew(
 
   deskew_state deskew_state1(
     .reset(reset),
-    .current_state(state), .next_state(state_int_1),
+    .current_state(state_int_0), .next_state(state_int_1),
     .mgt_rxdata(rxdata_1), .mgt_rxcharisk(rxisk_1), .sync_status(sync_status),
     .disp_err({disp_err[7], disp_err[5], disp_err[3], disp_err[1]}),
     .next_align_status(align_status_1), .next_enable_deskew(enable_dekew_1)

@@ -85,6 +85,16 @@ module xaui_kat(
   wire remote_error = xgmii_rxc_int[3:0] == 4'b0001 && xgmii_rxd_int[31:0]  == 32'h0200009c ||
                       xgmii_rxc_int[7:4] == 4'b0001 && xgmii_rxd_int[63:32] == 32'h0200009c;
  
+  wire [3:0] sync_status_int;
+  wire align_status_int;
+
+  reg [3:0] sync_status;
+  reg align_status;
+  always @(posedge usrclk) begin
+    sync_status  <= sync_status_int;
+    align_status <= align_status_int;
+  end
+
   pcs_tx pcs_tx_0(
     .clk(usrclk), .reset(reset),
     .xgmii_txdata(xgmii_txd_z), 
@@ -92,6 +102,15 @@ module xaui_kat(
     .mgt_txdata(mgt_txdata),
     .mgt_txcharisk(mgt_txcharisk)
   );
+
+  reg [63:0] mgt_rxdata_z;
+  reg  [7:0] mgt_rxcharisk_z;
+  reg  [7:0] mgt_codevalid_z;
+  always @(posedge usrclk) begin
+    mgt_rxdata_z    <= mgt_rxdata;
+    mgt_rxcharisk_z <= mgt_rxcharisk;
+    mgt_codevalid_z <= mgt_codevalid;
+  end
 
   pcs_sync pcs_sync_0(
     .clk(usrclk),
@@ -102,23 +121,23 @@ module xaui_kat(
     .syncok(mgt_syncok),
     .rxlock(mgt_rxlock),
     .signal_detect(signal_detect),
-    .lanesync(sync_status)
+    .lanesync(sync_status_int)
   );
 
   pcs_deskew pcs_deskew_0(
     .clk(usrclk), .reset(reset),
-    .mgt_rxdata(mgt_rxdata), .mgt_rxcharisk(mgt_rxcharisk),
-    .disp_err(~mgt_codevalid),
+    .mgt_rxdata(mgt_rxdata_z), .mgt_rxcharisk(mgt_rxcharisk_z),
+    .disp_err(~mgt_codevalid_z),
     .sync_status(sync_status),
     .enable_deskew(mgt_enchansync),
-    .align_status(align_status)
+    .align_status(align_status_int)
   );
 
   pcs_rx pcs_rx_0(
     .clk(usrclk), .reset(reset),
     .align_status(align_status),
-    .mgt_rxdata(mgt_rxdata), .mgt_rxcharisk(mgt_rxcharisk),
-    .disperr(~mgt_codevalid),
+    .mgt_rxdata(mgt_rxdata_z), .mgt_rxcharisk(mgt_rxcharisk_z),
+    .disperr(~mgt_codevalid_z),
     .xgmii_rxd(xgmii_rxd_int), .xgmii_rxc(xgmii_rxc_int)
   );
 

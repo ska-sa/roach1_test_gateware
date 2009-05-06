@@ -48,6 +48,7 @@ module tx_state(
   input got_tx_data;
   input reset;
   begin
+    nstate = `SEND_RANDOM_R;
     if (reset) begin
       nstate = `SEND_RANDOM_R;
     end else if (got_tx_data) begin
