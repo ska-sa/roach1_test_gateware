@@ -18,9 +18,10 @@ module toplevel(
     /* PPC epb interface */
     epb_clk, epb_reset_n,
     epb_data, epb_addr,
-    epb_cs_n, epb_we_n, epb_be_n, epb_oen_n,
+    epb_cs_n, epb_we_n, epb_be_n, epb_oe_n,
+    epb_rdy,
     /* PPC misc signals */
-    ppc_tmr_clk, ppc_syserr, ppc_sm_cs_n,
+    ppc_tmr_clk, ppc_syserr, ppc_sm_cs_n, ppc_irq,
     /* system configuration inputs */
     sys_config, user_dip, config_dip,
     /* system configuration outputs */
@@ -56,11 +57,13 @@ module toplevel(
   input  epb_clk, epb_reset_n;
   inout  [7:0] epb_data;
   input  [4:0] epb_addr;
-  input  epb_cs_n, epb_we_n, epb_be_n, epb_oen_n;
+  input  epb_cs_n, epb_we_n, epb_be_n, epb_oe_n;
+  output epb_rdy;
 
   output ppc_tmr_clk;
   input  ppc_syserr;
   input  ppc_sm_cs_n;
+  output ppc_irq;
 
   input  [7:0] sys_config;
   input  [3:0] user_dip;
@@ -79,10 +82,13 @@ module toplevel(
   output tempsense_addr;
 
   /************************ Resets ****************************/
+
   //common signals
+  wire sys_reset = !(reset_por_n && !reset_mon);
+  /* system wide reset */
+
   wire por_force;      //power-on-reset force signal tied to a register
   wire por_force_int;  //power-on-reset force signal on master clk domain
-  wire sys_reset = !(reset_por_n && !reset_mon);
   wire geth_reset_int; //gigabit ethernet reset tied to a register
 
   //output assignments
@@ -111,26 +117,20 @@ module toplevel(
   /************************* LEDs *****************************/
 
   wire [1:0] user_led_int;
+  localparam FLASH_WIDTH = 22;
 
-  reg [25:0] counter [1:0];
+  /* optimize: this is insanely wasteful - consider this for deletion first  */
+  reg [FLASH_WIDTH - 1:0] counter;
 
   always @(posedge clk_master) begin
     if (reset_mon) begin
-      counter[0] <= 26'b0;
+      counter <= {FLASH_WIDTH{1'b0}};
     end else begin
-      counter[0] <= counter[0] + 1;
+      counter <= counter + 1;
     end
   end
 
-  always @(posedge epb_clk) begin
-    if (reset_mon) begin
-      counter[1] <= 26'b0;
-    end else begin
-      counter[1] <= counter[1] + 1;
-    end
-  end
-
-  assign sys_led_n  = ~{!flash_busy_n, ppc_syserr ? counter[0][23] : v5c_done};
+  assign sys_led_n  = ~{!flash_busy_n, ppc_syserr ? counter[FLASH_WIDTH - 1] : v5c_done};
   
   assign user_led_n = ~user_led_int;
 
@@ -139,7 +139,7 @@ module toplevel(
 
   assign clk_aux_en     = 1'b1;
   assign clk_master_sel = 1'b1;
-  assign tempsense_addr = 1'b0; //TODO: check this
+  assign tempsense_addr = 1'b0;
   assign ppc_tmr_clk    = clk_aux;
   
 `ifdef BOOT_CONF_EEPROM
@@ -154,8 +154,6 @@ module toplevel(
 `endif
   assign boot_conf_en_n = 1'b0;
 
-  wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
-
   assign eeprom_0_wp = !user_dip[3];
   assign eeprom_1_wp = !user_dip[3];
   assign flash_wp_n  = !user_dip[2];
@@ -164,13 +162,20 @@ module toplevel(
   wire [7:0] epb_data_i;
   wire [7:0] epb_data_o;
 
-  wire epb_data_oen;
+  wire epb_data_oe;
+  wire epb_rdy_oe;
 
   epb_infrastructure epb_infrastructure_inst(
-    .epb_data  (epb_data),
-    .epb_data_i(epb_data_o),
-    .epb_data_o(epb_data_i),
-    .epb_oen   (epb_data_oen)
+    /* External Signals */
+    .epb_data     (epb_data),
+    .epb_rdy      (epb_rdy),
+
+    /* Internal Signals */
+    .epb_data_i  (epb_data_o),
+    .epb_data_o  (epb_data_i),
+    .epb_data_oe (epb_data_oe),
+    .epb_rdy_oe  (epb_rdy_oe),
+    .epb_rdy_i   (1'b0)
   );
   
   wire wb_stb_o, wb_cyc_o;
@@ -182,16 +187,28 @@ module toplevel(
   wire wb_clk_i = !epb_clk; //hopefully improve timing
   wire wb_rst_i = sys_reset || !epb_reset_n;
 
-  epb_wb_bridge #(
-    .TRANS_LENGTH(1)
-  ) epb_wb_bridge_inst (
-    .clk(wb_clk_i), .reset(wb_rst_i),
-    .epb_cs_n(epb_cs_n), .epb_oen_n(epb_oen_n), .epb_we_n(epb_we_n), .epb_be_n(epb_be_n),
-    .epb_addr(epb_addr),
-    .epb_data_i(epb_data_i), .epb_data_o(epb_data_o), .epb_data_oen(epb_data_oen),
-    .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o), .wb_sel_o(wb_sel_o),
-    .wb_adr_o(wb_adr_o), .wb_dat_o(wb_dat_o), .wb_dat_i(wb_dat_i),
-    .wb_ack_i(wb_ack_i)
+  epb_wb_bridge epb_wb_bridge_inst (
+    .clk   (wb_clk_i),
+    .reset (wb_rst_i),
+
+    .epb_cs_n    (epb_cs_n),
+    .epb_oe_n    (epb_oe_n),
+    .epb_we_n    (epb_we_n),
+    .epb_be_n    (epb_be_n),
+    .epb_addr    (epb_addr),
+    .epb_data_i  (epb_data_i),
+    .epb_data_o  (epb_data_o),
+    .epb_data_oe (epb_data_oe),
+    .epb_busy    (epb_rdy_oe),
+
+    .wb_cyc_o (wb_cyc_o),
+    .wb_stb_o (wb_stb_o),
+    .wb_we_o  (wb_we_o),
+    .wb_sel_o (wb_sel_o),
+    .wb_adr_o (wb_adr_o),
+    .wb_dat_o (wb_dat_o),
+    .wb_dat_i (wb_dat_i),
+    .wb_ack_i (wb_ack_i)
   );
 
   /* V basic wishbone arbitration */
@@ -233,7 +250,12 @@ module toplevel(
   wire  [7:0] rev_min = `REV_MINOR;
   wire [15:0] rev_rcs = `REV_RCS;
 
-  assign wb_ack_i_3 = 1'b1;
+  reg wb_ack_rev;
+
+  always @(posedge wb_clk_i) begin
+    wb_ack_rev <= wb_stb_o_3;
+  end
+  assign wb_ack_i_3 = wb_ack_rev;
 
   assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'd0 ? rev_id [15:8] :
                       wb_adr_o_3[2:0] == 3'd1 ? rev_id [ 7:0] :
@@ -246,134 +268,111 @@ module toplevel(
   /*************************** Misc Registers ****************************/
 
   misc misc_inst(
-    .wb_clk_i(wb_clk_i),   .wb_rst_i(wb_rst_i),
-    .wb_stb_i(wb_stb_o_0), .wb_cyc_i(wb_cyc_o_0), .wb_we_i (wb_we_o),
-    .wb_adr_i(wb_adr_o_0),   .wb_dat_i(wb_dat_o),   .wb_dat_o(wb_dat_i_0),
-    .wb_ack_o(wb_ack_i_0),
+    .wb_clk_i (wb_clk_i),
+    .wb_rst_i (wb_rst_i),
+    .wb_stb_i (wb_stb_o_0),
+    .wb_cyc_i (wb_cyc_o_0),
+    .wb_we_i  (wb_we_o),
+    .wb_adr_i (wb_adr_o_0),
+    .wb_dat_i (wb_dat_o),
+    .wb_dat_o (wb_dat_i_0),
+    .wb_ack_o (wb_ack_i_0),
     
-    .por_force(por_force),
-    .geth_reset(geth_reset_int),
-    .sys_config(sys_config),
-    .user_dip(user_dip),
-    .config_dip(config_dip),
-    .user_led(user_led_int),
-
-    .eeprom_0_wp(eeprom_0_wp_int),
-    .eeprom_1_wp(eeprom_1_wp_int),
-    .flash_wp   (flash_wp_int),
-    .flash_busy (!flash_busy_n),
-    .serial_conf_busy(serial_conf_busy), .serial_conf_disable(serial_conf_disable)
+    .por_force    (por_force),
+    .geth_reset   (geth_reset_int),
+    .sys_config   (sys_config),
+    .user_dip     (user_dip),
+    .config_dip   (config_dip),
+    .user_led     (user_led_int),
+    .flash_busy_n (flash_busy_n)
   );
 
   /********************** V5 config/SelectMap ****************************/
 
   wire v5c_init_n_o;
-  wire v5c_init_n_oen;
+  wire v5c_init_n_oe;
   wire v5c_init_n_i;
-
-  wire v5c_cclk_o_int;
-  wire v5c_cclk_o_int_0;
-  wire v5c_cclk_o_int_1;
-  wire v5c_cclk_oen;
 
   v5c_infrastructure v5c_infrastructure_inst (
     .v5c_init_n    (v5c_init_n),
     .v5c_init_n_i  (v5c_init_n_o),
     .v5c_init_n_o  (v5c_init_n_i),
-    .v5c_init_n_oen(v5c_init_n_oen), 
+    .v5c_init_n_oe (v5c_init_n_oe), 
 
     .v5c_cclk    (v5c_cclk_o),
-    .v5c_cclk_i  (v5c_cclk_o_int),
-    .v5c_cclk_oen(v5c_cclk_oen)
+    .v5c_cclk_i  (wb_clk_i),
+    .v5c_cclk_oe (1'b1)
   );
-
-  wire [2:0] v5c_mode_0;
-  wire [2:0] v5c_mode_1;
-
-  wire v5c_prog_n_0;
-  wire v5c_prog_n_1;
-
-  wire v5c_init_n_o_0;
-  wire v5c_init_n_o_1;
-  wire v5c_init_n_oen_1;
-
-  assign v5c_cclk_oen  = 1'b1;//serial_conf_busy;
-
-  assign v5c_cclk_o_int = serial_conf_busy ? v5c_cclk_o_int_0 : v5c_cclk_o_int_1;
-  assign v5c_cclk_o_int_1 = wb_clk_i;
-  assign v5c_cclk_en_n  = 1'b1;//serial_conf_busy;
- 
-
-  assign v5c_mode = 3'b110;
-
-  assign v5c_prog_n     = serial_conf_busy ? v5c_prog_n_0   : v5c_prog_n_1;  
-  assign v5c_init_n_o   = serial_conf_busy ? v5c_init_n_o_0 : v5c_init_n_o_1;  
-  assign v5c_init_n_oen = serial_conf_busy ? 1'b1           : v5c_init_n_oen_1;  
-
-  // user interface to v5 serial conf module
-  wire [7:0] user_data;
-  wire user_data_strb;
-  wire user_rdy;
 
   v5c_sm v5c_sm_inst (
-    .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
-    .wb_cyc_i(wb_cyc_o_1), .wb_stb_i(wb_stb_o_1), .wb_we_i(wb_we_o),
-    .wb_adr_i(wb_adr_o_1), .wb_dat_i(wb_dat_o), .wb_dat_o(wb_dat_i_1),
-    .wb_ack_o(wb_ack_i_1),
+    .wb_clk_i (wb_clk_i),
+    .wb_rst_i (wb_rst_i),
+    .wb_cyc_i (wb_cyc_o_1),
+    .wb_stb_i (wb_stb_o_1),
+    .wb_we_i  (wb_we_o),
+    .wb_adr_i (wb_adr_o_1),
+    .wb_dat_i (wb_dat_o),
+    .wb_dat_o (wb_dat_i_1),
+    .wb_ack_o (wb_ack_i_1),
 
-    .epb_clk(epb_clk),
-    .sm_cs_n(ppc_sm_cs_n),
+    .sm_cs_n (ppc_sm_cs_n),
 
-    .v5c_rdwr_n(v5c_rdwr_n), .v5c_cs_n(v5c_cs_n), .v5c_prog_n(v5c_prog_n_1),
-    .v5c_done(v5c_done), .v5c_busy(v5c_dout_busy),
-    .v5c_init_n_i(v5c_init_n_i), .v5c_init_n_o(v5c_init_n_o_1), .v5c_init_n_oen(v5c_init_n_oen_1),
-    .v5c_mode(v5c_mode_1),
-
-    .sm_busy(serial_conf_busy)
+    .v5c_rdwr_n    (v5c_rdwr_n),
+    .v5c_cs_n      (v5c_cs_n),
+    .v5c_prog_n    (v5c_prog_n),
+    .v5c_done      (v5c_done),
+    .v5c_busy      (v5c_dout_busy),
+    .v5c_init_n_i  (v5c_init_n_i),
+    .v5c_init_n_o  (v5c_init_n_o),
+    .v5c_init_n_oe (v5c_init_n_oe),
+    .v5c_mode      (v5c_mode)
   );
+  assign v5c_cclk_en_n = 1'b1;
 
   /************** MMC Interfaces **************/
 
-  wire mmc_cmd_o, mmc_cmd_i, mmc_cmd_oen;
+  wire mmc_cmd_o, mmc_cmd_i, mmc_cmd_oe;
   wire [7:0] mmc_data_o;
   wire [7:0] mmc_data_i;
-  wire mmc_data_oen;
-
-  wire mmc_clk_0, mmc_clk_1;
-  wire mmc_cmd_o_0, mmc_cmd_o_1;
-  wire mmc_cmd_oen_0, mmc_cmd_oen_1;
-
-  assign mmc_clk      = serial_conf_busy ? mmc_clk_0      : mmc_clk_1;
-  assign mmc_cmd_o    = serial_conf_busy ? mmc_cmd_o_0    : mmc_cmd_o_1;
-  assign mmc_cmd_oen  = serial_conf_busy ? mmc_cmd_oen_0  : mmc_cmd_oen_1;
+  wire mmc_data_oe;
 
   mmc_infrastructure mmc_infrastructure_inst(
-    .mmc_cmd(mmc_cmd), .mmc_data(mmc_data),
-    .mmc_cmd_i(mmc_cmd_o), .mmc_cmd_o(mmc_cmd_i), .mmc_cmd_oen(mmc_cmd_oen),
-    .mmc_data_i(mmc_data_o), .mmc_data_o(mmc_data_i), .mmc_data_oen(mmc_data_oen)
+    /* external signals */
+    .mmc_cmd     (mmc_cmd),
+    .mmc_data    (mmc_data),
+    /* internal signals */
+    .mmc_cmd_i   (mmc_cmd_o),
+    .mmc_cmd_o   (mmc_cmd_i),
+    .mmc_cmd_oe  (mmc_cmd_oe),
+    .mmc_data_i  (mmc_data_o),
+    .mmc_data_o  (mmc_data_i),
+    .mmc_data_oe (mmc_data_oe)
   );
 
-  mmc_ro mmc_ro_inst(
-    .clk(clk_master), .reset(reset_por_n),
-    .mmc_clk(mmc_clk_0),
-    .mmc_cmd_o(mmc_cmd_o_0), .mmc_cmd_i(mmc_cmd_i), .mmc_cmd_oen(mmc_cmd_oen_0),
-    .mmc_data_i(mmc_data_i),
-    .user_data_o(user_data), .user_data_strb(user_data_strb),
-    .user_rdy(user_rdy),
-    .boot_sel(serial_boot_sel)
-  );
+  mmc_controller mmc_controller (
+    .wb_clk_i (wb_clk_i),
+    .wb_rst_i (wb_rst_i),
+    .wb_cyc_i (wb_cyc_o_2),
+    .wb_stb_i (wb_stb_o_2),
+    .wb_we_i  (wb_we_o),
+    .wb_adr_i (wb_adr_o_2),
+    .wb_dat_i (wb_dat_o),
+    .wb_dat_o (wb_dat_i_2),
+    .wb_ack_o (wb_ack_i_2),
 
-  mmc_bb mmc_bb_inst(
-    .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
-    .wb_cyc_i(wb_cyc_o_2), .wb_stb_i(wb_stb_o_2), .wb_we_i(wb_we_o),
-    .wb_adr_i(wb_adr_o_2), .wb_dat_i(wb_dat_o), .wb_dat_o(wb_dat_i_2),
-    .wb_ack_o(wb_ack_i_2),
-
-    .mmc_clk(mmc_clk_1),
-    .mmc_cmd_o(mmc_cmd_o_1), .mmc_cmd_i(mmc_cmd_i), .mmc_cmd_oen(mmc_cmd_oen_1),
-    .mmc_data_i(mmc_data_i), .mmc_data_o(mmc_data_o), .mmc_data_oen(mmc_data_oen),
-    .mmc_cdetect(mmc_cdetect), .mmc_wp(mmc_wp)
+    .mmc_clk     (mmc_clk),
+    .mmc_cmd_o   (mmc_cmd_o),
+    .mmc_cmd_i   (mmc_cmd_i),
+    .mmc_cmd_oe  (mmc_cmd_oe),
+    .mmc_data_i  (mmc_data_i),
+    .mmc_data_o  (mmc_data_o),
+    .mmc_data_oe (mmc_data_oe),
+    .mmc_cdetect (mmc_cdetect),
+    
+    .irq_cdetect  (),
+    .irq_got_cmd  (),
+    .irq_got_dat  (),
+    .irq_got_busy ()
   );
-  
 
 endmodule

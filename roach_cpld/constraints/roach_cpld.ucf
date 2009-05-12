@@ -7,7 +7,7 @@ TIMESPEC TS_clk_master = PERIOD clk_master 66 MHz;
 #TIMESPEC TS_clk_aux = PERIOD clk_aux 50 MHz;
 # 
 Net epb_clk TNM_NET = epb_clk;
-TIMESPEC TS_epb_clk = PERIOD epb_clk 100 MHz;
+TIMESPEC TS_epb_clk = PERIOD epb_clk 84 MHz;
 #
 
 ################## Resets and Clocks ####################
@@ -103,13 +103,17 @@ NET "epb_addr<0>" IOSTANDARD = LVCMOS33 | LOC = "21";
 NET "epb_cs_n"    IOSTANDARD = LVCMOS33 | LOC = "12";
 NET "epb_we_n"    IOSTANDARD = LVCMOS33 | LOC = "13";
 NET "epb_be_n"    IOSTANDARD = LVCMOS33 | LOC = "16";
-NET "epb_oen_n"   IOSTANDARD = LVCMOS33 | LOC = "34";
+NET "epb_oe_n"    IOSTANDARD = LVCMOS33 | LOC = "34";
+
+NET "epb_rdy"     IOSTANDARD = LVCMOS33 | LOC = "51";
 
 ####################### PPC Misc #######################
 NET "ppc_tmr_clk" IOSTANDARD = LVCMOS33 | LOC = "4";
 NET "ppc_syserr"  IOSTANDARD = LVCMOS33 | LOC = "7";
 
 NET "ppc_sm_cs_n" IOSTANDARD = LVCMOS33 | LOC = "50";
+
+NET "ppc_irq"     IOSTANDARD = LVCMOS33 | LOC = "53";
 
 ################## System Configuration ################
 

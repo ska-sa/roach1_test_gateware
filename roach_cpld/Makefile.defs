@@ -14,12 +14,13 @@ PCFILE=constraints/$(PROJECT).ucf
 # Enter your source files here space seperated
 #      Note: no spaces in filenames
 SRC=./modules/toplevel/hdl/toplevel.v \
-    ./modules/mmc_ro/hdl/mmc_ro.v \
-    ./modules/mmc_bb/hdl/mmc_bb.v\
     ./modules/mmc_infrastructure/hdl/mmc_infrastructure.v \
+    ./modules/mmc_controller/hdl/mmc_controller.v \
+    ./modules/mmc_controller/hdl/crc16_d8.v \
+    ./modules/mmc_controller/hdl/crc7_d1.v \
+    ./modules/mmc_controller/hdl/clk_ctrl.v \
     ./modules/epb_infrastructure/hdl/epb_infrastructure.v \
     ./modules/epb_wb_bridge/hdl/epb_wb_bridge.v \
-    ./modules/v5c_serial/hdl/v5c_serial.v \
     ./modules/v5c_sm/hdl/v5c_sm.v \
     ./modules/v5c_infrastructure/hdl/v5c_infrastructure.v \
     ./modules/misc/hdl/misc.v
