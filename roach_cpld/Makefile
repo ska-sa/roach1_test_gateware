@@ -3,39 +3,55 @@ include Makefile.defs
 default:
 	@echo ""
 	@echo "Invalid make option: select one of the following"
-	@echo "bits, obuild, sim, build_parameters, clean"
+	@echo "bits, synth, build_parameters, build, clean"
 	@echo ""
+
+build:
+	@if svn st | grep -q "^[^?]" ; then \
+		echo "error: svn not up-to-date"; \
+		false; \
+	fi
+	@touch Makefile.defs
+	@svn update
+	@make -C . bits RCS_UPTODATE=1 REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
 
 sim: $(SRC)
 	@echo "not implemented"
 
-obuild:
-	@if svn st | grep -q "^[^?]" ; then \
-	   echo "error: svn not up-to-date"; \
-	   false; \
-	   fi
-	@make -C . bits \
-	   RCS_UPTODATE=1 REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
-
-bits: build_parameters $(SRC) $(PCFILE) Makefile.defs
-	@make -C build bits \
+bits: synth
+	@make -C implementation bits \
 	   PROJ_FILE="../Makefile.defs" \
-	   SRC="$(addprefix ../,$(SRC))" PCFILE="$(addprefix ../,$(PCFILE))" \
-	   PROJECT=$(PROJECT) TOPLEVEL_MODULE=$(TOPLEVEL_MODULE) \
-	   PARTNUM=$(PARTNUM) VINC="$(addprefix ../,$(VINC))" \
-	   GEN_DIR=../$(GEN_DIR) \
+	   PCFILE="$(addprefix ../,$(PCFILE))" \
+	   PARTNUM=$(PARTNUM) \
+	   PROJECT=$(PROJECT) \
+	   NETLIST="../synthesis/$(PROJECT).ngc" \
 	   NETLIST_DIRS="$(addprefix  ../,$(NETLIST_DIRS))"
-	@cp $(GEN_DIR)/$(PROJECT).jed $(GEN_DIR)/$(PROJECT)_$(REV_MAJOR)_$(REV_MINOR)_$(REV_RCS).jed
+	@cp implementation/$(PROJECT).jed gen/$(PROJECT)_$(REV_MAJOR)_$(REV_MINOR)_$(REV_RCS).jed
+
+synth: build_parameters
+	@make -C synthesis netlist \
+	   PROJ_FILE="../Makefile.defs" \
+	   SRC="$(addprefix ../,$(SRC))" \
+	   PROJECT=$(PROJECT) \
+	   TOPLEVEL_MODULE=$(TOPLEVEL_MODULE) \
+	   PARTNUM=$(PARTNUM) \
+	   VINC="$(addprefix ../,$(VINC))"
+	@cp synthesis/$(PROJECT).ngc netlist/$(PROJECT)_$(REV_MAJOR)_$(REV_MINOR)_$(REV_RCS).ngc
 
 build_parameters:
 	@make -C support build_parameters \
-	   PROJECT=$(PROJECT) REV_MAJOR=$(REV_MAJOR) REV_MINOR=$(REV_MINOR) \
+	   PROJECT=$(PROJECT) \
+		 REV_MAJOR=$(REV_MAJOR) \
+		 REV_MINOR=$(REV_MINOR) \
 	   REV_RCS=$(REV_RCS) \
-	   INCLUDE=../$(VINC) \
-	   MODULE_ID=$(MODULE_ID)
-	
+		 RCS_UPTODATE=$(RCS_UPTODATE) \
+		 VINC=../$(VINC) \
+	   PROJ_FILE="../Makefile.defs"
+
 clean:
-	make -C modules clean
-	make -C build clean
+	make -C synthesis clean
+	make -C implementation clean
+	make -C support clean
 	rm -rf gen/*
+	rm -rf netlist/*
 

@@ -1,9 +1,0 @@
-[size] 1676 1021
-[pos] 1344 -96
-*-15.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] TB_mmc_ro.
-@28
-TB_mmc_ro.mmc_ro.clk
-TB_mmc_ro.mmc_ro.reset
-TB_mmc_ro.mmc_ro.mmc_clk
-TB_mmc_ro.mmc_ro.mmc_cmd_o

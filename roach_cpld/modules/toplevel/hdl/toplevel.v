@@ -156,20 +156,9 @@ module toplevel(
 
   wire eeprom_0_wp_int, eeprom_1_wp_int, flash_wp_int;
 
-  //assign eeprom_0_wp = user_dip[3] | eeprom_0_wp_int;
   assign eeprom_0_wp = !user_dip[3];
-  //assign eeprom_1_wp = user_dip[3] | eeprom_1_wp_int;
   assign eeprom_1_wp = !user_dip[3];
-  //assign flash_wp_n  = 1'b1        & !flash_wp_int;
-  assign flash_wp_n  = 1'b1;
-
-  //TODO: this must change to something more sensible
-
-  // Signals for controlling the v5 serial configuration at startup
-  //wire serial_boot_enable = config_dip[0];
-  wire serial_boot_enable = 1'b0;
-  wire serial_boot_sel    = config_dip[2:1];
-  wire serial_conf_busy, serial_conf_disable;
+  assign flash_wp_n  = !user_dip[2];
 
   /**************** PPC External Perihperal Bus ****************/
   wire [7:0] epb_data_i;
@@ -244,14 +233,14 @@ module toplevel(
   wire  [7:0] rev_min = `REV_MINOR;
   wire [15:0] rev_rcs = `REV_RCS;
 
-  assign wb_ack_i_3 = 1'b1; //as if it matters
+  assign wb_ack_i_3 = 1'b1;
 
-  assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'b000 ? rev_id [15:8] :
-                      wb_adr_o_3[2:0] == 3'b001 ? rev_id [ 7:0] :
-                      wb_adr_o_3[2:0] == 3'b010 ? rev_maj[ 7:0] :
-                      wb_adr_o_3[2:0] == 3'b011 ? rev_min[ 7:0] :
-                      wb_adr_o_3[2:0] == 3'b100 ? rev_rcs[15:8] :
-                      wb_adr_o_3[2:0] == 3'b101 ? rev_rcs[ 7:0] :
+  assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'd0 ? rev_id [15:8] :
+                      wb_adr_o_3[2:0] == 3'd1 ? rev_id [ 7:0] :
+                      wb_adr_o_3[2:0] == 3'd2 ? rev_maj[ 7:0] :
+                      wb_adr_o_3[2:0] == 3'd3 ? rev_min[ 7:0] :
+                      wb_adr_o_3[2:0] == 3'd4 ? rev_rcs[15:8] :
+                      wb_adr_o_3[2:0] == 3'd5 ? rev_rcs[ 7:0] :
                       8'b0;
 
   /*************************** Misc Registers ****************************/
@@ -325,21 +314,6 @@ module toplevel(
   wire [7:0] user_data;
   wire user_data_strb;
   wire user_rdy;
-
-  v5c_serial v5c_serial_inst (
-    .clk(clk_master), .reset(sys_reset),
-    //control ports
-    .serial_boot_enable(serial_boot_enable),
-    .serial_boot_busy(serial_conf_busy),
-    .abort(serial_conf_disable),
-    //user interface - connect to mmc
-    .user_data(user_data), .user_data_strb(user_data_strb),
-    .user_rdy(user_rdy),
-    //select map signals
-    .v5c_mode(v5c_mode_0),
-    .v5c_prog_n(v5c_prog_n_0), .v5c_init_n(v5c_init_n_o_0), .v5c_done(v5c_done),
-    .v5c_din(v5c_din), .v5c_cclk(v5c_cclk_o_int_0)
-  );
 
   v5c_sm v5c_sm_inst (
     .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),

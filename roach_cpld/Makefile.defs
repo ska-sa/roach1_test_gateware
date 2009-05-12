@@ -5,7 +5,7 @@
 # Project name
 
 PROJECT=roach_cpld
-REV_MAJOR=2
+REV_MAJOR=4
 REV_MINOR=0
 REV_RCS:=0
 
