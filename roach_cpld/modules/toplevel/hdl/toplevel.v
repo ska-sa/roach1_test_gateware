@@ -117,22 +117,10 @@ module toplevel(
   /************************* LEDs *****************************/
 
   wire [1:0] user_led_int;
-  localparam FLASH_WIDTH = 22;
 
-  /* optimize: this is insanely wasteful - consider this for deletion first  */
-  reg [FLASH_WIDTH - 1:0] counter;
-
-  always @(posedge clk_master) begin
-    if (reset_mon) begin
-      counter <= {FLASH_WIDTH{1'b0}};
-    end else begin
-      counter <= counter + 1;
-    end
-  end
-
-  assign sys_led_n  = ~{!flash_busy_n, ppc_syserr ? counter[FLASH_WIDTH - 1] : v5c_done};
+  assign sys_led_n  = ~{v5c_done, ppc_syserr};
   
-  assign user_led_n = ~user_led_int;
+  assign user_led_n = user_led_int;
 
 
   /******************* Fixed Assignments **********************/
@@ -156,7 +144,7 @@ module toplevel(
 
   assign eeprom_0_wp = !user_dip[3];
   assign eeprom_1_wp = !user_dip[3];
-  assign flash_wp_n  = !user_dip[2];
+  assign flash_wp_n  = 1'b1; //user_dip[2];
 
   /**************** PPC External Perihperal Bus ****************/
   wire [7:0] epb_data_i;
@@ -184,7 +172,7 @@ module toplevel(
   wire [7:0] wb_dat_o;
   wire [7:0] wb_dat_i;
   wire wb_ack_i;
-  wire wb_clk_i = !epb_clk; //hopefully improve timing
+  wire wb_clk_i = epb_clk;
   wire wb_rst_i = sys_reset || !epb_reset_n;
 
   epb_wb_bridge epb_wb_bridge_inst (

@@ -8,36 +8,24 @@ module clk_ctrl(
   );
 
   reg [7:0] progress;
-
-
-  reg state;
-  localparam IDLE = 0;
-  localparam RUN  = 1;
-
+  reg run;
   always @(posedge clk) begin
-    if (rst) begin
-      progress <= 8'd0;
-      state <= IDLE;
-    end else begin
-      case (state)
-        IDLE: begin
-          if (tick) begin
-            progress <= progress + 1;
-            state    <= RUN;
-          end
-        end
-        RUN: begin
-          if (done) begin
-            progress <= progress + 1;
-            state <= IDLE;
-          end
-        end
-      endcase
+    if (done) begin
+      progress <= 0;
+    end else if (tick || run) begin
+      progress <= progress + 1;
     end
   end
 
-  assign mmc_clk = tick && state == IDLE || state == RUN && (progress < width);
-  assign done = state == RUN && progress >= {width, 1'b0};
-  /* optimize ^^^^^^^^^ could get rid of comparisons and decode in state machine*/
+  always @(posedge clk) begin
+    if (done) begin
+      run <= 1'b0;
+    end else if (tick) begin
+      run <= 1'b1;
+    end
+  end
+
+  assign mmc_clk = tick || (progress < {width});
+  assign done    = progress >= {width, 1'b0};
 
 endmodule

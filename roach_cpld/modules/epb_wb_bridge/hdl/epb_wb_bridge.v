@@ -30,7 +30,7 @@ module epb_wb_bridge(
   assign wb_adr_o    = epb_addr;
   assign wb_dat_o    = epb_data_i;
   assign epb_data_o  = wb_dat_i;
-  assign epb_data_oe = epb_we_n && !epb_cs_n && !epb_oe_n;
+  assign epb_data_oe = !epb_cs_n && !epb_oe_n;
 
   /* EPB transaction decoding */
 
@@ -46,7 +46,7 @@ module epb_wb_bridge(
           end
         end
         1: begin
-          if (wb_ack_i) begin
+          if (wb_ack_i || epb_cs_n) begin
             epb_waiting <= 1'b0;
           end
         end

@@ -161,9 +161,7 @@ module mmc_controller(
             adv_mode <= wb_dat_i[2:0];
           end
           REG_CLK: begin
-            if (wb_dat_i[6:0] > 0) begin
-              clk_width <= wb_dat_i[6:0];
-            end
+            clk_width <= wb_dat_i[6:0];
           end
           default: begin
           end
