@@ -272,7 +272,9 @@ module toplevel(
     .user_dip     (user_dip),
     .config_dip   (config_dip),
     .user_led     (user_led_int),
-    .flash_busy_n (flash_busy_n)
+    .flash_busy_n (flash_busy_n),
+    .mmc_wp       (mmc_wp),
+    .mmc_cdetect  (mmc_cdetect)
   );
 
   /********************** V5 config/SelectMap ****************************/
@@ -352,9 +354,9 @@ module toplevel(
     .mmc_cmd_o   (mmc_cmd_o),
     .mmc_cmd_i   (mmc_cmd_i),
     .mmc_cmd_oe  (mmc_cmd_oe),
-    .mmc_data_i  (mmc_data_i),
-    .mmc_data_o  (mmc_data_o),
-    .mmc_data_oe (mmc_data_oe),
+    .mmc_dat_i   (mmc_data_i),
+    .mmc_dat_o   (mmc_data_o),
+    .mmc_dat_oe  (mmc_data_oe),
     .mmc_cdetect (mmc_cdetect),
     
     .irq_cdetect  (),

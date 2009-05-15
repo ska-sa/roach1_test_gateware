@@ -2,7 +2,7 @@ module adv_proc (
     input        clk,
     input        rst,
 
-    input  [2:0] adv_mode,
+    input  [1:0] adv_mode,
     input        adv_en,
     output       adv_tick,
     output       adv_done,
@@ -19,7 +19,8 @@ module adv_proc (
     output [7:0] dat_wr,
     output       cmd_wr,
     
-    input        clk_done
+    input        clk_done,
+    input        clk_ack
   );
 
   localparam ADV_CMD_RD = 2'd0;
@@ -41,21 +42,16 @@ module adv_proc (
       wr_index <= 3'd0;
       wr_wait <= 1'b0;
     end else begin
-      if (adv_tick) begin
-        wr_wait <= 1'b1;
-        if (!wr_wait)
-          wr_index <= wr_index + 1;
-      end
-      if (clk_done) begin
-        wr_wait <= 1'b0;
+      if (clk_ack) begin
+        wr_index <= wr_index + 1;
       end
     end
   end
 
   /* TODO: hopefully synthesis will work this out */
-  assign cmd_wr = bus_cmd_i >> (7 - wr_index);
-  assign dat_wr = data_width == DW_1 ? bus_dat_i >> (7 - wr_index)                     :
-                  data_width == DW_4 ? (wr_index[1] ? bus_dat_i[3:0] : bus_dat_i[7:4]) :
+  assign cmd_wr = bus_cmd_i[7 - wr_index];
+  assign dat_wr = data_width == DW_1 ? {7'b0, bus_dat_i[7 - wr_index]}                         :
+                  data_width == DW_4 ? {4'b0, (wr_index[1] ? bus_dat_i[3:0] : bus_dat_i[7:4])} :
                                        bus_dat_i[7:0];
 
   /* Read Logic */
@@ -95,12 +91,12 @@ module adv_proc (
                                        mmc_dat_i[7:0];
 
 
-  assign adv_len  = adv_mode == ADV_CMD_WR || adv_mode == ADV_CMD_RD ||
-                    adv_mode == ADV_DAT_RD && data_width == DW_1     ||
-                    adv_mode == ADV_DAT_WR && data_width == DW_1       ? 3'b111 :
-                    adv_mode == ADV_DAT_RD && data_width == DW_4     ||
-                    adv_mode == ADV_DAT_WR && data_width == DW_4       ? 3'b001 :
-                                                                         3'b0;
+  wire [2:0] adv_len = adv_mode == ADV_CMD_WR || adv_mode == ADV_CMD_RD ||
+                       adv_mode == ADV_DAT_RD && data_width == DW_1     ||
+                       adv_mode == ADV_DAT_WR && data_width == DW_1       ? 3'b111 :
+                       adv_mode == ADV_DAT_RD && data_width == DW_4     ||
+                       adv_mode == ADV_DAT_WR && data_width == DW_4       ? 3'b001 :
+                                                                            3'b0;
 
   assign adv_done = adv_len == rd_index;
   reg adv_busy;

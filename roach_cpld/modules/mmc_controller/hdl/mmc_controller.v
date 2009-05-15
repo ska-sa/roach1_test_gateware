@@ -102,6 +102,7 @@ module mmc_controller(
 
   wire clk_done;
   wire clk_rdy;
+  wire clk_ack;
   wire clk_tick = man_adv_en || mem_adv_tick || auto_tick;
 
   clk_ctrl clk_ctrl_inst(
@@ -110,6 +111,7 @@ module mmc_controller(
     .width   (clk_width),
     .tick    (clk_tick),
     .rdy     (clk_rdy),
+    .ack     (clk_ack),
     .done    (clk_done),
     .mmc_clk (mmc_clk)
   );
@@ -128,9 +130,9 @@ module mmc_controller(
 
   /*********** Auto Mode Logic ***********/
 
-  assign irq_got_cmd  = clk_done && auto_mode == 0 && !mmc_cmd_i;
-  assign irq_got_dat  = clk_done && auto_mode == 1 && !mmc_dat_i[0];
-  assign irq_got_busy = clk_done && auto_mode == 2 &&  mmc_dat_i[0];
+  assign irq_got_cmd  = clk_done && auto_mode == 1 && !mmc_cmd_i;
+  assign irq_got_dat  = clk_done && auto_mode == 2 && !mmc_dat_i[0];
+  assign irq_got_busy = clk_done && auto_mode == 3 &&  mmc_dat_i[0];
 
   assign auto_done = irq_got_cmd || irq_got_dat || irq_got_busy;
 
@@ -143,7 +145,7 @@ module mmc_controller(
     if (wb_rst_i) begin
       auto_pend <= 1'b0;
     end else begin
-      if (|auto_mode && !auto_pend) begin
+      if ((|auto_mode) && !auto_pend) begin
         auto_stb  <= 1'b1;
         auto_pend <= 1'b1;
       end 
@@ -168,10 +170,10 @@ module mmc_controller(
 
   /* MMC Data assignments */ 
 
-  assign mmc_dat_o = mem_adv_mode == {1'b1, ADV_DAT_WR} ? adv_wr_dat : dat_wr;
-  assign mmc_cmd_o = mem_adv_mode == {1'b1, ADV_CMD_WR} ? adv_wr_cmd : cmd_wr;
-  assign dat_rd    = mem_adv_mode == {1'b1, ADV_DAT_RD} ? adv_rd_dat : mmc_dat_i;
-  assign cmd_rd    = mem_adv_mode == {1'b1, ADV_CMD_RD} ? adv_rd_cmd : {7'b0, mmc_cmd_i};
+  assign mmc_dat_o = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_DAT_WR ? adv_wr_dat : dat_wr;
+  assign mmc_cmd_o = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_CMD_WR ? adv_wr_cmd : cmd_wr;
+  assign dat_rd    = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_DAT_RD ? adv_rd_dat : mmc_dat_i;
+  assign cmd_rd    = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_CMD_RD ? adv_rd_cmd : {7'b0, mmc_cmd_i};
 
   /* Memory operation advance */
 
@@ -179,7 +181,7 @@ module mmc_controller(
     .clk (wb_clk_i),
     .rst (wb_rst_i),
 
-    .adv_mode (mem_adv_mode),
+    .adv_mode (mem_adv_mode[1:0]),
     .adv_en   (mem_adv_en),
     .adv_tick (mem_adv_tick),
     .adv_done (mem_adv_done),
@@ -196,6 +198,7 @@ module mmc_controller(
     .dat_wr    (adv_wr_dat),
     .cmd_wr    (adv_wr_cmd),
     
+    .clk_ack   (clk_ack),
     .clk_done  (clk_done)
   );
   

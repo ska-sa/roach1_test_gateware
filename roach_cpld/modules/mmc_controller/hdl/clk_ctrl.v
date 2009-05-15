@@ -5,6 +5,7 @@ module clk_ctrl(
     input        tick,
     output       done,
     output       rdy,
+    output       ack,
     output       mmc_clk
   );
   localparam W_40M  = 0;
@@ -22,8 +23,10 @@ module clk_ctrl(
   reg [7:0] progress;
 
   wire half_bit_done;
+  reg ack_reg;
 
   always @(posedge clk) begin
+    ack_reg <= 1'b0;
     if (rst) begin
       state <= IDLE;
     end else begin
@@ -32,6 +35,7 @@ module clk_ctrl(
           if (tick) begin
             progress <= 7'b1;
             state    <= HIGH;
+            ack_reg  <= 1'b1;
           end
         end
         HIGH: begin
@@ -47,6 +51,7 @@ module clk_ctrl(
             progress <= 1;
             if (tick) begin
               state <= HIGH;
+              ack_reg  <= 1'b1;
             end else begin
               state <= IDLE;
             end
@@ -59,6 +64,7 @@ module clk_ctrl(
     end
   end
   assign rdy = state == IDLE || state == LOW && half_bit_done;
+  assign ack = ack_reg;
 
   assign done = state == LOW && half_bit_done;
 

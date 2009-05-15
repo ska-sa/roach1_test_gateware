@@ -9,7 +9,7 @@ module wb_attach(
     output  [7:0] wb_dat_o,
     output        wb_ack_o,
 
-    output  [1:0] mem_adv_mode,
+    output  [2:0] mem_adv_mode,
     output        mem_adv_en, 
     input         mem_adv_done, 
     output        man_adv_en, 
@@ -156,9 +156,6 @@ module wb_attach(
       cmd_oe_reg     <= 1'b0;
       auto_mode_reg  <= AUTO_NONE;
     end else begin
-      if (auto_done) begin
-        auto_mode_reg <= AUTO_NONE;
-      end
       if (wb_trans && wb_we_i) begin
         case (wb_adr_i)
           REG_CMD: begin
@@ -168,8 +165,8 @@ module wb_attach(
             dat_wr_reg    <= wb_dat_i;
           end
           REG_AUTO: begin
-            mem_adv_mode_reg   <= wb_dat_i[6:4];
-            auto_mode_reg  <= wb_dat_i[1:0];
+            mem_adv_mode_reg <= wb_dat_i[6:4];
+            auto_mode_reg    <= wb_dat_i[1:0];
           end
           REG_ADV: begin
           end
@@ -183,6 +180,9 @@ module wb_attach(
           end
         endcase
       end
+      if (auto_done) begin
+        auto_mode_reg <= AUTO_NONE;
+      end
     end
   end
 
@@ -190,7 +190,7 @@ module wb_attach(
 
   assign mem_adv_en = wb_trans && mem_adv_mode_reg[2] && wb_adr_i[2:1] == 2'd0 && {wb_adr_i[0], wb_we_i} == mem_adv_mode_reg[1:0];
 
-  assign mem_adv_mode   = mem_adv_mode_reg[1:0];
+  assign mem_adv_mode = mem_adv_mode_reg;
   assign man_adv_en = wb_trans && wb_we_i && wb_adr_i == REG_ADV;
   assign crc_rst    = wb_trans && wb_we_i && wb_adr_i == REG_CRC_CMD;
 
@@ -203,8 +203,5 @@ module wb_attach(
   assign clk_width  = clk_width_reg;
 
   assign crc16_dvld = wb_trans && wb_we_i && wb_adr_i == REG_DAT;
-
-
-
 
 endmodule

@@ -13,7 +13,9 @@ module misc(
 
     user_led,
 
-    flash_busy_n
+    flash_busy_n,
+    mmc_wp,
+    mmc_cdetect
   );
 
   input  wb_clk_i, wb_rst_i;
@@ -32,6 +34,8 @@ module misc(
   output [1:0] user_led;
   
   input  flash_busy_n;
+  input  mmc_wp;
+  input  mmc_cdetect;
 
   localparam REG_MISC_RESET       = 3'd0;
   localparam REG_MISC_SYSCONFIG_0 = 3'd1;
@@ -47,7 +51,7 @@ module misc(
   assign wb_dat_o = wb_adr_i == REG_MISC_RESET       ? {6'b0, geth_reset, por_force} :
                     wb_adr_i == REG_MISC_SYSCONFIG_0 ? {config_dip, user_dip} :
                     wb_adr_i == REG_MISC_SYSCONFIG_1 ? sys_config :
-                    wb_adr_i == REG_MISC_FLASH       ? {4'b0, 3'b0, flash_busy_n} :
+                    wb_adr_i == REG_MISC_FLASH       ? {2'b0, mmc_wp, mmc_cdetect, 3'b0, flash_busy_n} :
                     wb_adr_i == REG_MISC_REGS        ? {6'b0, user_led} :
                     8'b0;
 

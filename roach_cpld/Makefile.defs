@@ -16,6 +16,8 @@ PCFILE=constraints/$(PROJECT).ucf
 SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/mmc_infrastructure/hdl/mmc_infrastructure.v \
     ./modules/mmc_controller/hdl/mmc_controller.v \
+    ./modules/mmc_controller/hdl/adv_proc.v \
+    ./modules/mmc_controller/hdl/wb_attach.v \
     ./modules/mmc_controller/hdl/crc16_d8.v \
     ./modules/mmc_controller/hdl/crc7_d1.v \
     ./modules/mmc_controller/hdl/clk_ctrl.v \
