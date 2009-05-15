@@ -11,7 +11,7 @@ module crc7_d1(
 
   always @(posedge clk) begin
     if (rst) begin
-      crc <= 7'b111_1111;
+      crc <= 0;
     end else begin
       if (dvld) begin
         crc[0] <= data ^ crc[6];

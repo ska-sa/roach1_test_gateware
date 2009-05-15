@@ -45,7 +45,7 @@ module crc16_d8(
 
   always @(posedge clk) begin
     if (rst) begin
-      crc_reg <= {16{1'b1}};
+      crc_reg <= 0;
     end else begin
       if (dvld) begin
         crc_reg <= crc_7;

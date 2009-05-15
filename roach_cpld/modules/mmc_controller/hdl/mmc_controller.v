@@ -13,9 +13,9 @@ module mmc_controller(
     output       mmc_cmd_o,
     input        mmc_cmd_i,
     output       mmc_cmd_oe,
-    input  [7:0] mmc_data_i,
-    output [7:0] mmc_data_o,
-    output       mmc_data_oe,
+    input  [7:0] mmc_dat_i,
+    output [7:0] mmc_dat_o,
+    output       mmc_dat_oe,
     input        mmc_cdetect,
 
     output       irq_cdetect,
@@ -23,397 +23,198 @@ module mmc_controller(
     output       irq_got_dat,
     output       irq_got_busy
   );
-  reg wb_ack_reg;
-  wire wb_trans = wb_cyc_i && wb_stb_i && !wb_ack_reg;
 
-  localparam REG_CMD      = 3'd0;
-  localparam REG_DAT      = 3'd1;
-  localparam REG_AUTO     = 3'd2;
-  localparam REG_ADV      = 3'd3;
-  localparam REG_CLK      = 3'd4;
-  localparam REG_CRC_CMD  = 3'd5;
-  localparam REG_CRC_DAT1 = 3'd6;
-  localparam REG_CRC_DAT0 = 3'd7;
+  /********* Common Signals **********/
 
-  wire [15:0] crc16;
-  crc16_d8 crc_16_d8_inst (
-    .clk  (wb_clk_i),
-    .rst  (wb_trans && wb_we_i && wb_adr_i == REG_CRC_DAT1),
-    .data (wb_dat_i),
-    .dvld (wb_trans && wb_we_i && wb_adr_i == REG_DAT),
-    .dout (crc16)
-  );
+  /***** Clock Advance Controls ******/
+  /* Memory operation advance */
+  wire [2:0] mem_adv_mode;
+  wire       mem_adv_en;
+  wire       mem_adv_done;
+  wire       mem_adv_tick;
 
-  wire [6:0] crc7;
-  crc7_d1 crc7_d1_inst (
-    .clk  (wb_clk_i),
-    .rst  (wb_trans && wb_we_i && wb_adr_i == REG_CRC_CMD),
-    .data (wb_dat_i[0]),
-    .dvld (wb_trans && wb_we_i && wb_adr_i == REG_CMD),
-    .dout (crc7)
-  );
-
-  /*** Configuration Registers ***/
-  reg [1:0] data_width;
-  localparam DW_1 = 2'd0;
-  localparam DW_4 = 2'd1;
-  localparam DW_8 = 2'd2;
-
-  reg [6:0] clk_width;
-
-  reg [2:0] adv_mode;
-  localparam ADV_CMD_NONE = 3'd0;
-  localparam ADV_CMD_RD   = 3'd1;
-  localparam ADV_CMD_WR   = 3'd2;
-  localparam ADV_DAT_RD   = 3'd3;
-  localparam ADV_DAT_WR   = 3'd4;
-
-  wire adv_cmd_rd = adv_mode == ADV_CMD_RD && wb_trans && !wb_we_i && wb_adr_i == REG_CMD;
-  wire adv_cmd_wr = adv_mode == ADV_CMD_WR && wb_trans &&  wb_we_i && wb_adr_i == REG_CMD;
-  wire adv_dat_rd = adv_mode == ADV_DAT_RD && wb_trans && !wb_we_i && wb_adr_i == REG_DAT;
-  wire adv_dat_wr = adv_mode == ADV_DAT_WR && wb_trans &&  wb_we_i && wb_adr_i == REG_DAT;
-
-  wire adv_done;
-
-  /* Manual Clock Control */
+  /* Single Clock advance */
+  wire man_adv_en;
   wire man_adv_done;
-  wire man_adv_en = wb_trans && wb_we_i && wb_adr_i == REG_ADV && wb_dat_i[3];
 
-  /*** Hardware Registers ***/
-  reg data_oe;
-  reg cmd_oe;
-  assign mmc_cmd_oe  = cmd_oe;
-  assign mmc_data_oe = data_oe;
+  /***** Auto Clock Tick Signals ****/
+  wire [1:0] auto_mode;
+  wire       auto_tick;
+  wire       auto_done;
 
-  /*** Auto Clock advance Controls ****/
-  reg [1:0] auto_mode;
-  localparam AUTO_NONE      = 0;
-  localparam AUTO_CMD_START = 1;
-  localparam AUTO_DAT_START = 2;
-  localparam AUTO_BUSY      = 3;
-  wire auto_done;
-
-  /*** Data / CMD contents ******/
+  /**** Data / CMD Read Contents ****/
   wire [7:0] cmd_rd;
-  wire [7:0] data_rd;
+  wire [7:0] dat_rd;
 
-  reg       cmd_wr;
-  reg [7:0] data_wr;
+  /** Data / CMD Simple Write Data **/
+  wire       cmd_wr;
+  wire [7:0] dat_wr;
 
-  /****** Wishbone State Machine *******/
+  /********** CRC Signals ***********/
+  wire  [6:0] crc7;
+  wire [15:0] crc16;
+  wire        crc16_dvld;
+  wire        crc_rst;
 
-  reg wb_state;
-  localparam WB_IDLE     = 0;
-  localparam WB_ADV_WAIT = 1;
+  /********* MMC Parameters *********/
+  wire  [1:0] data_width;
+  wire  [1:0] clk_width;
 
-  always @(posedge wb_clk_i) begin
-    wb_ack_reg <= 1'b0;
+  wb_attach wb_attach_inst(
+    .wb_clk_i (wb_clk_i),
+    .wb_rst_i (wb_rst_i),
+    .wb_cyc_i (wb_cyc_i),
+    .wb_stb_i (wb_stb_i),
+    .wb_we_i  (wb_we_i),
+    .wb_adr_i (wb_adr_i),
+    .wb_dat_i (wb_dat_i),
+    .wb_dat_o (wb_dat_o),
+    .wb_ack_o (wb_ack_o),
 
-    if (wb_rst_i) begin
-      wb_state   <= WB_IDLE;
-    end else begin
-      case (wb_state)
-        WB_IDLE: begin
-          if (adv_cmd_rd || adv_cmd_wr || adv_dat_rd || adv_dat_wr) begin
-            wb_state <= WB_ADV_WAIT;
-          end else if (wb_trans) begin
-            wb_ack_reg <= 1'b1;
-          end
-        end
-        WB_ADV_WAIT: begin
-          if (adv_done) begin
-            wb_state   <= WB_IDLE;
-          end
-        end
-      endcase
-    end
-  end
-  assign wb_ack_o = wb_state == WB_IDLE ? wb_ack_reg : adv_done;
+    .mem_adv_mode (mem_adv_mode), 
+    .mem_adv_en   (mem_adv_en), 
+    .mem_adv_done (mem_adv_done), 
 
-  /****** Wishbone Reg Write *******/
+    .man_adv_en   (man_adv_en), 
+    .man_adv_done (man_adv_done), 
 
-  always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
-      data_width <= DW_1;
-      clk_width  <= {7{1'b1}};
-      data_oe    <= 1'b0;
-      cmd_oe     <= 1'b0;
-      auto_mode  <= AUTO_NONE;
-    end else begin
-      if (auto_done) begin
-        auto_mode <= AUTO_NONE;
-      end
-      if (wb_trans && wb_we_i) begin
-        case (wb_adr_i)
-          REG_CMD: begin
-            cmd_wr <= wb_dat_i[0];
-          end
-          REG_DAT: begin
-            data_wr <= wb_dat_i;
-          end
-          REG_AUTO: begin
-            data_oe    <= wb_dat_i[7];
-            cmd_oe     <= wb_dat_i[6];
-            data_width <= wb_dat_i[5:4];
-            auto_mode  <= wb_dat_i[1:0];
-          end
-          REG_ADV: begin
-            adv_mode <= wb_dat_i[2:0];
-          end
-          REG_CLK: begin
-            clk_width <= wb_dat_i[6:0];
-          end
-          default: begin
-          end
-        endcase
-      end
-    end
-  end
+    .dat_oe (mmc_dat_oe),
+    .cmd_oe (mmc_cmd_oe),
 
-  /****** Wishbone Reg Read *******/
+    .dat_wr (dat_wr),
+    .cmd_wr (cmd_wr),
+    .dat_rd (dat_rd),
+    .cmd_rd (cmd_rd),
 
-  reg [7:0] wb_dat_reg;
-  always @(*) begin
-    case (wb_adr_i)
-      REG_CMD: begin
-        wb_dat_reg <= cmd_rd;
-      end
-      REG_DAT: begin
-        wb_dat_reg <= data_rd;
-      end
-      REG_AUTO: begin
-        wb_dat_reg <= {data_oe, cmd_oe, data_width, 2'b0, auto_mode};
-      end
-      REG_ADV: begin
-        wb_dat_reg <= {4'b0, man_adv_done, adv_mode};
-      end
-      REG_CLK: begin
-        wb_dat_reg <= {1'b0, clk_width};
-      end
-      REG_CRC_CMD: begin
-        wb_dat_reg <= {1'b0, crc7[6:0]};
-      end
-      REG_CRC_DAT1: begin
-        wb_dat_reg <= crc16[15:8];
-      end
-      REG_CRC_DAT0: begin
-        wb_dat_reg <= crc16[7:0];
-      end
-      default: begin
-        wb_dat_reg <= 8'b0;
-      end
-    endcase
-  end
-  assign wb_dat_o = wb_dat_reg;
+    .auto_mode (auto_mode),
+    .auto_done (auto_done),
 
-  /***** Primary Clock Control SM ********/
+    .crc7       (crc7),
+    .crc16      (crc16),
+    .crc16_dvld (crc16_dvld),
+    .crc_rst    (crc_rst),
 
-  reg [2:0] progress;
-  
-  reg ctrl_state;
-  localparam CTRL_IDLE = 2'd0;
-  localparam CTRL_WAIT = 2'd1;
-  localparam CTRL_AUTO = 2'd2;
-  localparam CTRL_TICK = 2'd3;
-
-  wire clk_done;
-
-  always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
-      ctrl_state <= CTRL_IDLE;
-      progress   <= 3'd0;
-    end else begin
-      case (ctrl_state)
-        CTRL_IDLE: begin
-          if (auto_mode != AUTO_NONE) begin
-            ctrl_state <= CTRL_AUTO;
-          end
-          if (adv_cmd_rd || adv_cmd_wr || adv_dat_rd || adv_dat_wr || man_adv_en) begin
-            ctrl_state <= CTRL_WAIT;
-          end
-        end
-        CTRL_WAIT: begin
-          if (clk_done) begin
-            progress <= progress + 1;
-          end
-          if (adv_done) begin
-            progress <= 2'd0;
-          end
-        end
-        CTRL_AUTO: begin
-          ctrl_state <= CTRL_TICK;
-        end
-        CTRL_TICK: begin
-          if (clk_done) begin
-            if (auto_mode == AUTO_NONE || auto_done) begin
-              ctrl_state <= CTRL_IDLE;
-            end
-          end
-        end
-      endcase
-    end
-  end
-
-  wire auto_cmd_start  = ctrl_state == CTRL_TICK && clk_done && auto_mode == AUTO_CMD_START && !mmc_cmd_i;
-  wire auto_data_start = ctrl_state == CTRL_TICK && clk_done && auto_mode == AUTO_DAT_START && !mmc_data_i[0];
-  wire auto_busy       = ctrl_state == CTRL_TICK && clk_done && auto_mode == AUTO_BUSY      &&  mmc_data_i[0];
-  assign auto_done = auto_cmd_start || auto_data_start || auto_busy;
-
-  /* Simply Tie the adv done to IDLE */
-  assign man_adv_done = ctrl_state == CTRL_IDLE;
-
-  reg adv_done_reg;
-  always @(*) begin
-    adv_done_reg <= 1'b0;
-    if (clk_done) begin
-      case (adv_mode)
-        ADV_CMD_RD: begin
-          if (progress == 3'd7) begin
-            adv_done_reg <= 1'b1;
-          end
-        end
-        ADV_CMD_WR: begin
-          if (progress == 3'd7) begin
-            adv_done_reg <= 1'b1;
-          end
-        end
-        ADV_DAT_RD: begin
-          case (data_width)
-            DW_8: begin
-              if (progress == 3'd0) begin
-                adv_done_reg <= 1'b1;
-              end
-            end
-            DW_4: begin
-              if (progress == 3'd1) begin
-                adv_done_reg <= 1'b1;
-              end
-            end
-            default: begin
-              if (progress == 3'd7) begin
-                adv_done_reg <= 1'b1;
-              end
-            end
-          endcase
-        end
-        ADV_DAT_WR: begin
-        end
-        default: begin
-          adv_done_reg <= 1'b1;
-        end
-      endcase
-    end
-  end
-  assign adv_done = adv_done_reg;
-
-  /************** DATA/CMD I/O encoding / decoding ***************/
-
-  /* Output Data/CMD */
-  reg [7:0] mmc_dat_o_reg;
-  reg       mmc_cmd_o_reg;
-  always @(*) begin
-    if (adv_mode == ADV_DAT_WR) begin
-      case (data_width)
-        DW_1: begin
-          mmc_dat_o_reg <= wb_dat_i >> (progress[2:0]);
-        end
-        DW_4: begin
-          mmc_dat_o_reg <= wb_dat_i >> (4*progress[0]);
-        end
-        default: begin
-          mmc_dat_o_reg <= wb_dat_i;
-        end
-      endcase
-    end else begin
-      mmc_dat_o_reg <= data_wr;
-    end
-
-    if (adv_mode == ADV_CMD_WR) begin
-      mmc_cmd_o_reg <= wb_dat_i >> (progress[2:0]);
-      /* a little tacky ^^^^^^^^ */
-    end else begin
-      mmc_cmd_o_reg <= cmd_wr;
-    end
-  end
-  assign mmc_data_o = mmc_dat_o_reg;
-  assign mmc_cmd_o  = mmc_cmd_o_reg;
-
-
-  /* Accumulate data */
-  reg [6:0] cmd_accum;
-  reg [6:0] data_accum;
-
-  always @(posedge wb_clk_i) begin
-    if (wb_rst_i) begin
-      cmd_accum <= 7'b0;
-      data_accum <= 7'b0;
-    end else if (clk_done) begin
-      case (data_width)
-        DW_1: begin
-          if (progress == 3'd0) begin
-            data_accum <= {6'b0, mmc_data_i[0]};
-          end else begin
-            data_accum <= {data_accum[5:0], mmc_data_i[0]};
-          end
-        end
-        default: begin
-          data_accum[3:0] <= mmc_data_i[3:0];
-        end
-      endcase
-
-      if (progress == 3'd0) begin
-        cmd_accum <= {6'b0, mmc_cmd_i};
-      end else begin
-        cmd_accum <= {cmd_accum[5:0], mmc_cmd_i};
-      end
-    end
-  end
-
-  /* Piece together Accum + received data */
-  assign cmd_rd = adv_mode == ADV_CMD_RD ? {cmd_accum, mmc_cmd_i} : {7'b0, mmc_cmd_i};
-
-  reg [7:0] data_rd_reg;
-  always @(*) begin
-    if (adv_mode == ADV_DAT_RD) begin
-      case (data_width)
-        DW_1: begin
-          data_rd_reg <= {data_accum[6:0], mmc_data_i[0]};
-        end 
-        DW_4: begin
-          data_rd_reg <= {data_accum[3:0], mmc_data_i[3:0]};
-        end 
-        default: begin
-          data_rd_reg <= mmc_data_i;
-        end
-      endcase
-    end else begin
-      data_rd_reg <= mmc_data_i;
-    end
-  end
-  assign data_rd = data_rd_reg;
-
+    .data_width (data_width),
+    .clk_width  (clk_width)
+  );
 
   /********* Clock Control *********/
+
+  wire clk_done;
+  wire clk_rdy;
+  wire clk_tick = man_adv_en || mem_adv_tick || auto_tick;
 
   clk_ctrl clk_ctrl_inst(
     .clk     (wb_clk_i),
     .rst     (wb_rst_i),
     .width   (clk_width),
-    .tick    (ctrl_state == CTRL_IDLE && (adv_cmd_rd || adv_cmd_wr || adv_dat_rd || adv_dat_wr || man_adv_en) || ctrl_state == CTRL_AUTO),
+    .tick    (clk_tick),
+    .rdy     (clk_rdy),
     .done    (clk_done),
     .mmc_clk (mmc_clk)
   );
 
-  /************* IRQ Assignments ************/
+  /************ Manual Advance Logic *************/
 
-  reg prev_cdetect;
+  reg man_adv_done_reg;
   always @(posedge wb_clk_i) begin
-    prev_cdetect <= mmc_cdetect;
+    if (man_adv_en) begin
+      man_adv_done_reg <= 1'b0;
+    end else if (clk_done) begin
+      man_adv_done_reg <= 1'b1;
+    end
   end
+  assign man_adv_done = man_adv_done_reg;
 
-  assign irq_cdetect  = prev_cdetect != mmc_cdetect;
-  assign irq_got_cmd  = auto_cmd_start;
-  assign irq_got_dat  = auto_data_start;
-  assign irq_got_busy = auto_busy;
+  /*********** Auto Mode Logic ***********/
+
+  assign irq_got_cmd  = clk_done && auto_mode == 0 && !mmc_cmd_i;
+  assign irq_got_dat  = clk_done && auto_mode == 1 && !mmc_dat_i[0];
+  assign irq_got_busy = clk_done && auto_mode == 2 &&  mmc_dat_i[0];
+
+  assign auto_done = irq_got_cmd || irq_got_dat || irq_got_busy;
+
+  reg auto_stb;
+  reg auto_pend;
+
+  always @(posedge wb_clk_i) begin
+    auto_stb  <= 1'b0;
+
+    if (wb_rst_i) begin
+      auto_pend <= 1'b0;
+    end else begin
+      if (|auto_mode && !auto_pend) begin
+        auto_stb  <= 1'b1;
+        auto_pend <= 1'b1;
+      end 
+      if (clk_done) begin
+        auto_pend <= 1'b0;
+      end
+    end
+  end
+  assign auto_tick = auto_stb;
+
+  /******* Memory Op Clock Advance *******/
+
+  localparam ADV_CMD_RD   = 2'd0;
+  localparam ADV_CMD_WR   = 2'd1;
+  localparam ADV_DAT_RD   = 2'd2;
+  localparam ADV_DAT_WR   = 2'd3;
+
+  wire [7:0] adv_wr_dat;
+  wire       adv_wr_cmd;
+  wire [7:0] adv_rd_dat;
+  wire [7:0] adv_rd_cmd;
+
+  /* MMC Data assignments */ 
+
+  assign mmc_dat_o = mem_adv_mode == {1'b1, ADV_DAT_WR} ? adv_wr_dat : dat_wr;
+  assign mmc_cmd_o = mem_adv_mode == {1'b1, ADV_CMD_WR} ? adv_wr_cmd : cmd_wr;
+  assign dat_rd    = mem_adv_mode == {1'b1, ADV_DAT_RD} ? adv_rd_dat : mmc_dat_i;
+  assign cmd_rd    = mem_adv_mode == {1'b1, ADV_CMD_RD} ? adv_rd_cmd : {7'b0, mmc_cmd_i};
+
+  /* Memory operation advance */
+
+  adv_proc adv_proc (
+    .clk (wb_clk_i),
+    .rst (wb_rst_i),
+
+    .adv_mode (mem_adv_mode),
+    .adv_en   (mem_adv_en),
+    .adv_tick (mem_adv_tick),
+    .adv_done (mem_adv_done),
+
+    .data_width (data_width),
+
+    .mmc_dat_i (mmc_dat_i),
+    .mmc_cmd_i (mmc_cmd_i),
+    .dat_rd    (adv_rd_dat),
+    .cmd_rd    (adv_rd_cmd),
+
+    .bus_dat_i (wb_dat_i),
+    .bus_cmd_i (wb_dat_i),
+    .dat_wr    (adv_wr_dat),
+    .cmd_wr    (adv_wr_cmd),
+    
+    .clk_done  (clk_done)
+  );
+  
+  /********** CRCs ***********/
+
+  crc16_d8 crc_16_d8_inst (
+    .clk  (wb_clk_i),
+    .rst  (crc_rst),
+    .data (wb_dat_i),
+    .dvld (crc16_dvld),
+    .dout (crc16)
+  );
+
+  crc7_d1 crc7_d1_inst (
+    .clk  (wb_clk_i),
+    .rst  (crc_rst),
+    .data (mmc_cmd_o),
+    .dvld (clk_rdy && clk_tick),
+    .dout (crc7)
+  );
 
 endmodule
