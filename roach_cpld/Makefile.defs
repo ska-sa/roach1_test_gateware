@@ -6,7 +6,7 @@
 
 PROJECT=roach_cpld
 REV_MAJOR=4
-REV_MINOR=0
+REV_MINOR=1
 REV_RCS:=0
 
 # Pin Constraints
@@ -15,6 +15,7 @@ PCFILE=constraints/$(PROJECT).ucf
 #      Note: no spaces in filenames
 SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/mmc_infrastructure/hdl/mmc_infrastructure.v \
+    ./modules/system_block/hdl/system_block.v \
     ./modules/mmc_controller/hdl/mmc_controller.v \
     ./modules/mmc_controller/hdl/adv_proc.v \
     ./modules/mmc_controller/hdl/wb_attach.v \

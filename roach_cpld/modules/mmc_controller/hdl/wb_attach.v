@@ -78,7 +78,7 @@ module wb_attach(
 
   /****** Wishbone State Machine *******/
 
-  assign wb_trans = wb_cyc_i & wb_stb_i;
+  wire wb_trans = wb_cyc_i & wb_stb_i;
 
   reg wb_state;
   localparam WB_IDLE     = 0;

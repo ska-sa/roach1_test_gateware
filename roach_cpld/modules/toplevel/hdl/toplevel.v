@@ -232,27 +232,28 @@ module toplevel(
   assign wb_ack_i = wb_ack_i_3 | wb_ack_i_2 | wb_ack_i_1 | wb_ack_i_0;
 
   /*********************** Revision Control Info *************************/
+
+  wire [3:0] irq_src;
+
+  system_block #(
+    .DESIGN_ID (`DESIGN_ID),
+    .REV_MAJOR (`REV_MAJOR),
+    .REV_MINOR (`REV_MINOR),
+    .REV_RCS   (`REV_RCS)
+  ) system_block (
+    .wb_clk_i (wb_clk_i),
+    .wb_rst_i (wb_rst_i),
+    .wb_stb_i (wb_stb_o_3),
+    .wb_cyc_i (wb_cyc_o_3),
+    .wb_we_i  (wb_we_o),
+    .wb_adr_i (wb_adr_o_3),
+    .wb_dat_i (wb_dat_o),
+    .wb_dat_o (wb_dat_i_3),
+    .wb_ack_o (wb_ack_i_3),
+    .irq_src  (irq_src),
+    .irq      (ppc_irq)
+  );
   
-  wire [15:0] rev_id  = `DESIGN_ID;
-  wire  [7:0] rev_maj = `REV_MAJOR;
-  wire  [7:0] rev_min = `REV_MINOR;
-  wire [15:0] rev_rcs = `REV_RCS;
-
-  reg wb_ack_rev;
-
-  always @(posedge wb_clk_i) begin
-    wb_ack_rev <= wb_stb_o_3;
-  end
-  assign wb_ack_i_3 = wb_ack_rev;
-
-  assign wb_dat_i_3 = wb_adr_o_3[2:0] == 3'd0 ? rev_id [15:8] :
-                      wb_adr_o_3[2:0] == 3'd1 ? rev_id [ 7:0] :
-                      wb_adr_o_3[2:0] == 3'd2 ? rev_maj[ 7:0] :
-                      wb_adr_o_3[2:0] == 3'd3 ? rev_min[ 7:0] :
-                      wb_adr_o_3[2:0] == 3'd4 ? rev_rcs[15:8] :
-                      wb_adr_o_3[2:0] == 3'd5 ? rev_rcs[ 7:0] :
-                      8'b0;
-
   /*************************** Misc Registers ****************************/
 
   misc misc_inst(
@@ -359,10 +360,10 @@ module toplevel(
     .mmc_dat_oe  (mmc_data_oe),
     .mmc_cdetect (mmc_cdetect),
     
-    .irq_cdetect  (),
-    .irq_got_cmd  (),
-    .irq_got_dat  (),
-    .irq_got_busy ()
+    .irq_cdetect  (irq_src[0]),
+    .irq_got_cmd  (irq_src[1]),
+    .irq_got_dat  (irq_src[2]),
+    .irq_got_busy (irq_src[3])
   );
 
 endmodule

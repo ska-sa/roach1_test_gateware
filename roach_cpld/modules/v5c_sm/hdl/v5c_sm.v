@@ -26,7 +26,6 @@ module v5c_sm(
 
   localparam REG_SM_STATUS = 2'd0;
   localparam REG_SM_OREGS  = 2'd1;
-  localparam REG_SM_DATA   = 2'd2;
   localparam REG_SM_CTRL   = 2'd3;
 
   reg v5c_rdwr_n, v5c_prog_n;
@@ -42,7 +41,6 @@ module v5c_sm(
 
   assign wb_dat_o = wb_adr_i == REG_SM_STATUS ? {5'b0, v5c_busy, v5c_done, v5c_init_n_i} :
                     wb_adr_i == REG_SM_OREGS  ? {5'b0, v5c_rdwr_n, v5c_init_n_o, v5c_prog_n} :
-                    wb_adr_i == REG_SM_DATA   ? 8'b0 :
                     wb_adr_i == REG_SM_CTRL   ? {7'b0, v5c_init_n_oe} :
                                                 8'b0;
 
@@ -74,8 +72,6 @@ module v5c_sm(
             v5c_prog_n   <= wb_dat_i[0];
             v5c_init_n_o <= wb_dat_i[1];
             v5c_rdwr_n   <= wb_dat_i[2];
-          end
-          REG_SM_DATA: begin
           end
           REG_SM_CTRL: begin
             v5c_init_n_oe <= wb_dat_i[0];
