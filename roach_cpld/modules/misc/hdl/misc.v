@@ -56,7 +56,7 @@ module misc(
                     8'b0;
 
   reg wb_ack_o;
-  wire wb_trans = wb_cyc_i && wb_stb_i && !wb_ack_o;
+  wire wb_trans = wb_cyc_i && wb_stb_i;
   always @(posedge wb_clk_i) begin
     //strobes
     wb_ack_o <= 1'b0;

@@ -35,12 +35,10 @@ module adv_proc (
   /* Write Logic */
 
   reg [2:0] wr_index;  
-  reg wr_wait;
 
   always @(posedge clk) begin
     if (adv_done || rst) begin
       wr_index <= 3'd0;
-      wr_wait <= 1'b0;
     end else begin
       if (clk_ack) begin
         wr_index <= wr_index + 1;
@@ -68,8 +66,8 @@ module adv_proc (
     end
   end
 
-  reg [7:0] cmd_accum;
-  reg [7:0] dat_accum;
+  reg [6:0] cmd_accum;
+  reg [6:0] dat_accum;
   always @(posedge clk) begin
     cmd_accum[7 - rd_index] <= mmc_cmd_i;
 

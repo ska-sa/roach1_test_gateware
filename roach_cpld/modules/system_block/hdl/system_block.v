@@ -74,6 +74,7 @@ module system_block #(
       end
     endcase
   end
+  assign wb_dat_o = wb_dat_o_reg;
 
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin

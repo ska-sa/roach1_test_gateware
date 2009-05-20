@@ -6,7 +6,7 @@
 
 PROJECT=roach_cpld
 REV_MAJOR=4
-REV_MINOR=1
+REV_MINOR=2
 REV_RCS:=0
 
 # Pin Constraints

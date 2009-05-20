@@ -118,10 +118,13 @@ module toplevel(
 
   wire [1:0] user_led_int;
 
-  assign sys_led_n  = ~{v5c_done, ppc_syserr};
+  OBUFE sys_led_buf[1:0] (
+    .E({v5c_done, ppc_syserr}), .I(1'b0), .O(sys_led_n)
+  );
   
-  assign user_led_n = user_led_int;
-
+  OBUFE user_led_buf[1:0] (
+    .E(user_led_int), .I(1'b0), .O(user_led_n)
+  );
 
   /******************* Fixed Assignments **********************/
 
@@ -144,7 +147,7 @@ module toplevel(
 
   assign eeprom_0_wp = !user_dip[3];
   assign eeprom_1_wp = !user_dip[3];
-  assign flash_wp_n  = 1'b1; //user_dip[2];
+  assign flash_wp_n  = 1'b1;
 
   /**************** PPC External Perihperal Bus ****************/
   wire [7:0] epb_data_i;
@@ -152,6 +155,7 @@ module toplevel(
 
   wire epb_data_oe;
   wire epb_rdy_oe;
+  wire epb_rdy_o;
 
   epb_infrastructure epb_infrastructure_inst(
     /* External Signals */
@@ -163,10 +167,11 @@ module toplevel(
     .epb_data_o  (epb_data_i),
     .epb_data_oe (epb_data_oe),
     .epb_rdy_oe  (epb_rdy_oe),
-    .epb_rdy_i   (1'b0)
+    .epb_rdy_i   (epb_rdy_o)
+  /* TODO: why the 'f' are the slew rates so bad ^^^^^^ */
   );
   
-  wire wb_stb_o, wb_cyc_o;
+  wire wb_stb_o;
   wire wb_we_o,  wb_sel_o;
   wire [4:0] wb_adr_o;
   wire [7:0] wb_dat_o;
@@ -187,9 +192,10 @@ module toplevel(
     .epb_data_i  (epb_data_i),
     .epb_data_o  (epb_data_o),
     .epb_data_oe (epb_data_oe),
-    .epb_busy    (epb_rdy_oe),
+    .epb_rdy_o   (epb_rdy_o),
+    .epb_rdy_oe  (epb_rdy_oe),
 
-    .wb_cyc_o (wb_cyc_o),
+    .wb_cyc_o (),
     .wb_stb_o (wb_stb_o),
     .wb_we_o  (wb_we_o),
     .wb_sel_o (wb_sel_o),
@@ -200,10 +206,10 @@ module toplevel(
   );
 
   /* V basic wishbone arbitration */
-  wire wb_stb_o_0 = wb_stb_o & wb_adr_o[4:3] == 2'b00;
-  wire wb_stb_o_1 = wb_stb_o & wb_adr_o[4:3] == 2'b01;
-  wire wb_stb_o_2 = wb_stb_o & wb_adr_o[4:3] == 2'b10;
-  wire wb_stb_o_3 = wb_stb_o & wb_adr_o[4:3] == 2'b11;
+  wire wb_stb_o_0 = wb_stb_o && wb_adr_o[4:3] == 2'b00;
+  wire wb_stb_o_1 = wb_stb_o && wb_adr_o[4:3] == 2'b01;
+  wire wb_stb_o_2 = wb_stb_o && wb_adr_o[4:3] == 2'b10;
+  wire wb_stb_o_3 = wb_stb_o && wb_adr_o[4:3] == 2'b11;
 
   wire wb_cyc_o_0 = wb_stb_o_0;
   wire wb_cyc_o_1 = wb_stb_o_1;

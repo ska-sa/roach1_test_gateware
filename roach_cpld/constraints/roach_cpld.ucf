@@ -72,7 +72,7 @@ NET "v5c_init_n"    IOSTANDARD = LVCMOS33 | LOC = "131" | PULLUP;
 
 NET "v5c_mode<2>"   IOSTANDARD = LVCMOS33 | LOC = "107";
 NET "v5c_mode<1>"   IOSTANDARD = LVCMOS33 | LOC = "106";
-NET "v5c_mode<0>"   IOSTANDARD = LVTTL | LOC = "105" | PULLDOWN;
+NET "v5c_mode<0>"   IOSTANDARD = LVTTL | LOC = "105";
 
 # cclk control
 NET "v5c_cclk_o"    IOSTANDARD = LVCMOS33 | LOC = "43";
@@ -105,7 +105,7 @@ NET "epb_we_n"    IOSTANDARD = LVCMOS33 | LOC = "13";
 NET "epb_be_n"    IOSTANDARD = LVCMOS33 | LOC = "16";
 NET "epb_oe_n"    IOSTANDARD = LVCMOS33 | LOC = "34";
 
-NET "epb_rdy"     IOSTANDARD = LVCMOS33 | LOC = "51";
+NET "epb_rdy"     IOSTANDARD = LVCMOS33 | LOC = "51" | PULLUP | OPEN_DRAIN = "TRUE";
 
 ####################### PPC Misc #######################
 NET "ppc_tmr_clk" IOSTANDARD = LVCMOS33 | LOC = "4";
@@ -150,10 +150,10 @@ NET "eeprom_1_wp"   IOSTANDARD = LVCMOS33 | LOC = "48";
 
 ################ System Status ####################
 
-NET "sys_led_n<1>"    IOSTANDARD = LVCMOS33 | LOC = "98";
-NET "sys_led_n<0>"    IOSTANDARD = LVCMOS33 | LOC = "100";
-NET "user_led_n<1>"   IOSTANDARD = LVCMOS33 | LOC = "101";
-NET "user_led_n<0>"   IOSTANDARD = LVCMOS33 | LOC = "102";
+NET "sys_led_n<1>"    IOSTANDARD = LVCMOS33 | LOC = "98"  | OPEN_DRAIN = "TRUE";
+NET "sys_led_n<0>"    IOSTANDARD = LVCMOS33 | LOC = "100" | OPEN_DRAIN = "TRUE";
+NET "user_led_n<1>"   IOSTANDARD = LVCMOS33 | LOC = "101" | OPEN_DRAIN = "TRUE";
+NET "user_led_n<0>"   IOSTANDARD = LVCMOS33 | LOC = "102" | OPEN_DRAIN = "TRUE";
 
 ################## Flash Memory ###################
 

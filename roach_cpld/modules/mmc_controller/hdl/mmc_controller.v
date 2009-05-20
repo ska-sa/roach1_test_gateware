@@ -220,4 +220,13 @@ module mmc_controller(
     .dout (crc7)
   );
 
+  /* cdetect irq */
+
+  reg prev_cdetect;
+
+  always @(posedge wb_clk_i) begin
+    prev_cdetect <= mmc_cdetect;
+  end
+  assign irq_cdetect = prev_cdetect != mmc_cdetect;
+
 endmodule

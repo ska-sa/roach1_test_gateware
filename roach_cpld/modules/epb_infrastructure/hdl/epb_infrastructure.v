@@ -8,7 +8,7 @@ module epb_infrastructure(
   );
 
   inout  [7:0] epb_data;
-  inout        epb_rdy;
+  output       epb_rdy;
 
   input  [7:0] epb_data_i;
   output [7:0] epb_data_o;
@@ -25,8 +25,8 @@ module epb_infrastructure(
     .I(epb_data), .O(epb_data_o)
   );
 
-  OBUFE OBUFE_epb_rdy(
-    .E(epb_rdy_oe), .I(epb_rdy_i), .O(epb_rdy)
+  OBUFT OBUFE_epb_rdy(
+    .T(!epb_rdy_oe), .I(epb_rdy_i), .O(epb_rdy)
   );
 
 endmodule
