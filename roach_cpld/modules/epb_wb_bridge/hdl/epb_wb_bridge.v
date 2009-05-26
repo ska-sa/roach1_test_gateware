@@ -41,9 +41,7 @@ module epb_wb_bridge(
   localparam BUS_WAIT1 = 3;
 
   reg [7:0] epb_data_reg;
-  reg epb_rdy_reg;
   always @(posedge clk) begin
-    epb_rdy_reg <= 1'b0;
     if (reset) begin
       epb_state <= IDLE;
     end else begin

@@ -47,7 +47,7 @@ NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
 #NET "mmc_wp"      IOSTANDARD = LVCMOS33 | LOC = "121" | PULLUP;
 #NET "mmc_cdetect" IOSTANDARD = LVCMOS33 | LOC = "116" | PULLUP;
 
-NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "116";
+NET "mmc_clk"     IOSTANDARD = LVCMOS33 | LOC = "116" | SLEW = "SLOW";
 NET "mmc_cmd"     IOSTANDARD = LVCMOS33 | LOC = "114" | PULLUP;
 NET "mmc_data<7>" IOSTANDARD = LVCMOS33 | LOC = "118" | PULLUP;
 NET "mmc_data<6>" IOSTANDARD = LVCMOS33 | LOC = "117" | PULLUP;

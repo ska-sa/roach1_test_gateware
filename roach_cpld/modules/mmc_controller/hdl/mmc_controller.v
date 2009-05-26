@@ -216,7 +216,7 @@ module mmc_controller(
     .clk  (wb_clk_i),
     .rst  (crc_rst),
     .data (mmc_cmd_o),
-    .dvld (clk_rdy && clk_tick),
+    .dvld (clk_ack),
     .dout (crc7)
   );
 

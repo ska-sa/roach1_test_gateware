@@ -37,7 +37,7 @@ module adv_proc (
   reg [2:0] wr_index;  
 
   always @(posedge clk) begin
-    if (adv_done || rst) begin
+    if (adv_en || rst) begin
       wr_index <= 3'd0;
     end else begin
       if (clk_ack) begin
@@ -45,11 +45,12 @@ module adv_proc (
       end
     end
   end
+  wire [2:0] wr_index_seq = adv_en ? 0 : wr_index;
 
   /* TODO: hopefully synthesis will work this out */
-  assign cmd_wr = bus_cmd_i[7 - wr_index];
-  assign dat_wr = data_width == DW_1 ? {7'b0, bus_dat_i[7 - wr_index]}                         :
-                  data_width == DW_4 ? {4'b0, (wr_index[1] ? bus_dat_i[3:0] : bus_dat_i[7:4])} :
+  assign cmd_wr = bus_cmd_i[7 - wr_index_seq];
+  assign dat_wr = data_width == DW_1 ? {7'b0, bus_dat_i[7 - wr_index_seq]}                         :
+                  data_width == DW_4 ? {4'b0, (wr_index_seq[1] ? bus_dat_i[3:0] : bus_dat_i[7:4])} :
                                        bus_dat_i[7:0];
 
   /* Read Logic */
@@ -66,8 +67,8 @@ module adv_proc (
     end
   end
 
-  reg [6:0] cmd_accum;
-  reg [6:0] dat_accum;
+  reg [7:0] cmd_accum;
+  reg [7:0] dat_accum;
   always @(posedge clk) begin
     cmd_accum[7 - rd_index] <= mmc_cmd_i;
 
@@ -76,16 +77,16 @@ module adv_proc (
         dat_accum[7 - rd_index] <= mmc_dat_i[0];
       end
       default: begin
-        if (rd_index[0]) begin
-          dat_accum[6:3] <= mmc_dat_i[3:0];
+        if (!rd_index[0]) begin
+          dat_accum[7:4] <= mmc_dat_i[3:0];
         end
       end
     endcase
   end
 
-  assign cmd_rd = {cmd_accum[6:0], mmc_cmd_i};
-  assign dat_rd = data_width == DW_1 ? {dat_accum[6:0], mmc_dat_i[0:0]} :
-                  data_width == DW_4 ? {dat_accum[6:3], mmc_dat_i[3:0]} :
+  assign cmd_rd = {cmd_accum[7:1], mmc_cmd_i};
+  assign dat_rd = data_width == DW_1 ? {dat_accum[7:1], mmc_dat_i[0:0]} :
+                  data_width == DW_4 ? {dat_accum[7:4], mmc_dat_i[3:0]} :
                                        mmc_dat_i[7:0];
 
 
@@ -96,7 +97,7 @@ module adv_proc (
                        adv_mode == ADV_DAT_WR && data_width == DW_4       ? 3'b001 :
                                                                             3'b0;
 
-  assign adv_done = adv_len == rd_index;
+  assign adv_done = adv_len == rd_index && clk_done;
   reg adv_busy;
   always @(posedge clk) begin
     if (adv_en) begin
