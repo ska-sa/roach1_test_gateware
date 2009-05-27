@@ -21,7 +21,7 @@ module toplevel(
     epb_cs_n, epb_we_n, epb_be_n, epb_oe_n,
     epb_rdy,
     /* PPC misc signals */
-    ppc_tmr_clk, ppc_syserr, ppc_sm_cs_n, ppc_irq,
+    ppc_tmr_clk, ppc_syserr, ppc_sm_cs_n, ppc_irq_n,
     /* system configuration inputs */
     sys_config, user_dip, config_dip,
     /* system configuration outputs */
@@ -63,7 +63,7 @@ module toplevel(
   output ppc_tmr_clk;
   input  ppc_syserr;
   input  ppc_sm_cs_n;
-  output ppc_irq;
+  output ppc_irq_n;
 
   input  [7:0] sys_config;
   input  [3:0] user_dip;
@@ -241,6 +241,7 @@ module toplevel(
 
   wire [3:0] irq_src;
 
+  wire ppc_irq;
   system_block #(
     .DESIGN_ID (`DESIGN_ID),
     .REV_MAJOR (`REV_MAJOR),
@@ -259,6 +260,7 @@ module toplevel(
     .irq_src  (irq_src),
     .irq      (ppc_irq)
   );
+  assign ppc_irq_n = !ppc_irq;
   
   /*************************** Misc Registers ****************************/
 

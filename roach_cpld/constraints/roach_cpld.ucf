@@ -113,7 +113,7 @@ NET "ppc_syserr"  IOSTANDARD = LVCMOS33 | LOC = "7";
 
 NET "ppc_sm_cs_n" IOSTANDARD = LVCMOS33 | LOC = "50";
 
-NET "ppc_irq"     IOSTANDARD = LVCMOS33 | LOC = "53";
+NET "ppc_irq_n"   IOSTANDARD = LVCMOS33 | LOC = "53";
 
 ################## System Configuration ################
 
