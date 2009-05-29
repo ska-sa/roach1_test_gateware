@@ -28,19 +28,16 @@ module mmc_controller(
 
   /***** Clock Advance Controls ******/
   /* Memory operation advance */
-  wire [2:0] mem_adv_mode;
+  wire [1:0] mem_adv_mode;
   wire       mem_adv_en;
   wire       mem_adv_done;
+  wire       rd_dat_avail;
+
   wire       mem_adv_tick;
 
   /* Single Clock advance */
   wire man_adv_en;
   wire man_adv_done;
-
-  /***** Auto Clock Tick Signals ****/
-  wire [1:0] auto_mode;
-  wire       auto_tick;
-  wire       auto_done;
 
   /**** Data / CMD Read Contents ****/
   wire [7:0] cmd_rd;
@@ -51,7 +48,6 @@ module mmc_controller(
   wire [7:0] dat_wr;
 
   /********** CRC Signals ***********/
-  wire  [6:0] crc7;
   wire [15:0] crc16;
   wire        crc16_dvld;
   wire        crc_rst;
@@ -75,6 +71,8 @@ module mmc_controller(
     .mem_adv_en   (mem_adv_en), 
     .mem_adv_done (mem_adv_done), 
 
+    .rd_dat_avail (rd_dat_avail), 
+
     .man_adv_en   (man_adv_en), 
     .man_adv_done (man_adv_done), 
 
@@ -86,10 +84,6 @@ module mmc_controller(
     .dat_rd (dat_rd),
     .cmd_rd (cmd_rd),
 
-    .auto_mode (auto_mode),
-    .auto_done (auto_done),
-
-    .crc7       (crc7),
     .crc16      (crc16),
     .crc16_dvld (crc16_dvld),
     .crc_rst    (crc_rst),
@@ -103,7 +97,7 @@ module mmc_controller(
   wire clk_done;
   wire clk_rdy;
   wire clk_ack;
-  wire clk_tick = man_adv_en || mem_adv_tick || auto_tick;
+  wire clk_tick = man_adv_en || mem_adv_tick;
 
   clk_ctrl clk_ctrl_inst(
     .clk     (wb_clk_i),
@@ -115,7 +109,7 @@ module mmc_controller(
     .done    (clk_done),
     .mmc_clk (mmc_clk)
   );
-
+  
   /************ Manual Advance Logic *************/
 
   reg man_adv_done_reg;
@@ -128,82 +122,67 @@ module mmc_controller(
   end
   assign man_adv_done = man_adv_done_reg;
 
-  /*********** Auto Mode Logic ***********/
-
-  assign irq_got_cmd  = clk_done && auto_mode == 1 && !mmc_cmd_i;
-  assign irq_got_dat  = clk_done && auto_mode == 2 && !mmc_dat_i[0];
-  assign irq_got_busy = clk_done && auto_mode == 3 &&  mmc_dat_i[0];
-
-  assign auto_done = irq_got_cmd || irq_got_dat || irq_got_busy;
-
-  reg auto_stb;
-  reg auto_pend;
-
-  always @(posedge wb_clk_i) begin
-    auto_stb  <= 1'b0;
-
-    if (wb_rst_i) begin
-      auto_pend <= 1'b0;
-    end else begin
-      if ((|auto_mode) && !auto_pend) begin
-        auto_stb  <= 1'b1;
-        auto_pend <= 1'b1;
-      end 
-      if (clk_done) begin
-        auto_pend <= 1'b0;
-      end
-    end
-  end
-  assign auto_tick = auto_stb;
-
   /******* Memory Op Clock Advance *******/
 
-  localparam ADV_CMD_RD   = 2'd0;
-  localparam ADV_CMD_WR   = 2'd1;
-  localparam ADV_DAT_RD   = 2'd2;
-  localparam ADV_DAT_WR   = 2'd3;
+  localparam ADV_DAT_RD   = 2'd1;
+  localparam ADV_DAT_WR   = 2'd2;
 
   wire [7:0] adv_wr_dat;
   wire       adv_wr_cmd;
   wire [7:0] adv_rd_dat;
   wire [7:0] adv_rd_cmd;
 
+  /****************** Rd Logic *******************/
+  wire mem_adv_done_rd;
+  wire mem_adv_tick_rd;
+
+  rd_adv rd_adv_inst(
+    .clk        (wb_clk_i),
+    .rst        (wb_rst_i),
+    .enable     (mem_adv_mode == ADV_DAT_RD),
+    .data_width (data_width),     
+    .mmc_dat_i  (mmc_dat_i),
+    .bus_data   (adv_rd_dat),
+    .bus_req    (mem_adv_en),
+    .bus_ack    (mem_adv_done_rd),
+    .clk_tick   (mem_adv_tick_rd),
+    .clk_done   (clk_done)
+  );
+  assign rd_dat_avail = mem_adv_done_rd;
+
+  /****************** Wr Logic *******************/
+  wire mem_adv_done_wr;
+  wire mem_adv_tick_wr;
+  wire [7:0] adv_dat_wr;
+
+  wr_adv wr_adv (
+    .clk        (wb_clk_i),
+    .rst        (wb_rst_i),
+    .data_width (data_width),     
+    .bus_req    (mem_adv_en && mem_adv_mode == ADV_DAT_WR),
+    .bus_dat_i  (wb_dat_i),
+    .bus_ack    (mem_adv_done_wr),
+    .dat_wr     (adv_dat_wr),
+    .clk_tick   (mem_adv_tick_wr),
+    .clk_done   (clk_done),
+    .clk_ack    (clk_ack)
+  );
+
+  assign mem_adv_done = mem_adv_mode == ADV_DAT_WR ? mem_adv_done_wr : mem_adv_done_rd;
+  assign mem_adv_tick = mem_adv_mode == ADV_DAT_WR ? mem_adv_tick_wr : mem_adv_tick_rd;
+
   /* MMC Data assignments */ 
 
-  assign mmc_dat_o = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_DAT_WR ? adv_wr_dat : dat_wr;
-  assign mmc_cmd_o = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_CMD_WR ? adv_wr_cmd : cmd_wr;
-  assign dat_rd    = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_DAT_RD ? adv_rd_dat : mmc_dat_i;
-  assign cmd_rd    = mem_adv_mode[2] && mem_adv_mode[1:0] == ADV_CMD_RD ? adv_rd_cmd : {7'b0, mmc_cmd_i};
+  assign mmc_cmd_o = cmd_wr;
+  assign mmc_dat_o = mem_adv_mode == ADV_DAT_WR ? adv_dat_wr : dat_wr;
+  assign dat_rd    = mem_adv_mode == ADV_DAT_RD ? adv_rd_dat : mmc_dat_i;
+  assign cmd_rd    = {7'b0, mmc_cmd_i};
 
   /* Memory operation advance */
 
-  adv_proc adv_proc (
-    .clk (wb_clk_i),
-    .rst (wb_rst_i),
-
-    .adv_mode (mem_adv_mode[1:0]),
-    .adv_en   (mem_adv_en),
-    .adv_tick (mem_adv_tick),
-    .adv_done (mem_adv_done),
-
-    .data_width (data_width),
-
-    .mmc_dat_i (mmc_dat_i),
-    .mmc_cmd_i (mmc_cmd_i),
-    .dat_rd    (adv_rd_dat),
-    .cmd_rd    (adv_rd_cmd),
-
-    .bus_dat_i (wb_dat_i),
-    .bus_cmd_i (wb_dat_i),
-    .dat_wr    (adv_wr_dat),
-    .cmd_wr    (adv_wr_cmd),
-    
-    .clk_ack   (clk_ack),
-    .clk_done  (clk_done)
-  );
-  
   /********** CRCs ***********/
 
+  /*
   crc16_d8 crc_16_d8_inst (
     .clk  (wb_clk_i),
     .rst  (crc_rst),
@@ -211,14 +190,7 @@ module mmc_controller(
     .dvld (crc16_dvld),
     .dout (crc16)
   );
-
-  crc7_d1 crc7_d1_inst (
-    .clk  (wb_clk_i),
-    .rst  (crc_rst),
-    .data (mmc_cmd_o),
-    .dvld (clk_ack),
-    .dout (crc7)
-  );
+  */
 
   /* cdetect irq */
 

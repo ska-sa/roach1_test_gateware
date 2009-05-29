@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 
 `define CLK_PERIOD 10
-`define SIMLENGTH 10000
+`define SIMLENGTH 80000
 
 module TB_mmc_controller();
 
@@ -82,105 +82,135 @@ module TB_mmc_controller();
   assign wb_clk_i = clk;
   assign wb_rst_i = reset;
 
+`define BLOCK_READ
+
+`ifdef BLOCK_READ
+
+  wire [31:0] douche;
+  reg [31:0] count;
   reg [31:0] progress;
+  reg [7:0] backoff;
+  localparam BACKOFF = 8;
   always @(posedge wb_clk_i) begin
     wb_stb_i <= 1'b0;
     if (wb_rst_i) begin
       progress <= 0;
+      backoff <= 0;
+      count <= 0;
     end else begin
       case (progress)
         0: begin
           wb_stb_i <= 1'b1;
           wb_we_i  <= 1'b1;
-          wb_adr_i <= 3'd2;
-          wb_dat_i <= 8'b0101_0000;
-          progress <= progress + 1;
+          wb_adr_i <= 3'd4;
+          wb_dat_i <= 8'b0011_0101;
+          progress <= 1;
         end
         1: begin
           if (wb_ack_o) begin
             wb_stb_i <= 1'b1;
             wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd4;
-            wb_dat_i <= 8'b0011_0001;
-            progress <= progress + 1;
+            wb_adr_i <= 3'd2;
+            wb_dat_i <= 8'b0001_0000;
+            progress <= 2;
           end
-        end
+        end 
         2: begin
           if (wb_ack_o) begin
-            /* reset crcs */
-            wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd5;
-            wb_dat_i <= 8'b0;
-            progress <= progress + 1;
+            progress <= 3;
           end
         end
         3: begin
-          if (wb_ack_o) begin
-            /* write cmd byte 0 */
+          if (backoff == BACKOFF) begin
             wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd0;
-            wb_dat_i <= 8'b0100_0000;
-            progress <= progress + 1;
+            wb_we_i  <= 1'b0;
+            wb_adr_i <= 3'd1;
+
+            progress <= 4;
+          end else begin
+            backoff <= backoff + 1;
           end
         end
         4: begin
           if (wb_ack_o) begin
-            /* write cmd byte 1 */
-            wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd0;
-            wb_dat_i <= 8'b0000_0000;
-            progress <= progress + 1;
+            backoff  <= 0;
+            progress <= 3;
+            
+            if (count < 512) begin
+              if (wb_dat_o[7:0] !== douche[7:0]) begin
+                $display("FAILED: data mismatch, got = %x, expected = %x\n", wb_dat_o, douche[7:0]);
+                $display("%x %x",count, douche[7:0]);
+                $finish;
+              end
+            end else begin
+              if (count == 512) begin
+                if (wb_dat_o[7:0] !== 8'hde) begin
+                  $display("FAILED: data mismatch, got = %x, expected = %x\n", wb_dat_o, 8'hde);
+                  $finish;
+                end
+              end
+              if (count == 513) begin
+                if (wb_dat_o[7:0] !== 8'had) begin
+                  $display("FAILED: data mismatch, got = %x, expected = %x\n", wb_dat_o, 8'had);
+                  $finish;
+                end
+              end
+              if (count == 514) begin
+                if (wb_dat_o[7:0] !== 8'hff) begin
+                  $display("FAILED: data mismatch, got = %x, expected = %x\n", wb_dat_o, 8'hff);
+                  $finish;
+                end else begin
+                  $display("PASSED: block read");
+                  $finish;
+                end
+              end
+            end
+            count <= count + 1;
           end
         end
-        5: begin
-          if (wb_ack_o) begin
-            /* write cmd byte 2 */
-            wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd0;
-            wb_dat_i <= 8'b0000_0000;
-            progress <= progress + 1;
-          end
-        end
-        6: begin
-          if (wb_ack_o) begin
-            /* write cmd byte 3 */
-            wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd0;
-            wb_dat_i <= 8'b0000_0000;
-            progress <= progress + 1;
-          end
-        end
-        7: begin
-          if (wb_ack_o) begin
-            /* write cmd byte 4 */
-            wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b1;
-            wb_adr_i <= 3'd0;
-            wb_dat_i <= 8'b0;
-            progress <= progress + 1;
-          end
-        end
-        8: begin
-          if (wb_ack_o) begin
-            /* Read CRC */
-            wb_stb_i <= 1'b1;
-            wb_we_i  <= 1'b0;
-            wb_adr_i <= 3'd5;
-            progress <= progress + 1;
-          end
-        end
-        9: begin
-          if (wb_ack_o) begin
-            $display("PASSED: crc = %x", wb_dat_o);
-            $finish;
-          end
-        end
+
       endcase
+    end
+  end
+  assign douche = (((count*2) & 16'h0f) << 4) | ((((count*2) + 8'h1) & 8'h0f));
+
+`endif
+
+  /* MMC stuff */
+  reg [31:0] mmc_progress;
+
+  reg  [7:0] mmc_dat_reg;
+  assign mmc_dat_i = mmc_dat_reg;
+
+  initial begin
+    mmc_dat_reg  <= 8'hff;
+    mmc_progress <= 0;
+  end
+
+  always @(negedge mmc_clk) begin
+    mmc_progress <= mmc_progress + 1;
+    case (mmc_progress)
+      9:         mmc_dat_reg <= 8'h0;
+      1024+10+0:  mmc_dat_reg <= 8'b1;
+      1024+10+1:  mmc_dat_reg <= 8'b1;
+      1024+10+2:  mmc_dat_reg <= 8'b0;
+      1024+10+3:  mmc_dat_reg <= 8'b1;
+      1024+10+4:  mmc_dat_reg <= 8'b1;
+      1024+10+5:  mmc_dat_reg <= 8'b1;
+      1024+10+6:  mmc_dat_reg <= 8'b1;
+      1024+10+7:  mmc_dat_reg <= 8'b0;
+      1024+10+8:  mmc_dat_reg <= 8'b1;
+      1024+10+9:  mmc_dat_reg <= 8'b0;
+      1024+10+10: mmc_dat_reg <= 8'b1;
+      1024+10+11: mmc_dat_reg <= 8'b0;
+      1024+10+12: mmc_dat_reg <= 8'b1;
+      1024+10+13: mmc_dat_reg <= 8'b1;
+      1024+10+14: mmc_dat_reg <= 8'b0;
+      1024+10+15: mmc_dat_reg <= 8'b1;
+      1024+10+16: mmc_dat_reg <= 8'hff;
+    endcase
+    if (mmc_progress >= 10 && mmc_progress < 1024 + 10) begin
+      mmc_dat_reg <= mmc_progress - 10;
     end
   end
 

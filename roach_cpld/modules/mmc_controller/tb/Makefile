@@ -2,7 +2,8 @@ MODULE=mmc_controller
 
 VCC=iverilog
 FLAGS=-Wall
-DEFINES=-DDEBUG
+DEFINES=-DSIMULATION
+DEFINES+=-DDEBUG
 DEFINES+=-DDESPERATE_DEBUG
 VSIM=vvp
 
@@ -12,7 +13,7 @@ GEN_DIR=./gen
 
 INCLUDE=-I$(SRC_DIR)
 
-SRC=$(SRC_DIR)/$(MODULE).v $(SRC_DIR)/adv_proc.v $(SRC_DIR)/clk_ctrl.v $(SRC_DIR)/crc16_d8.v $(SRC_DIR)/crc7_d1.v $(SRC_DIR)/wb_attach.v
+SRC=$(SRC_DIR)/$(MODULE).v $(SRC_DIR)/wr_adv.v $(SRC_DIR)/clk_ctrl.v $(SRC_DIR)/crc16_d8.v $(SRC_DIR)/crc7_d1.v $(SRC_DIR)/wb_attach.v $(SRC_DIR)/rd_adv.v
 TB_SRC=$(TB_DIR)/TB_$(MODULE).v
 OBJ=$(GEN_DIR)/$(MODULE).o
 TB_OBJ=$(GEN_DIR)/TB_$(MODULE).o

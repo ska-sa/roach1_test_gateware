@@ -7,7 +7,7 @@ module toplevel(
     /* clock configuration bits */
     clk_master_sel, clk_aux_en,
     /* reset inputs */
-    reset_por_n, reset_mon, reset_debug_n,
+    reset_por_n, reset_debug_n,
     /* reset outputs */
     ppc_reset_n, por_force_n, ppc_ddr2_reset_n, geth_reset_n,
     /* mmc interface */
@@ -37,7 +37,7 @@ module toplevel(
   input  clk_master, clk_aux;
   output clk_master_sel, clk_aux_en;
 
-  input  reset_por_n, reset_mon, reset_debug_n;
+  input  reset_por_n, reset_debug_n;
   output ppc_reset_n, ppc_ddr2_reset_n, geth_reset_n;
   inout  por_force_n;
 
@@ -84,7 +84,8 @@ module toplevel(
   /************************ Resets ****************************/
 
   //common signals
-  wire sys_reset = !(reset_por_n && !reset_mon);
+  wire sys_reset = !(reset_por_n);
+  //synthesis attribute BUFG of sys_reset is SR
   /* system wide reset */
 
   wire por_force;      //power-on-reset force signal tied to a register
@@ -178,6 +179,7 @@ module toplevel(
   wire [7:0] wb_dat_i;
   wire wb_ack_i;
   wire wb_clk_i = epb_clk;
+  //synthesis attribute BUFG of epb_clk is CLK
   wire wb_rst_i = sys_reset || !epb_reset_n;
 
   epb_wb_bridge epb_wb_bridge_inst (

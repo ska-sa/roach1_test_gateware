@@ -39,8 +39,9 @@ module system_block #(
   wire  [7:0] rev_min = REV_MINOR;
   wire [15:0] rev_rcs = REV_RCS;
 
-  reg [3:0] irq_m;
-  reg [3:0] irq_r;
+  localparam IRQS = 1;
+  reg [IRQS-1:0] irq_m;
+  reg [IRQS-1:0] irq_r;
 
   reg [7:0] wb_dat_o_reg;
   always @(*) begin
@@ -64,10 +65,10 @@ module system_block #(
         wb_dat_o_reg <= rev_rcs[ 7:0];
       end
       REG_IRQM: begin
-        wb_dat_o_reg <= {4'b0, irq_m};
+        wb_dat_o_reg <= irq_m;
       end
       REG_IRQR: begin
-        wb_dat_o_reg <= {4'b0, irq_r};
+        wb_dat_o_reg <= irq_r;
       end
       default: begin
         wb_dat_o_reg  <= 8'd0;
@@ -78,17 +79,17 @@ module system_block #(
 
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
-      irq_r <= 4'b0;
-      irq_m <= 4'b0;
+      irq_r <= {IRQS{1'b0}};
+      irq_m <= {IRQS{1'b0}};
     end else begin
       irq_r <= irq_src | irq_r;
 
       if (wb_stb_i && wb_cyc_i && wb_we_i) begin
         if (wb_adr_i == REG_IRQM) begin
-          irq_m <= wb_dat_i[3:0];
+          irq_m <= wb_dat_i[IRQS-1:0];
         end
         if (wb_adr_i == REG_IRQR) begin
-          irq_r <= wb_dat_i[3:0];
+          irq_r <= wb_dat_i[IRQS-1:0];
         end
       end
     end

@@ -22,7 +22,7 @@ NET "clk_aux_en"       IOSTANDARD = LVCMOS33 | LOC = "137";
 
 #input resets
 NET "reset_por_n"      IOSTANDARD = LVCMOS33 | LOC = "143";
-NET "reset_mon"        IOSTANDARD = LVCMOS33 | LOC = "54";
+#NET "reset_mon"        IOSTANDARD = LVCMOS33 | LOC = "54";
 NET "reset_debug_n"    IOSTANDARD = LVCMOS33 | LOC = "14";
 
 #output resets
@@ -105,7 +105,7 @@ NET "epb_we_n"    IOSTANDARD = LVCMOS33 | LOC = "13";
 NET "epb_be_n"    IOSTANDARD = LVCMOS33 | LOC = "16";
 NET "epb_oe_n"    IOSTANDARD = LVCMOS33 | LOC = "34";
 
-NET "epb_rdy"     IOSTANDARD = LVCMOS33 | LOC = "51" | PULLUP | OPEN_DRAIN = "TRUE";
+NET "epb_rdy"     IOSTANDARD = LVCMOS33 | LOC = "51" | PULLUP;
 
 ####################### PPC Misc #######################
 NET "ppc_tmr_clk" IOSTANDARD = LVCMOS33 | LOC = "4";

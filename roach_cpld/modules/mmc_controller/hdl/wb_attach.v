@@ -9,11 +9,12 @@ module wb_attach(
     output  [7:0] wb_dat_o,
     output        wb_ack_o,
 
-    output  [2:0] mem_adv_mode,
+    output  [1:0] mem_adv_mode,
     output        mem_adv_en, 
     input         mem_adv_done, 
     output        man_adv_en, 
     input         man_adv_done, 
+    input         rd_dat_avail,
 
     output        dat_oe,
     output        cmd_oe,
@@ -22,10 +23,6 @@ module wb_attach(
     input   [7:0] dat_rd,
     input   [7:0] cmd_rd,
 
-    output  [1:0] auto_mode,
-    input         auto_done,
-
-    input   [6:0] crc7,
     input  [15:0] crc16,
     output        crc16_dvld,
     output        crc_rst,
@@ -58,20 +55,13 @@ module wb_attach(
   localparam W_10M  = 2;
   localparam W_365K = 3;
 
-  reg [2:0] mem_adv_mode_reg;
-  localparam ADV_CMD_RD   = 2'd0;
-  localparam ADV_CMD_WR   = 2'd1;
-  localparam ADV_DAT_RD   = 2'd2;
-  localparam ADV_DAT_WR   = 2'd3;
+  reg [1:0] mem_adv_mode_reg;
+  localparam ADV_NONE     = 2'd0;
+  localparam ADV_DAT_RD   = 2'd1;
+  localparam ADV_DAT_WR   = 2'd2;
 
   reg       cmd_wr_reg;
   reg [7:0] dat_wr_reg;
-
-  reg [1:0] auto_mode_reg;
-  localparam AUTO_NONE      = 0;
-  localparam AUTO_CMD_START = 1;
-  localparam AUTO_DAT_START = 2;
-  localparam AUTO_BUSY      = 3;
 
   reg dat_oe_reg;
   reg cmd_oe_reg;
@@ -84,20 +74,21 @@ module wb_attach(
   localparam WB_IDLE     = 0;
   localparam WB_ADV_WAIT = 1;
 
-  reg wb_ack_reg;
+  reg wb_ack_o_reg;
 
   always @(posedge wb_clk_i) begin
-    wb_ack_reg <= 1'b0;
-
+    wb_ack_o_reg <= 1'b0;
     if (wb_rst_i) begin
       wb_state   <= WB_IDLE;
     end else begin
       case (wb_state)
         WB_IDLE: begin
-          if (mem_adv_en) begin
-            wb_state <= WB_ADV_WAIT;
-          end else if (wb_trans) begin
-            wb_ack_reg <= 1'b1;
+          if (wb_trans) begin
+            if (mem_adv_en && !mem_adv_done) begin
+              wb_state <= WB_ADV_WAIT;
+            end else begin
+              wb_ack_o_reg <= 1'b1;
+            end
           end
         end
         WB_ADV_WAIT: begin
@@ -108,7 +99,8 @@ module wb_attach(
       endcase
     end
   end
-  assign wb_ack_o = wb_state == WB_IDLE ? wb_ack_reg : mem_adv_done;
+
+  assign wb_ack_o = wb_ack_o_reg || wb_state == WB_ADV_WAIT && mem_adv_done;
 
   /****** Wishbone Reg Read *******/
 
@@ -122,16 +114,13 @@ module wb_attach(
         wb_dat_reg <= dat_rd;
       end
       REG_AUTO: begin
-        wb_dat_reg <= {1'b0, mem_adv_mode, 2'b0, auto_mode};
+        wb_dat_reg <= {1'b0, mem_adv_mode, 3'b0, rd_dat_avail};
       end
       REG_ADV: begin
         wb_dat_reg <= {7'b0, man_adv_done};
       end
       REG_CLK: begin
         wb_dat_reg <= {2'b0, dat_oe, cmd_oe, data_width, clk_width};
-      end
-      REG_CRC_CMD: begin
-        wb_dat_reg <= {1'b0, crc7[6:0]};
       end
       REG_CRC_DAT1: begin
         wb_dat_reg <= crc16[15:8];
@@ -150,23 +139,22 @@ module wb_attach(
 
   always @(posedge wb_clk_i) begin
     if (wb_rst_i) begin
-      data_width_reg <= DW_1;
-      clk_width_reg  <= 2'b11;
-      dat_oe_reg     <= 1'b0;
-      cmd_oe_reg     <= 1'b0;
-      auto_mode_reg  <= AUTO_NONE;
+      mem_adv_mode_reg <= 2'b0;
+      data_width_reg   <= DW_1;
+      clk_width_reg    <= 2'b11;
+      dat_oe_reg       <= 1'b0;
+      cmd_oe_reg       <= 1'b0;
     end else begin
       if (wb_trans && wb_we_i) begin
         case (wb_adr_i)
           REG_CMD: begin
-            cmd_wr_reg     <= wb_dat_i[0];
+            cmd_wr_reg <= wb_dat_i[0];
           end
           REG_DAT: begin
-            dat_wr_reg    <= wb_dat_i;
+            dat_wr_reg <= wb_dat_i;
           end
           REG_AUTO: begin
             mem_adv_mode_reg <= wb_dat_i[6:4];
-            auto_mode_reg    <= wb_dat_i[1:0];
           end
           REG_ADV: begin
           end
@@ -176,32 +164,30 @@ module wb_attach(
             data_width_reg <= wb_dat_i[3:2];
             clk_width_reg  <= wb_dat_i[1:0];
           end
+          REG_CRC_CMD: begin
+          end
           default: begin
           end
         endcase
-      end
-      if (auto_done) begin
-        auto_mode_reg <= AUTO_NONE;
       end
     end
   end
 
   /********* Assignments **********/
 
-  assign mem_adv_en = wb_trans && mem_adv_mode_reg[2] && wb_adr_i[2:1] == 2'd0 && {wb_adr_i[0], wb_we_i} == mem_adv_mode_reg[1:0];
+  assign mem_adv_en = wb_trans && wb_adr_i == 3'd1 && (|mem_adv_mode);
 
   assign mem_adv_mode = mem_adv_mode_reg;
   assign man_adv_en = wb_trans && wb_we_i && wb_adr_i == REG_ADV;
-  assign crc_rst    = wb_trans && wb_we_i && wb_adr_i == REG_CRC_CMD;
+  assign crc_rst    = wb_trans && wb_we_i && wb_adr_i == REG_CRC_DAT1;
 
   assign dat_oe     = dat_oe_reg;
   assign cmd_oe     = cmd_oe_reg;
   assign dat_wr     = dat_wr_reg;
   assign cmd_wr     = cmd_wr_reg;
-  assign auto_mode  = auto_mode_reg;
   assign data_width = data_width_reg;
   assign clk_width  = clk_width_reg;
 
-  assign crc16_dvld = wb_trans && wb_we_i && wb_adr_i == REG_DAT;
+  assign crc16_dvld = wb_trans && wb_adr_i == REG_DAT;
 
 endmodule
