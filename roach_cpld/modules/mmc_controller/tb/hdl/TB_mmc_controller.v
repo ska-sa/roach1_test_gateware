@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 
 `define CLK_PERIOD 10
-`define SIMLENGTH 80000
+`define SIMLENGTH 800000
 
 module TB_mmc_controller();
 
@@ -90,7 +90,7 @@ module TB_mmc_controller();
   reg [31:0] count;
   reg [31:0] progress;
   reg [7:0] backoff;
-  localparam BACKOFF = 8;
+  localparam BACKOFF = 16;
   always @(posedge wb_clk_i) begin
     wb_stb_i <= 1'b0;
     if (wb_rst_i) begin
@@ -118,27 +118,42 @@ module TB_mmc_controller();
         2: begin
           if (wb_ack_o) begin
             progress <= 3;
+            wb_stb_i <= 1'b1;
+            wb_we_i  <= 1'b0;
+            wb_adr_i <= 3'd2;
           end
         end
         3: begin
+          if (wb_ack_o) begin
+            if (wb_dat_o[0]) begin
+              progress <= 4;
+              $display("wbm: got start\n");
+            end else begin
+              wb_stb_i <= 1'b1;
+              wb_we_i  <= 1'b0;
+              wb_adr_i <= 3'd2;
+            end
+          end
+        end
+        4: begin
           if (backoff == BACKOFF) begin
             wb_stb_i <= 1'b1;
             wb_we_i  <= 1'b0;
             wb_adr_i <= 3'd1;
 
-            progress <= 4;
+            progress <= 5;
           end else begin
             backoff <= backoff + 1;
           end
         end
-        4: begin
+        5: begin
           if (wb_ack_o) begin
             backoff  <= 0;
-            progress <= 3;
+            progress <= 4;
             
             if (count < 512) begin
               if (wb_dat_o[7:0] !== douche[7:0]) begin
-                $display("FAILED: data mismatch, got = %x, expected = %x\n", wb_dat_o, douche[7:0]);
+                $display("FAILED: data mismatch, got = %x, expected = %x, count = %d\n", wb_dat_o, douche[7:0], count);
                 $display("%x %x",count, douche[7:0]);
                 $finish;
               end
