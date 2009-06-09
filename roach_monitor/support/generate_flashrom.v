@@ -1,6 +1,6 @@
 `define VCC_HIGH      8'd160
 `define VCC_LOW       8'd140 
-`define TINT_HIGH     8'd172
+`define TINT_HIGH     8'd87
 `define TINT_LOW      8'd0 
 
 `define AV0_HIGH      8'd255
@@ -45,11 +45,11 @@
 `define AC9_HIGH      8'd255
 `define AC9_LOW       8'd0
 
-`define AT0_HIGH      8'd184
+`define AT0_HIGH      8'd93
 `define AT0_LOW       8'd0
 `define AT1_HIGH      8'd255
 `define AT1_LOW       8'd0
-`define AT2_HIGH      8'd172
+`define AT2_HIGH      8'd87
 `define AT2_LOW       8'd0
 `define AT3_HIGH      8'd255
 `define AT3_LOW       8'd0
