@@ -85,7 +85,6 @@ module toplevel(
 
   //common signals
   wire sys_reset = !(reset_por_n);
-  //synthesis attribute BUFG of sys_reset is SR
   /* system wide reset */
 
   wire por_force;      //power-on-reset force signal tied to a register
@@ -180,7 +179,7 @@ module toplevel(
   wire wb_ack_i;
   wire wb_clk_i = epb_clk;
   //synthesis attribute BUFG of epb_clk is CLK
-  wire wb_rst_i = sys_reset || !epb_reset_n;
+  wire wb_rst_i = 1'b0;
 
   epb_wb_bridge epb_wb_bridge_inst (
     .clk   (wb_clk_i),

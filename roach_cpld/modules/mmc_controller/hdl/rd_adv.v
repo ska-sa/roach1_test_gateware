@@ -2,7 +2,7 @@ module rd_adv(
     input        clk,
     input        rst,
     input        enable,
-    input  [1:0] data_width,     
+    input        data_width,     
     input  [7:0] mmc_dat_i,
     output [7:0] bus_data,
     input        bus_req,
@@ -112,8 +112,6 @@ module rd_adv(
 
   /******** Data Accumulation ********/
 
-  wire [1:0] dw = data_width;
-
   reg busy;
   reg [2:0] dacc;
   reg [7:0] data_accum;
@@ -164,10 +162,8 @@ module rd_adv(
         case (data_width)
           0: /* 1bit */
             targ_reg <= 7;
-          1: /* 4bit */
+          default: /* 4bit */
             targ_reg <= 1;
-          default: /* 8bit */
-            targ_reg <= 0;
         endcase
       end
       CRC: begin
@@ -189,10 +185,8 @@ module rd_adv(
         case (data_width)
           0: /* 1bit */
             bus_data_reg <= {data_accum[7:1], mmc_dat_i[0]};
-          1: /* 4bit */
+          default: /* 4bit */
             bus_data_reg <= {data_accum[3:0], mmc_dat_i[3:0]};
-          default: /* 8bit */
-            bus_data_reg <= mmc_dat_i[7:0];
         endcase
       end
       CRC: begin

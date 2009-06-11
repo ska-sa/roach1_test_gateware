@@ -5,7 +5,7 @@
 # Project name
 
 PROJECT=roach_cpld
-REV_MAJOR=6
+REV_MAJOR=7
 REV_MINOR=0
 REV_RCS:=0
 
@@ -20,7 +20,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/mmc_controller/hdl/wr_adv.v \
     ./modules/mmc_controller/hdl/rd_adv.v \
     ./modules/mmc_controller/hdl/wb_attach.v \
-    ./modules/mmc_controller/hdl/crc16_d8.v \
+    ./modules/mmc_controller/hdl/crc16.v \
     ./modules/mmc_controller/hdl/crc7_d1.v \
     ./modules/mmc_controller/hdl/clk_ctrl.v \
     ./modules/epb_infrastructure/hdl/epb_infrastructure.v \
@@ -34,7 +34,7 @@ NETLIST_DIRS=
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel
 # Logic Device Part Number
-PARTNUM=xc2c256-6-TQ144
+PARTNUM=xc2c256-7-TQ144
 
 # Verilog Include Directory
 VINC=include

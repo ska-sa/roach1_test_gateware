@@ -2,7 +2,7 @@ module wr_adv (
     input        clk,
     input        rst,
 
-    input  [1:0] data_width,
+    input        data_width,
 
     input        bus_req,
     input  [7:0] bus_dat_i,
@@ -15,9 +15,8 @@ module wr_adv (
     input        clk_ack
   );
 
-  localparam DW_1 = 2'd0;
-  localparam DW_4 = 2'd1;
-  localparam DW_8 = 2'd2;
+  localparam DW_1 = 1'd0;
+  localparam DW_4 = 1'd1;
 
   /* Write Logic */
 
@@ -47,12 +46,8 @@ module wr_adv (
             if (clk_ack && wr_index == 7)
               busy <= 1'b0;
           end
-          DW_4: begin
-            if (clk_ack && wr_index == 1)
-              busy <= 1'b0;
-          end
           default: begin
-            if (clk_ack && wr_index == 0)
+            if (clk_ack && wr_index == 1)
               busy <= 1'b0;
           end
         endcase
@@ -66,8 +61,7 @@ module wr_adv (
   wire [2:0] wr_index_seq = bus_req ? 0 : wr_index;
 
   assign dat_wr = data_width == DW_1 ? {7'b0, bus_dat_i[7 - wr_index_seq]}                         :
-                  data_width == DW_4 ? {4'b0, (wr_index_seq[1] ? bus_dat_i[3:0] : bus_dat_i[7:4])} :
-                                       bus_dat_i[7:0];
+                                       {4'b0, (wr_index_seq[1] ? bus_dat_i[3:0] : bus_dat_i[7:4])};
 
 
 endmodule

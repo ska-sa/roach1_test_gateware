@@ -1,3 +1,4 @@
+//`define ENABLE_CRC16
 module mmc_controller(
     input        wb_clk_i,
     input        wb_rst_i,
@@ -48,12 +49,14 @@ module mmc_controller(
   wire [7:0] dat_wr;
 
   /********** CRC Signals ***********/
-  wire [15:0] crc16;
-  wire        crc16_dvld;
-  wire        crc_rst;
+
+  wire [16*4-1:0] crc16;
+  wire            crc16_dvld;
+  wire            crc_rst;
+
 
   /********* MMC Parameters *********/
-  wire  [1:0] data_width;
+  wire        data_width;
   wire  [1:0] clk_width;
 
   wb_attach wb_attach_inst(
@@ -84,8 +87,8 @@ module mmc_controller(
     .dat_rd (dat_rd),
     .cmd_rd (cmd_rd),
 
+
     .crc16      (crc16),
-    .crc16_dvld (crc16_dvld),
     .crc_rst    (crc_rst),
 
     .data_width (data_width),
@@ -182,15 +185,17 @@ module mmc_controller(
 
   /********** CRCs ***********/
 
-  /*
-  crc16_d8 crc_16_d8_inst (
+`ifdef ENABLE_CRC16
+  assign crc16_dvld = clk_ack;
+
+  crc16 crc_16_inst[3:0] (
     .clk  (wb_clk_i),
     .rst  (crc_rst),
-    .data (wb_dat_i),
+    .data (mmc_dat_i[3:0]),
     .dvld (crc16_dvld),
     .dout (crc16)
   );
-  */
+`endif
 
   /* cdetect irq */
 

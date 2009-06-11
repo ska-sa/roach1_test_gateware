@@ -72,6 +72,6 @@ module epb_wb_bridge(
   assign epb_rdy_oe = !epb_cs_n;
   assign epb_rdy_o = epb_state[1];
 
-  assign epb_data_o = epb_data_reg;
+  assign epb_data_o = epb_state == WB_WAIT || epb_state == IDLE ? wb_dat_i : epb_data_reg;
 
 endmodule

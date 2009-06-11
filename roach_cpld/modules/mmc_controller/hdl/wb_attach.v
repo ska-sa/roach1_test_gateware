@@ -23,11 +23,10 @@ module wb_attach(
     input   [7:0] dat_rd,
     input   [7:0] cmd_rd,
 
-    input  [15:0] crc16,
-    output        crc16_dvld,
-    output        crc_rst,
+    input  [16*4-1:0] crc16,
+    output            crc_rst,
 
-    output  [1:0] data_width,
+    output        data_width,
     output  [1:0] clk_width
   );
 
@@ -44,10 +43,9 @@ module wb_attach(
 
   /****** Configuration Registers ******/
 
-  reg [1:0] data_width_reg;
-  localparam DW_1 = 2'd0;
-  localparam DW_4 = 2'd1;
-  localparam DW_8 = 2'd2;
+  reg       data_width_reg;
+  localparam DW_1 = 1'd0;
+  localparam DW_4 = 1'd1;
 
   reg [1:0] clk_width_reg;
   localparam W_40M  = 0;
@@ -65,6 +63,10 @@ module wb_attach(
 
   reg dat_oe_reg;
   reg cmd_oe_reg;
+
+  reg [1:0] crc_sel;
+
+
 
   /****** Wishbone State Machine *******/
 
@@ -120,13 +122,39 @@ module wb_attach(
         wb_dat_reg <= {7'b0, man_adv_done};
       end
       REG_CLK: begin
-        wb_dat_reg <= {2'b0, dat_oe, cmd_oe, data_width, clk_width};
+        wb_dat_reg <= {2'b0, dat_oe, cmd_oe, 1'b0, data_width, clk_width};
       end
       REG_CRC_DAT1: begin
-        wb_dat_reg <= crc16[15:8];
+        case (crc_sel)
+          0: begin
+            wb_dat_reg <= crc16[16*(0+1) - 1:16*0+8];
+          end
+          1: begin
+            wb_dat_reg <= crc16[16*(1+1) - 1:16*1+8];
+          end
+          2: begin
+            wb_dat_reg <= crc16[16*(2+1) - 1:16*2+8];
+          end
+          3: begin
+            wb_dat_reg <= crc16[16*(3+1) - 1:16*3+8];
+          end
+        endcase
       end
       REG_CRC_DAT0: begin
-        wb_dat_reg <= crc16[7:0];
+        case (crc_sel)
+          0: begin
+            wb_dat_reg <= crc16[16*(0+1) - 8 - 1:16*0];
+          end
+          1: begin
+            wb_dat_reg <= crc16[16*(1+1) - 8 - 1:16*1];
+          end
+          2: begin
+            wb_dat_reg <= crc16[16*(2+1) - 8 - 1:16*2];
+          end
+          3: begin
+            wb_dat_reg <= crc16[16*(3+1) - 8 - 1:16*3];
+          end
+        endcase
       end
       default: begin
         wb_dat_reg <= 8'b0;
@@ -161,10 +189,11 @@ module wb_attach(
           REG_CLK: begin
             dat_oe_reg     <= wb_dat_i[5];
             cmd_oe_reg     <= wb_dat_i[4];
-            data_width_reg <= wb_dat_i[3:2];
+            data_width_reg <= wb_dat_i[2];
             clk_width_reg  <= wb_dat_i[1:0];
           end
           REG_CRC_CMD: begin
+            crc_sel <= wb_dat_i[5:4];
           end
           default: begin
           end
@@ -187,7 +216,5 @@ module wb_attach(
   assign cmd_wr     = cmd_wr_reg;
   assign data_width = data_width_reg;
   assign clk_width  = clk_width_reg;
-
-  assign crc16_dvld = wb_trans && wb_adr_i == REG_DAT;
 
 endmodule

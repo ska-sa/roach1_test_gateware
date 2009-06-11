@@ -1,7 +1,7 @@
 ################## Timing Constraints ###################
 
 Net clk_master TNM_NET = clk_master;
-TIMESPEC TS_clk_master = PERIOD clk_master 66 MHz;
+TIMESPEC TS_clk_master = PERIOD clk_master 33 MHz;
 # 
 #Net clk_aux TNM_NET = clk_aux;
 #TIMESPEC TS_clk_aux = PERIOD clk_aux 50 MHz;

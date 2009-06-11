@@ -1,7 +1,7 @@
-module crc16_d8(
+module crc16(
     input         clk,
     input         rst,
-    input   [7:0] data,
+    input         data,
     input         dvld,
     output [15:0] dout
   );
@@ -31,16 +31,6 @@ module crc16_d8(
 
   reg [15:0] crc_reg;
 
-  wire [15:0] crc_0 = crc16(crc_reg, data[0]);
-  wire [15:0] crc_1 = crc16(crc_0,   data[1]);
-  wire [15:0] crc_2 = crc16(crc_1,   data[2]);
-  wire [15:0] crc_3 = crc16(crc_2,   data[3]);
-  wire [15:0] crc_4 = crc16(crc_3,   data[4]);
-  wire [15:0] crc_5 = crc16(crc_4,   data[5]);
-  wire [15:0] crc_6 = crc16(crc_5,   data[6]);
-  wire [15:0] crc_7 = crc16(crc_6,   data[7]);
-
-
   /* TODO: this is wrong */
 
   always @(posedge clk) begin
@@ -48,7 +38,7 @@ module crc16_d8(
       crc_reg <= 0;
     end else begin
       if (dvld) begin
-        crc_reg <= crc_7;
+        crc_reg <= crc16(crc_reg, data);
       end
     end
   end
