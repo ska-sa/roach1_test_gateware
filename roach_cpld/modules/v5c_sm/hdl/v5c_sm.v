@@ -30,6 +30,8 @@ module v5c_sm(
 
   reg v5c_rdwr_n, v5c_prog_n;
   reg v5c_init_n_o, v5c_init_n_oe;
+	//synthesis attribute INIT of v5c_prog_n is 1
+	//synthesis attribute INIT of v5c_init_n_oe is 0
 
   //Slave selectMAP 
   assign v5c_mode = 3'b110;
