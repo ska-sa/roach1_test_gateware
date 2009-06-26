@@ -204,7 +204,7 @@ module wb_attach(
 
   /********* Assignments **********/
 
-  assign mem_adv_en = wb_trans && wb_adr_i == 3'd1 && (|mem_adv_mode);
+  assign mem_adv_en = wb_trans && wb_adr_i == 3'd1 && (mem_adv_mode == 1 || mem_adv_mode == 2);
 
   assign mem_adv_mode = mem_adv_mode_reg;
   assign man_adv_en = wb_trans && wb_we_i && wb_adr_i == REG_ADV;

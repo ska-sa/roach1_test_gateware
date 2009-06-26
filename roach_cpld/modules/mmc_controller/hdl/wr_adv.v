@@ -56,7 +56,7 @@ module wr_adv (
   end
 
   assign clk_tick = busy || bus_req;
-  assign bus_ack  = !busy && clk_ack;
+  assign bus_ack  = !busy && clk_done;
 
   wire [2:0] wr_index_seq = bus_req ? 0 : wr_index;
 
