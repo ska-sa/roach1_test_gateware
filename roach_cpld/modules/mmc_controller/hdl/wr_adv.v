@@ -61,7 +61,7 @@ module wr_adv (
   wire [2:0] wr_index_seq = bus_req ? 0 : wr_index;
 
   assign dat_wr = data_width == DW_1 ? {7'b0, bus_dat_i[7 - wr_index_seq]}                         :
-                                       {4'b0, (wr_index_seq[1] ? bus_dat_i[3:0] : bus_dat_i[7:4])};
+                                       {4'b0, (wr_index_seq[0] ? bus_dat_i[3:0] : bus_dat_i[7:4])};
 
 
 endmodule

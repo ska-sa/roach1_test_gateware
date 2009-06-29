@@ -82,7 +82,48 @@ module TB_mmc_controller();
   assign wb_clk_i = clk;
   assign wb_rst_i = reset;
 
-`define BLOCK_READ
+//`define BLOCK_READ
+`define WR_ADV
+`ifdef WR_ADV
+
+  reg [31:0] progress;
+  always @(posedge wb_clk_i) begin
+    wb_stb_i <= 1'b0;
+    if (wb_rst_i) begin
+      progress <= 0;
+    end else begin
+      case (progress)
+        0: begin
+          wb_stb_i <= 1'b1;
+          wb_we_i  <= 1'b1;
+          wb_adr_i <= 3'd4;
+          wb_dat_i <= 8'b0011_0101; //4bit, med clk 
+          progress <= 1;
+        end
+        1: begin
+          if (wb_ack_o) begin
+            wb_stb_i <= 1'b1;
+            wb_we_i  <= 1'b1;
+            wb_adr_i <= 3'd2;
+            wb_dat_i <= 8'b0010_0000; //adv_wr
+            progress <= 2;
+          end
+        end 
+        2: begin
+          if (wb_ack_o) begin
+            progress <= 3;
+            wb_dat_i <= 8'b1110_0001;
+            wb_stb_i <= 1'b1;
+            wb_we_i  <= 1'b1;
+            wb_adr_i <= 3'd1;
+          end
+        end
+      endcase
+    end
+  end
+
+
+`endif
 
 `ifdef BLOCK_READ
 
