@@ -105,7 +105,7 @@ module toplevel(
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(1'b0),
-    .reset_i((!CHS_RESET_N) || reset_xport),
+    .reset_i(reset_xport),
     .reset_o(hard_reset)
   );
   assign XPORT_RESET_N = 1'b1;
@@ -115,11 +115,19 @@ module toplevel(
 
   debouncer #(
     .DELAY(32'h0020_0000)
-  ) debouncer_inst (  
+  ) debouncer_pwr_inst (  
     .clk(gclk40),
     .rst(hard_reset),
     .in_switch(!CHS_POWERDOWN_N), .out_switch(chs_powerdown)
-   // .in_switch(!CHS_POWERDOWN_N), .out_switch(chs_powerdown)
+  );
+
+  wire chs_reset;
+  debouncer #(
+    .DELAY(32'h0020_0000)
+  ) debouncer_rst_inst (  
+    .clk(gclk40),
+    .rst(hard_reset),
+    .in_switch(!CHS_RESET_N), .out_switch(chs_reset)
   );
 
   /*********************** Global Infrastructure ************************/
@@ -607,9 +615,7 @@ module toplevel(
   wire [11:0] vs_ram_rdata;
   wire [11:0] vs_ram_wdata;
 
-  vs_infrastructure #(
-    .RAM_HIGH(`RING_BUFFER_SIZE)
-  ) vs_infrastructure (
+  vs_infrastructure vs_infrastructure (
     .clk(gclk40), .reset(hard_reset),
     .ram_raddr(vs_ram_raddr),
     .ram_waddr(vs_ram_waddr),
@@ -618,9 +624,7 @@ module toplevel(
     .ram_wen(vs_ram_wen)
   );
 
-  value_storage #(
-    .RAM_HIGH(`RING_BUFFER_SIZE)
-  ) value_storage_inst (
+  value_storage value_storage_inst (
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[5]), .wb_stb_i(wbs_stb_o[5]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(5 + 1) - 1:16*5]),
@@ -677,7 +681,7 @@ module toplevel(
     /* Informational Signals */
     .power_ok(power_ok), .power_on(power_on), .no_power_cause(no_power_cause),
     /* Control Signals */
-    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown),
+    .cold_start(cold_start), .dma_done(dma_done), .chs_power_button(chs_powerdown), .chs_reset(chs_reset),
     .soft_reset(soft_reset), .crash(dma_crash), .chs_powerdown_pending(chs_powerdown_pending),
     /* ATX Power Supply Control */
     .ATX_PS_ON_N(ATX_PS_ON_N), .ATX_PWR_OK(ATX_PWR_OK),

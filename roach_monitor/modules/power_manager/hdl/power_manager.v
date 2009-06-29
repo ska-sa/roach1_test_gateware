@@ -12,7 +12,7 @@ module power_manager(
     /* Informational Signals */
     power_ok, power_on,
     /* Control Signals */
-    cold_start, dma_done, chs_power_button,
+    cold_start, dma_done, chs_power_button, chs_reset,
     soft_reset, crash, chs_powerdown_pending,
     no_power_cause,
     /* ATX Power Supply Control */
@@ -31,7 +31,7 @@ module power_manager(
   parameter MAX_UNACKED_CRASHES       = 3'b011; // 3 crashes
   parameter MAX_UNACKED_WD_OVERFLOWS  = 3'b111; //  7 overflows
   parameter SYS_HEALTH_POWERUP_MASK   = 32'hffff_ffff; //all inputs must be valid
-  parameter POWER_DOWN_WAIT           = 32'h003f_ffff; //100ms
+  parameter POWER_DOWN_WAIT           = 32'h00ff_ffff; //100ms
   parameter POST_POWERUP_WAIT         = 32'h003f_ffff; //100ms
 
   input  wb_clk_i, wb_rst_i;
@@ -45,7 +45,7 @@ module power_manager(
   output power_ok;
   output power_on;
   output [1:0] no_power_cause;
-  input  cold_start, dma_done, chs_power_button;
+  input  cold_start, dma_done, chs_power_button, chs_reset;
   output soft_reset, crash, chs_powerdown_pending;
   output ATX_PS_ON_N;
   input  ATX_PWR_OK;
@@ -175,7 +175,7 @@ module power_manager(
           end
         end
         STATE_POWERED_UP: begin
-          if (wb_reset_strb) begin //lowest priority
+          if (wb_reset_strb || chs_reset) begin //lowest priority
             power_state       <= STATE_POWERED_DOWN;
             soft_reset        <= 1'b1;
           end

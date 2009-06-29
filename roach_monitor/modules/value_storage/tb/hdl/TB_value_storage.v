@@ -2,9 +2,7 @@
 `define SIM_LENGTH 100000
 `define CLK_PERIOD 2
 
-`define NUM_SRAM_TRIPS 2 
-
-`define RAM_HIGH ((`NUM_SRAM_TRIPS)*1024)
+`define RAM_HIGH (4*1024)
 //`define RAM_HIGH 256
 
 module TB_value_storage();
@@ -27,9 +25,7 @@ module TB_value_storage();
   wire [11:0] ram_wdata;
 
 
-  value_storage #( 
-    .RAM_HIGH(`RAM_HIGH)
-  ) value_storage_inst (
+  value_storage value_storage_inst (
     .wb_clk_i(clk), .wb_rst_i(reset),
     .wb_stb_i(wb_stb_i), .wb_cyc_i(wb_cyc_i), .wb_we_i(wb_we_i),
     .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i), .wb_dat_o(wb_dat_o),
@@ -44,6 +40,7 @@ module TB_value_storage();
   reg [7:0] clk_counter;
 
   initial begin
+    $dumpvars;
     clk_counter<=8'b0;
     reset<=1'b1;
 `ifdef DEBUG
@@ -78,6 +75,7 @@ module TB_value_storage();
   reg second_test;
   integer i;
 
+  reg [11:0] first;
   always @(posedge clk) begin
     if (reset) begin
       mode <= `MODE_WAITADC;
@@ -118,9 +116,10 @@ module TB_value_storage();
               $display("FAILED: ring buffer readback total too small, x = %d", mode_total);
               $finish;
             end
-            for (i=0; i < mode_total - 1; i=i+1) begin
-              if (master_mem[i] !== 1024 + 31 - (i%32)) begin
-                $display("FAILED: mode == INDIRECT, %x != %x", master_mem[i], 1024 + 31 - (i%32));
+            first = master_mem[0];
+            for (i=1; i < mode_total - 1; i=i+1) begin
+              if ((master_mem[i] & 16'hfff) !== (first + i)%32 + 12'h400) begin
+                $display("FAILED: mode == INDIRECT, got = %x, expected = %x, i == %d", master_mem[i], (first+i)%32+12'h400, i);
                 $finish;
               end else if (i == 32 - 1) begin
                 second_test <= 1'b1;
@@ -261,7 +260,7 @@ module TB_value_storage();
             $display("wbm: indirect start ack");
 `endif
                 end else begin
-                  if (wb_dat_o == 16'hffff) begin
+                  if (wb_dat_o[15]) begin
                     mode_total <= wbm_progress;
                     stream_done <= 1'b1;
                     wbm_state <= `STATE_COMMAND;
@@ -272,6 +271,10 @@ module TB_value_storage();
                     master_mem[wbm_progress - 1] <= wb_dat_o;
                     wbm_progress <= wbm_progress + 1;
                     wbm_state <= `STATE_COMMAND;
+                    if (wbm_progress > `RAM_HIGH) begin
+                      $display("FAILED: buffer too long, end expected");
+                      $finish;
+                    end
 `ifdef DESPERATE_DEBUG
                     $display("wbm: got read, data = %x", wb_dat_o);
 `endif
@@ -297,116 +300,15 @@ module TB_value_storage();
   end 
 
   /************* Memory *****************/
-`ifdef MODELSIM
-  wire [`NUM_SRAM_TRIPS - 1:0] ram_sel = (1 << ram_waddr[12:10]);
-  wire [`NUM_SRAM_TRIPS - 1:0] ram_we_b = ~(ram_sel & {`NUM_SRAM_TRIPS{ram_wen}});
-
-  wire [(`NUM_SRAM_TRIPS) - 1:0] ram_rdata_arr [11:0];
-
-  genvar gen_i;
-  generate for (gen_i=0; gen_i < 12; gen_i=gen_i+1) begin : G0
-    assign ram_rdata[gen_i] = ram_rdata_arr[gen_i][ram_raddr[12:10]];
-  end endgenerate
-
-  /*
-  always @(ram_we_b) begin
-    if (ram_we_b != {`NUM_SRAM_TRIPS{1'b1}}) begin
-      $display("ram write: we_b %b, addr %x, data %x", ram_we_b, ram_waddr, ram_wdata);
-    end
-  end
-
-  reg [12:0] prev_raddr;
-  always @(posedge clk) begin
-    #1
-    prev_raddr <= ram_raddr;
-    if (ram_raddr != prev_raddr)
-    $display("ram read: addr %x, data %x", ram_raddr, ram_rdata);
-  end
-  */
-
-  RAM4K9 ram_0[`NUM_SRAM_TRIPS - 1:0](
-    .RESET(~reset),
-    .CLKA(clk),
-    .ADDRA11(1'b0), .ADDRA10(1'b0), .ADDRA9(ram_waddr[9]), .ADDRA8(ram_waddr[8]),
-    .ADDRA7(ram_waddr[7]), .ADDRA6(ram_waddr[6]), .ADDRA5(ram_waddr[5]), .ADDRA4(ram_waddr[4]),
-    .ADDRA3(ram_waddr[3]), .ADDRA2(ram_waddr[2]), .ADDRA1(ram_waddr[1]), .ADDRA0(ram_waddr[0]),
-    .DINA8(1'b0), .DINA7(1'b0), .DINA6(1'b0), .DINA5(1'b0),.DINA4(1'b0),
-    .DINA3(ram_wdata[3]), .DINA2(ram_wdata[2]), .DINA1(ram_wdata[1]), .DINA0(ram_wdata[0]),
-    .DOUTA8(), .DOUTA7(), .DOUTA6(), .DOUTA5(),.DOUTA4(), .DOUTA3(),.DOUTA2(),.DOUTA1(),.DOUTA0(),
-    .WIDTHA1(1'b1), .WIDTHA0(1'b0), .PIPEA(1'b0), .WMODEA(1'b0), .BLKA(1'b0), .WENA(ram_we_b),
-    .CLKB(clk),
-    .ADDRB11(1'b0), .ADDRB10(1'b0), .ADDRB9(ram_raddr[9]), .ADDRB8(ram_raddr[8]),
-    .ADDRB7(ram_raddr[7]), .ADDRB6(ram_raddr[6]), .ADDRB5(ram_raddr[5]), .ADDRB4(ram_raddr[4]),
-    .ADDRB3(ram_raddr[3]), .ADDRB2(ram_raddr[2]), .ADDRB1(ram_raddr[1]), .ADDRB0(ram_raddr[0]),
-    .DINB8(1'b0), .DINB7(1'b0), .DINB6(1'b0), .DINB5(1'b0),.DINB4(1'b0),
-    .DINB3(1'b0), .DINB2(1'b0), .DINB1(1'b0), .DINB0(1'b0),
-    .DOUTB8(), .DOUTB7(), .DOUTB6(), .DOUTB5(),.DOUTB4(),
-    .DOUTB3(ram_rdata_arr[3]),.DOUTB2(ram_rdata_arr[2]),.DOUTB1(ram_rdata_arr[1]),.DOUTB0(ram_rdata_arr[0]),
-    .WIDTHB1(1'b1), .WIDTHB0(1'b0), .PIPEB(1'b0), .WMODEB(1'b0), .BLKB(1'b0), .WENB(1'b1)
-
+  buffer buffer_inst(
+    .clk       (clk),
+    .reset     (reset),
+    .ram_raddr (ram_raddr),
+    .ram_waddr (ram_waddr),
+    .ram_rdata (ram_rdata),
+    .ram_wdata (ram_wdata),
+    .ram_wen   (ram_wen)
   );
-  RAM4K9 ram_1[`NUM_SRAM_TRIPS - 1:0](
-    .RESET(~reset),
-    .CLKA(clk),
-    .ADDRA11(1'b0), .ADDRA10(1'b0), .ADDRA9(ram_waddr[9]), .ADDRA8(ram_waddr[8]),
-    .ADDRA7(ram_waddr[7]), .ADDRA6(ram_waddr[6]), .ADDRA5(ram_waddr[5]), .ADDRA4(ram_waddr[4]),
-    .ADDRA3(ram_waddr[3]), .ADDRA2(ram_waddr[2]), .ADDRA1(ram_waddr[1]), .ADDRA0(ram_waddr[0]),
-    .DINA8(1'b0), .DINA7(1'b0), .DINA6(1'b0), .DINA5(1'b0),.DINA4(1'b0),
-    .DINA3(ram_wdata[7]), .DINA2(ram_wdata[6]), .DINA1(ram_wdata[5]), .DINA0(ram_wdata[4]),
-    .DOUTA8(), .DOUTA7(), .DOUTA6(), .DOUTA5(),.DOUTA4(), .DOUTA3(),.DOUTA2(),.DOUTA1(),.DOUTA0(),
-    .WIDTHA1(1'b1), .WIDTHA0(1'b0), .PIPEA(1'b0), .WMODEA(1'b0), .BLKA(1'b0), .WENA(ram_we_b),
-    .CLKB(clk),
-    .ADDRB11(1'b0), .ADDRB10(1'b0), .ADDRB9(ram_raddr[9]), .ADDRB8(ram_raddr[8]),
-    .ADDRB7(ram_raddr[7]), .ADDRB6(ram_raddr[6]), .ADDRB5(ram_raddr[5]), .ADDRB4(ram_raddr[4]),
-    .ADDRB3(ram_raddr[3]), .ADDRB2(ram_raddr[2]), .ADDRB1(ram_raddr[1]), .ADDRB0(ram_raddr[0]),
-    .DINB8(1'b0), .DINB7(1'b0), .DINB6(1'b0), .DINB5(1'b0),.DINB4(1'b0),
-    .DINB3(1'b0), .DINB2(1'b0), .DINB1(1'b0), .DINB0(1'b0),
-    .DOUTB8(), .DOUTB7(), .DOUTB6(), .DOUTB5(),.DOUTB4(),
-    .DOUTB3(ram_rdata_arr[7]),.DOUTB2(ram_rdata_arr[6]),.DOUTB1(ram_rdata_arr[5]),.DOUTB0(ram_rdata_arr[4]),
-    .WIDTHB1(1'b1), .WIDTHB0(1'b0), .PIPEB(1'b0), .WMODEB(1'b0), .BLKB(1'b0), .WENB(1'b1)
-  );
-
-  RAM4K9 ram_2[`NUM_SRAM_TRIPS - 1:0](
-    .RESET(~reset),
-    .CLKA(clk),
-    .ADDRA11(1'b0), .ADDRA10(1'b0), .ADDRA9(ram_waddr[9]), .ADDRA8(ram_waddr[8]),
-    .ADDRA7(ram_waddr[7]), .ADDRA6(ram_waddr[6]), .ADDRA5(ram_waddr[5]), .ADDRA4(ram_waddr[4]),
-    .ADDRA3(ram_waddr[3]), .ADDRA2(ram_waddr[2]), .ADDRA1(ram_waddr[1]), .ADDRA0(ram_waddr[0]),
-    .DINA8(1'b0), .DINA7(1'b0), .DINA6(1'b0), .DINA5(1'b0),.DINA4(1'b0),
-    .DINA3(ram_wdata[11]), .DINA2(ram_wdata[10]), .DINA1(ram_wdata[9]), .DINA0(ram_wdata[8]),
-    .DOUTA8(), .DOUTA7(), .DOUTA6(), .DOUTA5(),.DOUTA4(), .DOUTA3(),.DOUTA2(),.DOUTA1(),.DOUTA0(),
-    .WIDTHA1(1'b1), .WIDTHA0(1'b0), .PIPEA(1'b0), .WMODEA(1'b0), .BLKA(1'b0), .WENA(ram_we_b),
-    .CLKB(clk),
-    .ADDRB11(1'b0), .ADDRB10(1'b0), .ADDRB9(ram_raddr[9]), .ADDRB8(ram_raddr[8]),
-    .ADDRB7(ram_raddr[7]), .ADDRB6(ram_raddr[6]), .ADDRB5(ram_raddr[5]), .ADDRB4(ram_raddr[4]),
-    .ADDRB3(ram_raddr[3]), .ADDRB2(ram_raddr[2]), .ADDRB1(ram_raddr[1]), .ADDRB0(ram_raddr[0]),
-    .DINB8(1'b0), .DINB7(1'b0), .DINB6(1'b0), .DINB5(1'b0),.DINB4(1'b0),
-    .DINB3(1'b0), .DINB2(1'b0), .DINB1(1'b0), .DINB0(1'b0),
-    .DOUTB8(), .DOUTB7(), .DOUTB6(), .DOUTB5(),.DOUTB4(),
-    .DOUTB3(ram_rdata_arr[11]),.DOUTB2(ram_rdata_arr[10]),.DOUTB1(ram_rdata_arr[9]),.DOUTB0(ram_rdata_arr[8]),
-    .WIDTHB1(1'b1), .WIDTHB0(1'b0), .PIPEB(1'b0), .WMODEB(1'b0), .BLKB(1'b0), .WENB(1'b1)
-  );
-`else
-
-  reg [12:0] ram_rdata_reg;
-  assign ram_rdata = ram_rdata_reg;
-  reg [11:0] ram_mem [8*1024 - 1:0];
-
-  always @(posedge clk) begin
-    if (reset) begin
-    end else begin
-      if (ram_wen) begin
-        ram_mem[ram_waddr] <= ram_wdata;
-   //     $display("ram_write: a = %x, d = %x", ram_waddr, ram_wdata);
-      end
-      ram_rdata_reg <= ram_mem[ram_raddr];
-    end
-  end
-
-  always @(ram_raddr) begin
- //   $display("ram_read: a = %x, d = %x", ram_raddr, ram_mem[ram_raddr]);
-  end
-`endif
 
   
 endmodule

@@ -14,7 +14,7 @@ SYNTH_COMMANDS=impl -add synthesis -type fpga;\
                set_option -frequency $(SYNTH_FREQ);\
                set_option -run_prop_extract 1;\
                set_option -fanout_limit 12;\
-               set_option -globalthreshold 50;\
+               set_option -globalthreshold 500;\
                set_option -maxfan_hard 0;\
                set_option -disable_io_insertion 0;\
                set_option -retiming 0;\

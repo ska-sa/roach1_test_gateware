@@ -12,7 +12,7 @@ module adc_controller(
     ADC_START, ADC_CHNUM, ADC_CALIBRATE, ADC_DATAVALID, ADC_RESULT, ADC_BUSY, ADC_SAMPLE,
     current_stb, temp_stb, fast_mode
   );
-  parameter DEFAULT_SAMPLE_AVERAGING = 3'b101;
+  parameter DEFAULT_SAMPLE_AVERAGING = 3'b010;
 
   reg WTF_local, WTF_auto;
   wire WTF = WTF_local || WTF_auto;
