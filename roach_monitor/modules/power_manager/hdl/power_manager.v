@@ -73,6 +73,7 @@ module power_manager(
 
   reg  watchdog_overflow; //the watchdog timer was not reset and overflowed
   reg  chs_powerdown; //the chs powerdown was acknowledged
+  wire chs_reset_posedge;
 
   reg  wb_powerdown_strb; //wishbone master issues a shutdown command
   reg  wb_powerup_strb; //wishbone master issues a shutdown command
@@ -175,7 +176,7 @@ module power_manager(
           end
         end
         STATE_POWERED_UP: begin
-          if (wb_reset_strb || chs_reset) begin //lowest priority
+          if (wb_reset_strb || chs_reset_posedge) begin //lowest priority
             power_state       <= STATE_POWERED_DOWN;
             soft_reset        <= 1'b1;
           end
@@ -209,6 +210,9 @@ module power_manager(
             power_state    <= STATE_POWERED_DOWN;
           end
         end
+        default: begin
+          power_state <= STATE_NO_POWER;
+        end
       endcase
     end
   end
@@ -230,9 +234,7 @@ module power_manager(
               pass <= 1'b1
               else fail <= 1'b1
            */
-            pre_check_pass <= 1'b1;
-
-
+          pre_check_pass <= 1'b1;
         end
       end
     end
@@ -283,6 +285,7 @@ module power_manager(
     end
   end
 
+
   /************* Chassis Powerdown Control *********/
   reg chs_powerdown_pending;
   reg chs_powerdown_ack;
@@ -304,6 +307,16 @@ module power_manager(
       end
     end
   end
+
+  reg chs_reset_z;
+  always @(posedge wb_clk_i) begin
+    if (wb_rst_i) begin
+      chs_reset_z <= 0;
+    end else begin
+      chs_reset_z <= chs_reset;
+    end
+  end
+  assign chs_reset_posedge = chs_reset && !chs_reset_z;
   /************* Watchdog Timer Control *********/
 
   reg [35:0] watchdog_timer;

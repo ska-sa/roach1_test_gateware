@@ -35,19 +35,19 @@ module sequencer(
   assign power_up_done   = state == STATE_POWERED_UP;
   assign power_down_done = state == STATE_POWERED_DOWN;
 
-  assign ATX_PS_ON_N    = reset || state == STATE_POWERED_DOWN ? 1'b1 : 1'b0;
-  assign TRACK_2V5      = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
-  assign INHIBIT_2V5    = reset || state == STATE_POWERED_DOWN ? 1'b1 : 1'b0;
-  assign INHIBIT_1V8    = reset || state == STATE_POWERED_DOWN ? 1'b1 : 1'b0;
-  assign INHIBIT_1V5    = reset || state == STATE_POWERED_DOWN ? 1'b1 : 1'b0;
-  assign INHIBIT_1V2    = reset || state == STATE_POWERED_DOWN ? 1'b1 : 1'b0;
-  assign INHIBIT_1V0    = reset || state == STATE_POWERED_DOWN ? 1'b1 : 1'b0;
-  assign MGT_AVCC_EN    = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
-  assign MGT_AVTTX_EN   = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
-  assign MGT_AVCCPLL_EN = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
-  assign G12V_EN        = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
-  assign G5V_EN         = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
-  assign G3V3_EN        = reset || state == STATE_POWERED_DOWN ? 1'b0 : 1'b1;
+  assign ATX_PS_ON_N    = (reset || state == STATE_POWERED_DOWN) ? 1'b1 : 1'b0;
+  assign TRACK_2V5      = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
+  assign INHIBIT_2V5    = (reset || state == STATE_POWERED_DOWN) ? 1'b1 : 1'b0;
+  assign INHIBIT_1V8    = (reset || state == STATE_POWERED_DOWN) ? 1'b1 : 1'b0;
+  assign INHIBIT_1V5    = (reset || state == STATE_POWERED_DOWN) ? 1'b1 : 1'b0;
+  assign INHIBIT_1V2    = (reset || state == STATE_POWERED_DOWN) ? 1'b1 : 1'b0;
+  assign INHIBIT_1V0    = (reset || state == STATE_POWERED_DOWN) ? 1'b1 : 1'b0;
+  assign MGT_AVCC_EN    = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
+  assign MGT_AVTTX_EN   = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
+  assign MGT_AVCCPLL_EN = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
+  assign G12V_EN        = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
+  assign G5V_EN         = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
+  assign G3V3_EN        = (reset || state == STATE_POWERED_DOWN) ? 1'b0 : 1'b1;
 
   /******* Power State Machine *******/
   
