@@ -1,0 +1,4 @@
+system.ucf: fixed adc control line error
+--This line, and those below, will be ignored--
+
+M    system.ucf
