@@ -1,0 +1,38 @@
+#################### Build Parameters ###########################
+#
+#xilinx apps
+
+ISE_VER=10.1
+
+XST=xst-$(ISE_VER)
+
+#XST script commands
+XST_ARGS=run, -ifn $(PROJECT).prj,\
+              -ifmt mixed,\
+              -ofn $(PROJECT),\
+              -ofmt NGC,\
+              -top  $(TOPLEVEL_MODULE),\
+              -p $(PARTNUM),\
+              -opt_mode Area,\
+              -opt_level 2,\
+              -iuc NO,\
+              -keep_hierarchy NO,\
+              -rtlview Yes,\
+              -hierarchy_separator /,\
+              -bus_delimiter <>,\
+              -case maintain,\
+              -verilog2001 YES,\
+              -fsm_extract YES -fsm_encoding Auto,\
+              -safe_implementation No,\
+              -mux_extract YES,\
+              -resource_sharing YES,\
+              -iobuf YES,\
+              -equivalent_register_removal YES,\
+              -vlgincdir $(VINC)
+
+
+XST_SCRIPT=$(PROJECT).xst
+
+XST_PROJ=$(PROJECT).prj
+
+LANGUAGE=usenglish
