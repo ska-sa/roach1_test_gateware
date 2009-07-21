@@ -1,0 +1,17 @@
+#################### Build Parameters ###########################
+#
+#xilinx apps
+
+ISE_VER=10.1
+
+NGDBUILD=ngdbuild-$(ISE_VER)
+CPLDFIT=cpldfit-$(ISE_VER)
+HPREP6=hprep6-$(ISE_VER)
+TAEGINE=taengine-$(ISE_VER)
+
+######### Command Flags ###########
+NGDBUILD_FLAGS=-aul
+CPLDFIT_FLAGS=
+HPREP6_FLAGS=
+#TAENGINE_FLAGS=-detail
+TAENGINE_FLAGS=
