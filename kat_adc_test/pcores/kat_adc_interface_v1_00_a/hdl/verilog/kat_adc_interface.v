@@ -88,6 +88,7 @@ module kat_adc_interface(
     .IB (adc_overrange_n),
     .O  (adc_overrange_ibufds)
   );
+  
   wire adc_overrange_rise;
   wire adc_overrange_fall;
 
@@ -167,7 +168,10 @@ module kat_adc_interface(
   wire [7:0] adc_dq_d;
   wire [7:0] adc_dq;
   
-  IBUFDS ibufds_adc_data[31:0](
+  IBUFDS #(
+    .IOSTANDARD ("LVDS_25"),
+    .DIFF_TERM  ("TRUE")
+  ) ibufds_adc_data[31:0] (
     .I  ({adc_di_d_p, adc_di_p, adc_dq_d_p, adc_dq_p}),
     .IB ({adc_di_d_n, adc_di_n, adc_dq_d_n, adc_dq_n}),
     .O  ({adc_di_d, adc_di, adc_dq_d, adc_dq})
@@ -185,18 +189,18 @@ module kat_adc_interface(
 
   IDDR #( 
     .DDR_CLK_EDGE ("SAME_EDGE_PIPELINED"),
-    .INIT_Q1      (0),
-    .INIT_Q2      (0),
-    .SRTYPE       ("SYNC")
+    .INIT_Q1      (1'b0),
+    .INIT_Q2      (1'b0)
   ) iddr_data[31:0] (
     .Q1 ({adc_di_d_rise, adc_di_rise, adc_dq_d_rise, adc_dq_rise}),
     .Q2 ({adc_di_d_fall, adc_di_fall, adc_dq_d_fall, adc_dq_fall}),
     .C  (adc_clk),
-    .CE (1),
+    .CE (1'b1),
     .D  ({adc_di_d, adc_di, adc_dq_d, adc_dq}),
-    .R  (0),
-    .S  (0)
+    .R  (1'b0),
+    .S  (1'b0)
   );
+
 
   /*************** ADC Clock Domain FIFO *****************/
 
@@ -205,17 +209,28 @@ module kat_adc_interface(
 
   wire [69:0] fifo_data_out;
   wire fifo_empty;
+
+  reg fifo_rd_en;
+  
   adc_async_fifo adc_async_fifo_inst(
     .rst    (dcm_reset),
     .din    (fifo_data_in),
     .wr_clk (adc_clk),
     .wr_en  (1'b1),
     .rd_clk (ctrl_clk_in),
-    .rd_en  (1'b1),
+    .rd_en  (fifo_rd_en),
     .dout   (fifo_data_out), 
     .empty  (fifo_empty),
     .full   ()
   );
+
+  always @(posedge adc_clk) begin
+    if (dcm_reset) begin
+      fifo_rd_en <= 1'b0;
+    end else begin
+      fifo_rd_en <= !fifo_empty;
+    end
+  end
 
   //synthesis attribute box_type adc_async_fifo_inst "black_box" 
 

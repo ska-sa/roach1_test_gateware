@@ -60,12 +60,6 @@ module opb_katadccontroller(
   wire        adc0_reset;
   wire        adc1_reset;
 
-  wire        adc0_dcm_psen;
-  wire        adc0_dcm_psincdec;
-
-  wire        adc1_dcm_psen;
-  wire        adc1_dcm_psincdec;
-
   /************ OPB Logic ***************/
 
   wire addr_match = OPB_ABus >= C_BASEADDR && OPB_ABus <= C_HIGHADDR;

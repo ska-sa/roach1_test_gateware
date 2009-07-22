@@ -156,10 +156,6 @@ BEGIN kat_adc
  PORT adc1_sync3 = kat_adc_adc1_user_sync3
  PORT ctrl0 = kat_adc_ctrl0_user_data_out
  PORT ctrl1 = kat_adc_ctrl1_user_data_out
- PORT overrange_i1 = kat_adc_overflow_i1_user_data_in
- PORT overrange_q1 = kat_adc_overflow_q1_user_data_in
- PORT overrange_i0 = kat_adc_overrange_i0_user_data_in
- PORT overrange_q0 = kat_adc_overrange_q0_user_data_in
  PORT qdr0_ack = kat_adc_qdr0_ack
  PORT qdr0_cal_fail = kat_adc_qdr0_cal_fail
  PORT qdr0_din = kat_adc_qdr0_data_out
@@ -180,8 +176,6 @@ BEGIN kat_adc
  PORT qdr1_wr_en = kat_adc_qdr1_wr_en
  PORT status0 = kat_adc_status0_user_data_in
  PORT status1 = kat_adc_status1_user_data_in
- PORT sync_count0 = kat_adc_sync_count0_user_data_in
- PORT sync_count1 = kat_adc_sync_count1_user_data_in
  PORT ten_gbe0_led_rx = kat_adc_ten_gbe0_led_rx
  PORT ten_gbe0_led_tx = kat_adc_ten_gbe0_led_tx
  PORT ten_gbe0_led_up = kat_adc_ten_gbe0_led_up
@@ -485,58 +479,10 @@ BEGIN opb_register_ppc2simulink
  PORT user_clk = adc0_clk
 END
 
-# kat_adc/overflow_i1
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_overflow_i1
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000200
- PARAMETER C_HIGHADDR = 0x010002FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_overflow_i1_user_data_in
- PORT user_clk = adc0_clk
-END
-
-# kat_adc/overflow_q1
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_overflow_q1
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000300
- PARAMETER C_HIGHADDR = 0x010003FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_overflow_q1_user_data_in
- PORT user_clk = adc0_clk
-END
-
-# kat_adc/overrange_i0
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_overrange_i0
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000400
- PARAMETER C_HIGHADDR = 0x010004FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_overrange_i0_user_data_in
- PORT user_clk = adc0_clk
-END
-
-# kat_adc/overrange_q0
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_overrange_q0
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000500
- PARAMETER C_HIGHADDR = 0x010005FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_overrange_q0_user_data_in
- PORT user_clk = adc0_clk
-END
-
 # kat_adc/qdr0
 BEGIN qdr_controller
  PARAMETER INSTANCE = qdr0_controller
- PARAMETER CLK_FREQ = 350
+ PARAMETER CLK_FREQ = 300
  PARAMETER HW_VER   = 1.00.a
  PORT clk0    = adc0_clk
  PORT clk180  = adc0_clk180
@@ -592,12 +538,10 @@ BEGIN opb_qdr_sniffer
  PORT slave_ack     = kat_adc_qdr0_ack
 END
 
-
-
 # kat_adc/qdr1
 BEGIN qdr_controller
  PARAMETER INSTANCE = qdr1_controller
- PARAMETER CLK_FREQ = 350
+ PARAMETER CLK_FREQ = 300
  PARAMETER HW_VER   = 1.00.a
  PORT clk0    = adc0_clk
  PORT clk180  = adc0_clk180
@@ -676,30 +620,6 @@ BEGIN opb_register_simulink2ppc
  BUS_INTERFACE SOPB = opb0
  PORT OPB_Clk = epb_clk
  PORT user_data_in = kat_adc_status1_user_data_in
- PORT user_clk = adc0_clk
-END
-
-# kat_adc/sync_count0
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_sync_count0
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000800
- PARAMETER C_HIGHADDR = 0x010008FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_sync_count0_user_data_in
- PORT user_clk = adc0_clk
-END
-
-# kat_adc/sync_count1
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_sync_count1
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000900
- PARAMETER C_HIGHADDR = 0x010009FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_sync_count1_user_data_in
  PORT user_clk = adc0_clk
 END
 
