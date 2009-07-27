@@ -29,8 +29,8 @@ NET "reset_debug_n"    IOSTANDARD = LVCMOS33 | LOC = "14";
 NET "ppc_reset_n"      IOSTANDARD = LVCMOS33 | LOC = "15";
 NET "por_force_n"      IOSTANDARD = LVCMOS33 | LOC = "103" | PULLUP;
 
-NET "ppc_ddr2_reset_n" IOSTANDARD = LVCMOS33 | LOC = "139";
-NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "138";
+NET "ppc_ddr2_reset_n" IOSTANDARD = LVCMOS33 | LOC = "138";
+NET "geth_reset_n"     IOSTANDARD = LVCMOS33 | LOC = "139";
 
 ##################### MMC Signals #######################
 
