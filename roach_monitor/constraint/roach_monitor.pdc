@@ -151,5 +151,24 @@ set_io FAN3_CONTROL -pinname L14 -fixed yes -iostd LVTTL -SLEW Low
 set_io DEBUG_SERIAL_IN  -pinname G16 -fixed yes -iostd LVTTL
 set_io DEBUG_SERIAL_OUT -pinname H16 -fixed yes -iostd LVTTL -SLEW Low 
 
+#
+# GPIO
+#
+
+set_io GPIO_OE0  -pinname F12 -fixed yes -iostd LVTTL
+set_io GPIO_OE1  -pinname H12 -fixed yes -iostd LVTTL
+set_io GPIO\[7\]   -pinname A11 -fixed yes -iostd LVTTL
+set_io GPIO\[6\]   -pinname A14 -fixed yes -iostd LVTTL
+set_io GPIO\[5\]   -pinname C10 -fixed yes -iostd LVTTL
+set_io GPIO\[4\]   -pinname F9  -fixed yes -iostd LVTTL
+set_io GPIO\[3\]   -pinname E9  -fixed yes -iostd LVTTL
+set_io GPIO\[2\]   -pinname C9  -fixed yes -iostd LVTTL
+set_io GPIO\[1\]   -pinname D10 -fixed yes -iostd LVTTL
+set_io GPIO\[0\]   -pinname F10 -fixed yes -iostd LVTTL
+set_io GPIO_CC1    -pinname D11 -fixed yes -iostd LVTTL
+set_io GPIO_CC0    -pinname E11 -fixed yes -iostd LVTTL
+
+
 # Fix location of the Flash Memory
 set_location flashmem_inst/NVM_inst -fixed yes 164 1
+

@@ -31,7 +31,13 @@ module toplevel(
     /* Analogue Block Interfaces*/
     AG, AV, AC, AT, ATRET,
     /* Fixed Fusion Signals */
-    XTLCLK, PUB, VAREF
+    XTLCLK, PUB, VAREF,
+    /* GPIO */
+    GPIO_OE1,
+    GPIO_OE0,
+    GPIO,
+    GPIO_CC1,
+    GPIO_CC0
   );
   output ATX_PS_ON_N;
   input  ATX_PWR_OK;
@@ -73,7 +79,11 @@ module toplevel(
   input  XTLCLK, PUB;
   inout  VAREF;
 
-
+  output GPIO_OE1;
+  output GPIO_OE0;
+  inout  [7:0] GPIO;
+  input  GPIO_CC1;
+  input  GPIO_CC0;
 
   /*************** Global Nets ***************/
 
@@ -102,15 +112,16 @@ module toplevel(
   wire hard_reset_int;
   reset_block #(
     .DELAY(0),
-    .WIDTH(32'h400_0000)
+    .WIDTH(32'h20_0000)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(1'b0),
+    .async_reset_i(!CHS_RESET_N),
     .reset_i(reset_xport),
     .reset_o(hard_reset_int)
   );
   assign XPORT_RESET_N = 1'b1;
-  assign hard_reset = hard_reset_int || !CHS_RESET_N;
+  assign hard_reset = hard_reset_int;
+  //assign hard_reset = hard_reset_int || !CHS_RESET_N;
 
   /* Debounce chassis switches */
   wire chs_powerdown;
@@ -771,6 +782,9 @@ module toplevel(
     .FM_BUSY(FM_BUSY), .FM_STATUS(FM_STATUS), .FM_PAGESTATUS(FM_PAGESTATUS)
   );
 
+  /******************* GPIO ***********************/
+  assign GPIO_OE1 = 1'b1;
+  assign GPIO_OE0 = 1'b1;
+  assign GPIO       = {4'b1010, 4'b0011};
+
 endmodule
-
-
