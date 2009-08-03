@@ -63,8 +63,7 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./modules/wbs_arbiter/hdl/timeout.v \
     ./modules/wbs_arbiter/hdl/wbs_arbiter.v \
     ./include/parameters.v \
-    ./include/memlayout.v \
-    ./include/build_parameters.v
+    ./include/memlayout.v
 
 FLASHROM_F = $(PROJECT).ufc
 CHEADER_F  = $(PROJECT).h
