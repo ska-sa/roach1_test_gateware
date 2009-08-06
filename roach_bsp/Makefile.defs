@@ -7,7 +7,7 @@
 PROJECT=roach_bsp
 # module ID -> 16 bit hex
 BOARD_ID=57005 
-REV_MAJOR=4
+REV_MAJOR=5
 REV_MINOR=0
 RCS_UPTODATE=0
 REV_RCS=0
@@ -34,14 +34,14 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/xaui_phy/hdl/xaui_phy.v \
     ./modules/xaui_phy/hdl/xaui_v7_2.v \
     ./modules/xaui_phy/hdl/deskew_state.v \
-		./modules/xaui_phy/hdl/fix_term.v \
-		./modules/xaui_phy/hdl/pcs_deskew.v \
-		./modules/xaui_phy/hdl/pcs_rx.v \
-		./modules/xaui_phy/hdl/pcs_sync.v \
-		./modules/xaui_phy/hdl/pcs_tx.v \
-		./modules/xaui_phy/hdl/sync_state.v \
-		./modules/xaui_phy/hdl/tx_state.v \
-		./modules/xaui_phy/hdl/xaui_kat.v \
+    ./modules/xaui_phy/hdl/fix_term.v \
+    ./modules/xaui_phy/hdl/pcs_deskew.v \
+    ./modules/xaui_phy/hdl/pcs_rx.v \
+    ./modules/xaui_phy/hdl/pcs_sync.v \
+    ./modules/xaui_phy/hdl/pcs_tx.v \
+    ./modules/xaui_phy/hdl/sync_state.v \
+    ./modules/xaui_phy/hdl/tx_state.v \
+    ./modules/xaui_phy/hdl/xaui_kat.v \
     ./modules/ten_gig_eth/hdl/ten_gb_eth.vhd \
     ./modules/ten_gig_eth/hdl/ten_gig_eth_mac_UCB.vhd \
     ./modules/ten_gig_eth/hdl/wb_attach.v \
@@ -107,9 +107,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
     ./modules/qdr_cpu_interface/hdl/qdr_cpu_interface.v \
     ./modules/qdr_cpu_interface/hdl/qdr_wb_attach.v \
     ./modules/multiport_qdr/hdl/multiport_qdr.v \
-    ./modules/iadc_controller/hdl/iadc_controller.v \
-    ./modules/iadc_controller/hdl/fifo_72.v \
-    ./modules/iadc_infrastructure/hdl/iadc_infrastructure.v \
+    ./modules/gpio_test/hdl/gpio_test.v \
     ./include/parameters.v \
     ./include/mem_layout.v \
     ./support/roach_app.v
@@ -118,13 +116,13 @@ SRC=./modules/toplevel/hdl/toplevel.v \
 NETLIST_DIRS=./modules/xaui_phy/netlist \
              ./modules/ten_gig_eth/netlist \
              ./modules/iadc_controller/netlist \
-	           ./modules/roach_app/netlist
+	     ./modules/roach_app/netlist
 
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel
 # Logic Device Part Number
 PARTNUM=5vsx95t-ff1136-1
-#PARTNUM=5vsx95t-ff1136-1
+#PARTNUM=5vlx110t-ff1136-1
 
 # Verilog Include Directory
 VINC=include

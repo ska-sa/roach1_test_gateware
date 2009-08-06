@@ -422,6 +422,7 @@ architecture ten_gb_eth_arch of ten_gb_eth is
 	signal tx_cpu_got_ack                          : std_logic;
 	signal tx_arp_cache_address                    : std_logic_vector( 7 downto 0);
 	signal tx_arp_cache_read_data                  : std_logic_vector(47 downto 0);
+	signal tx_arp_cache_read_data_z                : std_logic_vector(47 downto 0);
 	signal tx_cpu_buffer_sizes                     : size_array := (0=> X"00", 1=> X"00");
 	signal tx_cpu_buffer_size                      : std_logic_vector( 7 downto 0) := (others => '0');
 	signal tx_cpu_buffer_current                   : std_logic;
@@ -620,6 +621,8 @@ tx_arp_cache: arp_cache
 		web       => "0",
 		doutb     => tx_arp_cache_read_data
 	);
+
+tx_arp_cache_read_data_z <= tx_arp_cache_read_data;
 
 -- *
 -- * USER side
@@ -826,9 +829,9 @@ tx_buffer_read_address_minustwo <= tx_buffer_read_address - 2;
 -- selects what should be sent to the mac depending on the controller state
 with tx_state select mac_tx_data <= 
 		local_mac(39 downto 32) & local_mac(47 downto 40) &
-                tx_arp_cache_read_data(7 downto 0) & tx_arp_cache_read_data(15 downto 8) &
-                tx_arp_cache_read_data(23 downto 16) & tx_arp_cache_read_data(31 downto 24) &
-                tx_arp_cache_read_data(39 downto 32) & tx_arp_cache_read_data(47 downto 40)
+                tx_arp_cache_read_data_z(7 downto 0) & tx_arp_cache_read_data_z(15 downto 8) &
+                tx_arp_cache_read_data_z(23 downto 16) & tx_arp_cache_read_data_z(31 downto 24) &
+                tx_arp_cache_read_data_z(39 downto 32) & tx_arp_cache_read_data_z(47 downto 40)
                        when SEND_HDR_WORD_1,
 		X"00" & X"45" &
                 X"00" & X"08" &

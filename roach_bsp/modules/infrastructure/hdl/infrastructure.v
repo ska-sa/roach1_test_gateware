@@ -9,10 +9,6 @@ module infrastructure(
     aux_clk_0,
     aux_clk1_n, aux_clk1_p,
     aux_clk_1,
-    adc_clk_0_n, adc_clk_0_p,
-    adc_clk_0,
-    adc_clk_1_n, adc_clk_1_p,
-    adc_clk_1,
     idelay_rst, idelay_rdy
   );
   input  sys_clk_n, sys_clk_p;
@@ -25,11 +21,6 @@ module infrastructure(
   output aux_clk_0;
   input  aux_clk1_n, aux_clk1_p;
   output aux_clk_1;
-
-  input  adc_clk_0_n, adc_clk_0_p;
-  output adc_clk_0;
-  input  adc_clk_1_n, adc_clk_1_p;
-  output adc_clk_1;
 
   input  idelay_rst;
   output idelay_rdy;
@@ -48,10 +39,10 @@ module infrastructure(
   IBUFGDS #(
     .IOSTANDARD("LVDS_25"),
     .DIFF_TERM("TRUE")
-  ) ibufgd_arr [4:0](
-    .I ({sys_clk_p, aux_clk1_p, aux_clk0_p, adc_clk_0_p, adc_clk_1_p}),
-    .IB({sys_clk_n, aux_clk1_n, aux_clk0_n, adc_clk_0_n, adc_clk_1_n}),
-    .O ({sys_clk,   aux_clk_1,  aux_clk_0,  adc_clk_0,   adc_clk_1})
+  ) ibufgd_arr [2:0](
+    .I ({sys_clk_p, aux_clk1_p, aux_clk0_p}),
+    .IB({sys_clk_n, aux_clk1_n, aux_clk0_n}),
+    .O ({sys_clk,   aux_clk_1,  aux_clk_0})
   );
 
   wire dly_clk_int;

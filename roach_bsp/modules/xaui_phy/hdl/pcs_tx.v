@@ -47,7 +47,7 @@ module pcs_tx(
                           txcharisk_o_1[1], txcharisk_o_0[1],txcharisk_o_1[0], txcharisk_o_0[0]};
 
   tx_state tx_state_0(
-    .reset(reset), .a_cnt(a_cnt_0), .code_sel(code_sel_0),
+    .reset(1'b0), .a_cnt(a_cnt_0), .code_sel(code_sel_0),
 
     .current_state(state), .next_state(state_int_0),
 
@@ -63,7 +63,7 @@ module pcs_tx(
   );
 
   tx_state tx_state_1(
-    .reset(reset), .a_cnt(a_cnt_1), .code_sel(code_sel_1),
+    .reset(1'b0), .a_cnt(a_cnt_1), .code_sel(code_sel_1),
 
     .current_state(state_int_0), .next_state(state_int_1),
 
@@ -78,10 +78,13 @@ module pcs_tx(
     .link_status_event(1'b0), .link_status(32'b0)
   );
 
+  localparam SEND_RANDOM_R = 4;
   always @(posedge clk) begin
-    state    <= state_int_1;
     if (reset) begin
       q_det <= 1'b0;
+      state  <= SEND_RANDOM_R;
+    end else begin
+      state    <= state_int_1;
     end
     next_ifg <= next_ifg_int_1;
     q_det    <= q_det_int_1;

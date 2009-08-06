@@ -94,12 +94,12 @@ module toplevel(
   
   inout  [37:0] zdok0_dp_n;
   inout  [37:0] zdok0_dp_p;
-  input  zdok0_clk0_n, zdok0_clk0_p;
-  input  zdok0_clk1_n, zdok0_clk1_p;
+  inout  zdok0_clk0_n, zdok0_clk0_p;
+  inout  zdok0_clk1_n, zdok0_clk1_p;
   inout  [37:0] zdok1_dp_n;
   inout  [37:0] zdok1_dp_p;
-  input  zdok1_clk0_n, zdok1_clk0_p;
-  input  zdok1_clk1_n, zdok1_clk1_p;
+  inout  zdok1_clk0_n, zdok1_clk0_p;
+  inout  zdok1_clk1_n, zdok1_clk1_p;
 
   output [17:0] qdr0_d;
   input  [17:0] qdr0_q;
@@ -173,15 +173,12 @@ module toplevel(
   wire sys_clk, dly_clk, epb_clk, mgt_clk_0, mgt_clk_1, aux_clk_0, aux_clk_1;
   wire dram_clk;
   wire qdr_clk_0,  qdr_clk_1;  
-  wire adc0_clk, adc1_clk;
 
   // Ensure that the above nets are not synthesized away
   // synthesis attribute KEEP of sys_clk    is TRUE
   // synthesis attribute KEEP of mgt_clk_0  is TRUE
   // synthesis attribute KEEP of mgt_clk_1  is TRUE
   // synthesis attribute KEEP of epb_clk    is TRUE
-  // synthesis attribute KEEP of adc0_clk   is TRUE
-  // synthesis attribute KEEP of adc1_clk   is TRUE
 
   /* global system reset on sys_clk domain */
   wire sys_reset;  
@@ -216,14 +213,6 @@ module toplevel(
     .aux_clk1_n (aux_clk1_n),
     .aux_clk1_p (aux_clk1_p),
     .aux_clk_1  (aux_clk_1),
-
-    .adc_clk_0_n (zdok0_clk1_n),
-    .adc_clk_0_p (zdok0_clk1_p),
-    .adc_clk_0   (adc0_clk),
-
-    .adc_clk_1_n (zdok1_clk1_n),
-    .adc_clk_1_p (zdok1_clk1_p),
-    .adc_clk_1   (adc1_clk),
 
     .idelay_rst (sys_reset),
     .idelay_rdy (idelay_ready)
@@ -1756,302 +1745,42 @@ module toplevel(
   assign qdr1_rd_data  = {36*`QDR1_WIDTH_MULTIPLIER{1'b0}};
 `endif
 
-/********************* IADC0 *********************/
+  /********************* ZDOK *********************/
 
-  /* ADC0 Fabric interface */
-  wire [63:0] adc0_data;
-  wire  [3:0] adc0_sync;
-  wire  [3:0] adc0_outofrange;
+  /* ZDOK 0 */
 
-`ifdef ENABLE_IADC_0
-  /****** ADC external signals ******/
-  wire adc0_clk_n, adc0_clk_p;
-  wire adc0_sync_n, adc0_sync_p;
-  wire adc0_outofrange_i_n, adc0_outofrange_i_p, adc0_outofrange_q_n, adc0_outofrange_q_p;
-  wire [7:0] adc0_data_i_even_n;
-  wire [7:0] adc0_data_i_even_p;
-  wire [7:0] adc0_data_i_odd_n;
-  wire [7:0] adc0_data_i_odd_p;
-  wire [7:0] adc0_data_q_even_n;
-  wire [7:0] adc0_data_q_even_p;
-  wire [7:0] adc0_data_q_odd_n;
-  wire [7:0] adc0_data_q_odd_p;
-  wire adc0_ddrb_n, adc0_ddrb_p;
-  wire adc0_ctrl_clk, adc0_ctrl_data, adc0_ctrl_strobe_n, adc0_mode;
-
-  /* Assign ZDOK signals */
- // zdok0_clk0_n and zdok0_clk0_p unassigned
-
-  assign zdok0_dp_n[8]       = adc0_ctrl_clk;
-  assign zdok0_dp_n[9]       = adc0_ctrl_data;
-  assign zdok0_dp_p[9]       = adc0_ctrl_strobe_n;
-  assign zdok0_dp_p[8]       = adc0_mode;
-  assign adc0_outofrange_i_n = zdok0_dp_n[28];
-  assign adc0_outofrange_i_p = zdok0_dp_p[28];
-  assign adc0_outofrange_q_n = zdok0_dp_n[18];
-  assign adc0_outofrange_q_p = zdok0_dp_p[18];
-  assign zdok0_dp_n[19]      = adc0_ddrb_n;
-  assign zdok0_dp_p[19]      = adc0_ddrb_p;
-  assign adc0_sync_n         = zdok0_dp_n[37];
-  assign adc0_sync_p         = zdok0_dp_p[37];
-
-  assign adc0_data_i_even_n  = {zdok0_dp_n[36], zdok0_dp_n[34], zdok0_dp_n[32], zdok0_dp_n[30],
-                                zdok0_dp_n[27], zdok0_dp_n[25], zdok0_dp_n[23], zdok0_dp_n[21]};
-  assign adc0_data_i_even_p  = {zdok0_dp_p[36], zdok0_dp_p[34], zdok0_dp_p[32], zdok0_dp_p[30],
-                                zdok0_dp_p[27], zdok0_dp_p[25], zdok0_dp_p[23], zdok0_dp_p[21]};
-
-  assign adc0_data_i_odd_n   = {zdok0_dp_n[35], zdok0_dp_n[33], zdok0_dp_n[31], zdok0_dp_n[29],
-                                zdok0_dp_n[26], zdok0_dp_n[24], zdok0_dp_n[22], zdok0_dp_n[20]};
-  assign adc0_data_i_odd_p   = {zdok0_dp_p[35], zdok0_dp_p[33], zdok0_dp_p[31], zdok0_dp_p[29],
-                                zdok0_dp_p[26], zdok0_dp_p[24], zdok0_dp_p[22], zdok0_dp_p[20]};
-
-  assign adc0_data_q_even_n  = {zdok0_dp_n[10], zdok0_dp_n[12], zdok0_dp_n[14], zdok0_dp_n[16],
-                                zdok0_dp_n[0],  zdok0_dp_n[2],  zdok0_dp_n[4],  zdok0_dp_n[6]};
-  assign adc0_data_q_even_p  = {zdok0_dp_p[10], zdok0_dp_p[12], zdok0_dp_p[14], zdok0_dp_p[16],
-                                zdok0_dp_p[0],  zdok0_dp_p[2],  zdok0_dp_p[4],  zdok0_dp_p[6]};
-
-  assign adc0_data_q_odd_n   = {zdok0_dp_n[11], zdok0_dp_n[13], zdok0_dp_n[15], zdok0_dp_n[17],
-                                zdok0_dp_n[1],  zdok0_dp_n[3],  zdok0_dp_n[5],  zdok0_dp_n[7]};
-  assign adc0_data_q_odd_p   = {zdok0_dp_p[11], zdok0_dp_p[13], zdok0_dp_p[15], zdok0_dp_p[17],
-                                zdok0_dp_p[1],  zdok0_dp_p[3],  zdok0_dp_p[5],  zdok0_dp_p[7]};
-
-  /****** ADC internal signals ******/
-  wire adc0_clk_90;
-  wire adc0_ddrb;
-  wire adc0_dcm_reset;
-
-  wire adc0_ctrl_clk_int, adc0_ctrl_data_int, adc0_ctrl_strobe_n_int, adc0_mode_int;
-
-  iadc_infrastructure iadc_infrastructure_inst_0(
-    /* General Signals */
-    .reset     (sys_reset),
-    .clk_lock  (adc0_clk_lock),
-
-    /* External Signals */
-    .adc_clk           (adc0_clk),
-
-    .adc_sync_n        (adc0_sync_n),
-    .adc_sync_p        (adc0_sync_p),
-    .adc_outofrange_i_n(adc0_outofrange_i_n),
-    .adc_outofrange_i_p(adc0_outofrange_i_p),
-    .adc_outofrange_q_n(adc0_outofrange_q_n),
-    .adc_outofrange_q_p(adc0_outofrange_q_p),
-    .adc_data_i_even_n (adc0_data_i_even_n),
-    .adc_data_i_even_p (adc0_data_i_even_p),
-    .adc_data_i_odd_n  (adc0_data_i_odd_n),
-    .adc_data_i_odd_p  (adc0_data_i_odd_p),
-    .adc_data_q_even_n (adc0_data_q_even_n),
-    .adc_data_q_even_p (adc0_data_q_even_p),
-    .adc_data_q_odd_n  (adc0_data_q_odd_n),
-    .adc_data_q_odd_p  (adc0_data_q_odd_p),
-    .adc_ddrb_n        (adc0_ddrb_n),
-    .adc_ddrb_p        (adc0_ddrb_p),
-
-    /* ADC DDR signals */
-    .adc_clk_0      (adc0_clk_0),
-    .adc_clk_90     (adc0_clk_90),
-    .adc_sync       (adc0_sync),
-    .adc_outofrange (adc0_outofrange),
-    .adc_data       (adc0_data),
-    .adc_ddrb       (adc0_ddrb),
-
-    /* ADC SDR/Control signals */
-    .adc_dcm_reset         (adc0_dcm_reset),
-    .adc_ctrl_clk_buf      (adc0_ctrl_clk),
-    .adc_ctrl_data_buf     (adc0_ctrl_data),
-    .adc_ctrl_strobe_n_buf (adc0_ctrl_strobe_n),
-    .adc_mode_buf          (adc0_mode),
-    .adc_ctrl_clk          (adc0_ctrl_clk_int),
-    .adc_ctrl_data         (adc0_ctrl_data_int),
-    .adc_ctrl_strobe_n     (adc0_ctrl_strobe_n_int),
-    .adc_mode              (adc0_mode_int)
-  );
-
-  /*TODO: make buffer optional, pass through ADC signals */
-  iadc_controller #(
-    .ENABLE_DATA_BUFFER(1)
-  ) iadc_controller_inst_0 (
-    /* Wishbone Interface */
-    .wb_clk_i (wb_clk),
-    .wb_rst_i (sys_reset),
+  gpio_test #(
+    .GPIO_COUNT (80)
+  ) gpio_zdok0 (
     .wb_cyc_i (wb_cyc_o[ADC0_SLI]),
     .wb_stb_i (wb_stb_o[ADC0_SLI]),
     .wb_sel_i (wb_sel_o),
-    .wb_we_i  (wb_we_o),
+    .wb_we_i  (wb_we_o), 
     .wb_adr_i (wb_adr_o),
     .wb_dat_i (wb_dat_o),
     .wb_dat_o (wb_dat_i[16*(ADC0_SLI + 1) - 1: 16*ADC0_SLI]),
     .wb_ack_o (wb_ack_i[ADC0_SLI]),
-    /* ADC inputs */
-    .adc_clk_0      (adc0_clk_0),
-    .adc_data       (adc0_data),
-    .adc_sync       (adc0_sync),
-    .adc_outofrange (adc0_outofrange),
-
-    /* ADC config bits */
-    .adc_ctrl_clk      (adc0_ctrl_clk_int),
-    .adc_ctrl_data     (adc0_ctrl_data_int),
-    .adc_ctrl_strobe_n (adc0_ctrl_strobe_n_int),
-    .adc_mode          (adc0_mode_int),
-    .adc_ddrb          (adc0_ddrb),
-    .adc_dcm_reset     (adc0_dcm_reset)
+    .gpio     ({zdok0_dp_n, zdok0_dp_p, zdok0_clk0_n, zdok0_clk0_p, zdok0_clk1_n, zdok0_clk1_p})
   );
 
-`else
-  assign zdok0_dp_n = {38{1'bz}};
-  assign zdok0_dp_p = {38{1'bz}};
-  assign wb_dat_i[16*(ADC0_SLI + 1) - 1: 16*ADC0_SLI] = 16'b0;
-  assign wb_ack_i[ADC0_SLI] = 1'b0;
-`endif
+  /* ZDOK 1 */
 
-/********************* IADC1 *********************/
-
-  /* ADC1 Fabric interface */
-  wire [63:0] adc1_data;
-  wire  [3:0] adc1_sync;
-  wire  [3:0] adc1_outofrange;
-
-
-`ifdef ENABLE_IADC_1
-  /****** ADC external signals ******/
-  wire adc1_clk_n, adc1_clk_p;
-  wire adc1_sync_n, adc1_sync_p;
-  wire adc1_outofrange_i_n, adc1_outofrange_i_p, adc1_outofrange_q_n, adc1_outofrange_q_p;
-  wire [7:0] adc1_data_i_even_n;
-  wire [7:0] adc1_data_i_even_p;
-  wire [7:0] adc1_data_i_odd_n;
-  wire [7:0] adc1_data_i_odd_p;
-  wire [7:0] adc1_data_q_even_n;
-  wire [7:0] adc1_data_q_even_p;
-  wire [7:0] adc1_data_q_odd_n;
-  wire [7:0] adc1_data_q_odd_p;
-  wire adc1_ddrb_n, adc1_ddrb_p;
-  wire adc1_ctrl_clk, adc1_ctrl_data, adc1_ctrl_strobe_n, adc1_mode;
-
-  /* Assign ZDOK signals */
- // zdok1_clk0_n and zdok1_clk0_p unassigned
-
-  assign zdok1_dp_n[8]       = adc1_ctrl_clk;
-  assign zdok1_dp_n[9]       = adc1_ctrl_data;
-  assign zdok1_dp_p[9]       = adc1_ctrl_strobe_n;
-  assign zdok1_dp_p[8]       = adc1_mode;
-  assign adc1_outofrange_i_n = zdok1_dp_n[28];
-  assign adc1_outofrange_i_p = zdok1_dp_p[28];
-  assign adc1_outofrange_q_n = zdok1_dp_n[18];
-  assign adc1_outofrange_q_p = zdok1_dp_p[18];
-  assign zdok1_dp_n[19]      = adc1_ddrb_n;
-  assign zdok1_dp_p[19]      = adc1_ddrb_p;
-  assign adc1_sync_n         = zdok1_dp_n[37];
-  assign adc1_sync_p         = zdok1_dp_p[37];
-
-  assign adc1_data_i_even_n  = {zdok1_dp_n[36], zdok1_dp_n[34], zdok1_dp_n[32], zdok1_dp_n[30],
-                                zdok1_dp_n[27], zdok1_dp_n[25], zdok1_dp_n[23], zdok1_dp_n[21]};
-  assign adc1_data_i_even_p  = {zdok1_dp_p[36], zdok1_dp_p[34], zdok1_dp_p[32], zdok1_dp_p[30],
-                                zdok1_dp_p[27], zdok1_dp_p[25], zdok1_dp_p[23], zdok1_dp_p[21]};
-
-  assign adc1_data_i_odd_n   = {zdok1_dp_n[35], zdok1_dp_n[33], zdok1_dp_n[31], zdok1_dp_n[29],
-                                zdok1_dp_n[26], zdok1_dp_n[24], zdok1_dp_n[22], zdok1_dp_n[20]};
-  assign adc1_data_i_odd_p   = {zdok1_dp_p[35], zdok1_dp_p[33], zdok1_dp_p[31], zdok1_dp_p[29],
-                                zdok1_dp_p[26], zdok1_dp_p[24], zdok1_dp_p[22], zdok1_dp_p[20]};
-
-  assign adc1_data_q_even_n  = {zdok1_dp_n[10], zdok1_dp_n[12], zdok1_dp_n[14], zdok1_dp_n[16],
-                                zdok1_dp_n[0],  zdok1_dp_n[2],  zdok1_dp_n[4],  zdok1_dp_n[6]};
-  assign adc1_data_q_even_p  = {zdok1_dp_p[10], zdok1_dp_p[12], zdok1_dp_p[14], zdok1_dp_p[16],
-                                zdok1_dp_p[0],  zdok1_dp_p[2],  zdok1_dp_p[4],  zdok1_dp_p[6]};
-
-  assign adc1_data_q_odd_n   = {zdok1_dp_n[11], zdok1_dp_n[13], zdok1_dp_n[15], zdok1_dp_n[17],
-                                zdok1_dp_n[1],  zdok1_dp_n[3],  zdok1_dp_n[5],  zdok1_dp_n[7]};
-  assign adc1_data_q_odd_p   = {zdok1_dp_p[11], zdok1_dp_p[13], zdok1_dp_p[15], zdok1_dp_p[17],
-                                zdok1_dp_p[1],  zdok1_dp_p[3],  zdok1_dp_p[5],  zdok1_dp_p[7]};
-
-  /****** ADC internal signals ******/
-  wire adc1_clk_90;
-  wire adc1_ddrb;
-  wire adc1_dcm_reset;
-
-  wire adc1_ctrl_clk_int, adc1_ctrl_data_int, adc1_ctrl_strobe_n_int, adc1_mode_int;
-
-  iadc_infrastructure iadc_infrastructure_inst_1(
-    /* General Signals */
-    .reset    (sys_reset),
-    .clk_lock (adc1_clk_lock),
-    /* External Signals */
-    .adc_clk            (adc1_clk),
-    .adc_sync_n         (adc1_sync_n),
-    .adc_sync_p         (adc1_sync_p),
-    .adc_outofrange_i_n (adc1_outofrange_i_n),
-    .adc_outofrange_i_p (adc1_outofrange_i_p),
-    .adc_outofrange_q_n (adc1_outofrange_q_n),
-    .adc_outofrange_q_p (adc1_outofrange_q_p),
-    .adc_data_i_even_n  (adc1_data_i_even_n),
-    .adc_data_i_even_p  (adc1_data_i_even_p),
-    .adc_data_i_odd_n   (adc1_data_i_odd_n),
-    .adc_data_i_odd_p   (adc1_data_i_odd_p),
-    .adc_data_q_even_n  (adc1_data_q_even_n),
-    .adc_data_q_even_p  (adc1_data_q_even_p),
-    .adc_data_q_odd_n   (adc1_data_q_odd_n),
-    .adc_data_q_odd_p   (adc1_data_q_odd_p),
-    .adc_ddrb_n         (adc1_ddrb_n),
-    .adc_ddrb_p         (adc1_ddrb_p),
-
-    /* ADC Signals */
-    .adc_clk_0      (adc1_clk_0),
-    .adc_clk_90     (adc1_clk_90),
-    .adc_sync       (adc1_sync),
-    .adc_outofrange (adc1_outofrange),
-    .adc_data       (adc1_data),
-    .adc_ddrb       (adc1_ddrb),
-    .adc_dcm_reset  (adc1_dcm_reset),
-    /* Control Signals */
-    .adc_ctrl_clk_buf      (adc1_ctrl_clk),
-    .adc_ctrl_data_buf     (adc1_ctrl_data),
-    .adc_ctrl_strobe_n_buf (adc1_ctrl_strobe_n),
-    .adc_mode_buf          (adc1_mode),
-    .adc_ctrl_clk          (adc1_ctrl_clk_int),
-    .adc_ctrl_data         (adc1_ctrl_data_int),
-    .adc_ctrl_strobe_n     (adc1_ctrl_strobe_n_int),
-    .adc_mode              (adc1_mode_int)
-  );
-
-  /*TODO: make buffer optional, pass through ADC signals */
-  iadc_controller #(
-    .ENABLE_DATA_BUFFER(1)
-  ) iadc_controller_inst_1 (
-    /* Wishbone Interface */
+  gpio_test #(
+    .GPIO_COUNT (80)
+  ) gpio_zdok1 (
     .wb_clk_i (wb_clk),
     .wb_rst_i (sys_reset),
     .wb_cyc_i (wb_cyc_o[ADC1_SLI]),
     .wb_stb_i (wb_stb_o[ADC1_SLI]),
     .wb_sel_i (wb_sel_o),
-    .wb_we_i  (wb_we_o),
+    .wb_we_i  (wb_we_o), 
     .wb_adr_i (wb_adr_o),
     .wb_dat_i (wb_dat_o),
     .wb_dat_o (wb_dat_i[16*(ADC1_SLI + 1) - 1: 16*ADC1_SLI]),
     .wb_ack_o (wb_ack_i[ADC1_SLI]),
-    /* ADC inputs */
-    .adc_clk_0      (adc1_clk_0),
-    .adc_data       (adc1_data),
-    .adc_sync       (adc1_sync),
-    .adc_outofrange (adc1_outofrange),
-
-    /* ADC config bits */
-    .adc_ctrl_clk      (adc1_ctrl_clk_int),
-    .adc_ctrl_data     (adc1_ctrl_data_int),
-    .adc_ctrl_strobe_n (adc1_ctrl_strobe_n_int),
-    .adc_mode          (adc1_mode_int),
-    .adc_ddrb          (adc1_ddrb),
-    .adc_dcm_reset     (adc1_dcm_reset)
+    .gpio     ({zdok1_dp_n, zdok1_dp_p, zdok1_clk0_n, zdok1_clk0_p, zdok1_clk1_n, zdok1_clk1_p})
   );
 
-`else
-
-  assign zdok1_dp_n = {38{1'bz}};
-  assign zdok1_dp_p = {38{1'bz}};
-
-  assign wb_dat_i[16*(ADC1_SLI + 1) - 1: 16*ADC1_SLI] = 16'b0;
-  assign wb_ack_i[ADC1_SLI] = 1'b0;
-
-`endif
 
   /******************* GPIO ***********************/
 
@@ -2089,8 +1818,6 @@ module toplevel(
     .dram_clk (dram_clk),
     .qdr0_clk (qdr_clk_0),
     .qdr1_clk (qdr_clk_0),
-    .adc0_clk (adc0_clk),
-    .adc1_clk (adc1_clk),
     .tge_clk  (mgt_clk_0),
     .aux_clk  ({aux_clk_1, aux_clk_0}),
     .aux_sync ({aux_clk_1, aux_clk_0}),
@@ -2173,16 +1900,6 @@ module toplevel(
     .qdr1_rd_valid  (qdr1_rd_valid),
     .qdr1_rd_ack    (qdr1_rd_ack),
     .qdr1_rd_data   (qdr1_rd_data),
-
-    /* ADC0 */
-    .adc0_data       (adc0_data),
-    .adc0_sync       (adc0_sync),
-    .adc0_outofrange (adc0_outofrange),
-
-    /* ADC1 */
-    .adc1_data       (adc1_data),
-    .adc1_sync       (adc1_sync),
-    .adc1_outofrange (adc1_outofrange),
 
     /* GPIO */
     .gpio_a    (),
