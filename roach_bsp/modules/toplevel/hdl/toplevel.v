@@ -143,9 +143,9 @@ module toplevel(
   inout  diff_gpio_b_clk_p, diff_gpio_b_clk_n;
 
   inout  [7:0] se_gpio_a;
-  output se_gpio_a_oen_n;
+  inout  se_gpio_a_oen_n;
   inout  [7:0] se_gpio_b;
-  output se_gpio_b_oen_n;
+  inout  se_gpio_b_oen_n;
 
   input  mgt_ref_clk_top_n, mgt_ref_clk_top_p;
   input  mgt_ref_clk_bottom_n, mgt_ref_clk_bottom_p;
@@ -231,8 +231,6 @@ module toplevel(
   );
 
   /**************** Serial Communications ****************/
-  wire serial_in, serial_out;
-
   wire [7:0] as_data_i;
   wire [7:0] as_data_o;
   wire as_dstrb_i, as_busy_o, as_dstrb_o;
@@ -244,7 +242,7 @@ module toplevel(
     .clk   (wb_clk),
     .reset (sys_reset),
 
-    .serial_in  (serial_in),
+    .serial_in  (1'b0),
     .serial_out (serial_out),
 
     .as_data_i (as_data_i),
@@ -1752,6 +1750,8 @@ module toplevel(
   gpio_test #(
     .GPIO_COUNT (80)
   ) gpio_zdok0 (
+    .wb_clk_i (wb_clk),
+    .wb_rst_i (sys_reset),
     .wb_cyc_i (wb_cyc_o[ADC0_SLI]),
     .wb_stb_i (wb_stb_o[ADC0_SLI]),
     .wb_sel_i (wb_sel_o),
@@ -1760,7 +1760,8 @@ module toplevel(
     .wb_dat_i (wb_dat_o),
     .wb_dat_o (wb_dat_i[16*(ADC0_SLI + 1) - 1: 16*ADC0_SLI]),
     .wb_ack_o (wb_ack_i[ADC0_SLI]),
-    .gpio     ({zdok0_dp_n, zdok0_dp_p, zdok0_clk0_n, zdok0_clk0_p, zdok0_clk1_n, zdok0_clk1_p})
+    .gpio     ({zdok0_clk1_p, zdok0_dp_p[37:29], zdok0_clk0_p, zdok0_dp_p[28:0],
+                zdok0_clk1_n, zdok0_dp_n[37:29], zdok0_clk0_n, zdok0_dp_n[28:0]})
   );
 
   /* ZDOK 1 */
@@ -1778,29 +1779,30 @@ module toplevel(
     .wb_dat_i (wb_dat_o),
     .wb_dat_o (wb_dat_i[16*(ADC1_SLI + 1) - 1: 16*ADC1_SLI]),
     .wb_ack_o (wb_ack_i[ADC1_SLI]),
-    .gpio     ({zdok1_dp_n, zdok1_dp_p, zdok1_clk0_n, zdok1_clk0_p, zdok1_clk1_n, zdok1_clk1_p})
+    .gpio     ({zdok1_clk1_p, zdok1_dp_p[37:29], zdok1_clk0_p, zdok1_dp_p[28:0],
+                zdok1_clk1_n, zdok1_dp_n[37:29], zdok1_clk0_n, zdok1_dp_n[28:0]})
   );
 
 
   /******************* GPIO ***********************/
 
-  /******** Single Ended **********/
-  assign se_gpio_a_oen_n = 1'b1;
 
-  assign se_gpio_a[2:0] = {3{1'bz}};
-  assign serial_in      = se_gpio_a[3];
-  assign se_gpio_a[7:4] = {4{1'bz}};
+  gpio_test #(
+    .GPIO_COUNT (80+9+9)
+  ) gpio_miscgpio (
+    .wb_clk_i (wb_clk),
+    .wb_rst_i (sys_reset),
+    .wb_cyc_i (wb_cyc_o[RSRVD0_SLI]),
+    .wb_stb_i (wb_stb_o[RSRVD0_SLI]),
+    .wb_sel_i (wb_sel_o),
+    .wb_we_i  (wb_we_o), 
+    .wb_adr_i (wb_adr_o),
+    .wb_dat_i (wb_dat_o),
+    .wb_dat_o (wb_dat_i[16*(RSRVD0_SLI + 1) - 1: 16*RSRVD0_SLI]),
+    .wb_ack_o (wb_ack_i[RSRVD0_SLI]),
+    .gpio     ({se_gpio_a, se_gpio_a_oen_n, se_gpio_b, se_gpio_b_oen_n, diff_gpio_a_clk_p, diff_gpio_a_p, diff_gpio_a_clk_n, diff_gpio_a_n, diff_gpio_b_clk_p, diff_gpio_b_p, diff_gpio_b_clk_n, diff_gpio_b_n})
+  );
 
-  assign se_gpio_b_oen_n = 1'b0;
-
-  assign se_gpio_b[0] = 1'b0;
-  assign se_gpio_b[1] = 1'b0;
-  assign se_gpio_b[2] = 1'b0;
-  assign se_gpio_b[3] = serial_out;
-  assign se_gpio_b[4] = 1'b0;
-  assign se_gpio_b[5] = 1'b0;
-  assign se_gpio_b[6] = 1'b0;
-  assign se_gpio_b[7] = 1'b0;
 
 /******************* ROACH Application *****************/
 
@@ -1992,16 +1994,6 @@ module toplevel(
   assign qdr1_wr_be     = { 4*`QDR1_WIDTH_MULTIPLIER{1'b0}};
   assign qdr1_rd_ack    = 1'b0;
 
-  /******** Differential **********/
-  assign diff_gpio_a_n     = {19{1'bz}};
-  assign diff_gpio_a_p     = {19{1'bz}};
-  assign diff_gpio_a_clk_n = 1'bz;
-  assign diff_gpio_a_clk_p = 1'bz;
-  assign diff_gpio_b_n     = {19{1'bz}};
-  assign diff_gpio_b_p     = {19{1'bz}};
-  assign diff_gpio_b_clk_n = 1'bz;
-  assign diff_gpio_b_clk_p = 1'bz;
-
 `endif
 
 
@@ -2016,15 +2008,12 @@ module toplevel(
   assign wb_dat_i[16*(RSRVD1_SLI + 1) - 1: 16*RSRVD1_SLI] = 16'b0;
   assign wb_ack_i[RSRVD1_SLI] = 1'b0;
 
-  assign wb_dat_i[16*(RSRVD0_SLI + 1) - 1: 16*RSRVD0_SLI] = 16'b0;
-  assign wb_ack_i[RSRVD0_SLI] = 1'b0;
-
   assign wb_dat_i[16*(TESTING_SLI + 1) - 1: 16*TESTING_SLI] = 16'b0;
   assign wb_ack_i[TESTING_SLI] = 1'b0;
 
   /************************* LEDs ************************/
 
- // assign led_n = ~{leddies};
-  assign led_n = ~{qdr0_phy_rdy, qdr1_phy_rdy, qdr0_cal_fail, qdr1_cal_fail};
+  assign led_n = ~{4'b1001};
+  //assign led_n = ~{qdr0_phy_rdy, qdr1_phy_rdy, qdr0_cal_fail, qdr1_cal_fail};
 
 endmodule

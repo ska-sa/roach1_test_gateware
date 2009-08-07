@@ -15,7 +15,7 @@ post_support:
 build_parameters: $(PARAM_V)
 
 $(PARAM_V): gen_build_parameters.v $(MAKEDEFS)
-	@$(VCC) $(DEFINES) $<
+	$(VCC) $(DEFINES) $<
 	@$(VSIM) a.out > $@
 	@rm a.out
 

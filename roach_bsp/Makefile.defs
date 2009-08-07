@@ -116,7 +116,7 @@ SRC=./modules/toplevel/hdl/toplevel.v \
 NETLIST_DIRS=./modules/xaui_phy/netlist \
              ./modules/ten_gig_eth/netlist \
              ./modules/iadc_controller/netlist \
-	     ./modules/roach_app/netlist
+             ./modules/roach_app/netlist
 
 # Module name of toplevel entity
 TOPLEVEL_MODULE=toplevel
