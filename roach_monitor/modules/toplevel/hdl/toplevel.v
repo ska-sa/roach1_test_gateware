@@ -112,16 +112,15 @@ module toplevel(
   wire hard_reset_int;
   reset_block #(
     .DELAY(0),
-    .WIDTH(32'h20_0000)
+    .WIDTH(32'h200_0000)
   ) reset_block_inst (
     .clk(gclk40),
-    .async_reset_i(!CHS_RESET_N),
-    .reset_i(reset_xport),
+    .async_reset_i(1'b0),
+    .reset_i(reset_xport || !CHS_RESET_N),
     .reset_o(hard_reset_int)
   );
   assign XPORT_RESET_N = 1'b1;
   assign hard_reset = hard_reset_int;
-  //assign hard_reset = hard_reset_int || !CHS_RESET_N;
 
   /* Debounce chassis switches */
   wire chs_powerdown;
@@ -764,7 +763,7 @@ module toplevel(
     .FM_WEN(FM_WEN),              
     .FM_PROGRAM(FM_PROGRAM),        
     .FM_CLK(FM_CLK),             
-    .FM_RESET(FM_RESET),           
+    .FM_RESET(1'b1),
     .FM_RD(FM_RD),              
     .FM_BUSY(FM_BUSY),            
     .FM_STATUS(FM_STATUS),

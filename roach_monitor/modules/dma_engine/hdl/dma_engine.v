@@ -323,7 +323,6 @@ module dma_engine(
                 if (wb_dat_i > 16'h00ff) begin
 		  // This is a hack to not load a bad system configuration
 		  // if the flash hasn't been initialized.
-		  // This is required as flashpro NVM init is broken (sometimes)
                   wb_dat_buf <= 16'h0000;
                 end else begin
                   wb_dat_buf <= wb_dat_i;
