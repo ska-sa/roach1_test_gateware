@@ -370,9 +370,9 @@ module toplevel(
     .mmc_cdetect (mmc_cdetect),
     
     .irq_cdetect  (irq_src[0]),
-    .irq_got_cmd  (irq_src[1]),
-    .irq_got_dat  (irq_src[2]),
-    .irq_got_busy (irq_src[3])
+    .irq_got_cmd  (irq_src[2]),
+    .irq_got_dat  (irq_src[3]),
+    .irq_got_busy (irq_src[1])
   );
 
 endmodule

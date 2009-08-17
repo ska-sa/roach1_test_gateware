@@ -54,6 +54,10 @@ module mmc_controller(
   wire            crc16_dvld;
   wire            crc_rst;
 
+  /********* Get MMC Ready *********/
+  wire get_ready_en;
+  wire get_ready_done;
+  wire get_ready_tick;
 
   /********* MMC Parameters *********/
   wire        data_width;
@@ -73,6 +77,9 @@ module mmc_controller(
     .mem_adv_mode (mem_adv_mode), 
     .mem_adv_en   (mem_adv_en), 
     .mem_adv_done (mem_adv_done), 
+
+    .get_ready_en   (get_ready_en),
+    .get_ready_done (get_ready_done),
 
     .rd_dat_avail (rd_dat_avail), 
 
@@ -100,7 +107,7 @@ module mmc_controller(
   wire clk_done;
   wire clk_rdy;
   wire clk_ack;
-  wire clk_tick = man_adv_en || mem_adv_tick;
+  wire clk_tick = man_adv_en || mem_adv_tick || get_ready_tick;
 
   clk_ctrl clk_ctrl_inst(
     .clk     (wb_clk_i),
@@ -112,7 +119,13 @@ module mmc_controller(
     .done    (clk_done),
     .mmc_clk (mmc_clk)
   );
-  
+
+  /************ Ready Condition Search *************/
+
+  assign get_ready_tick = get_ready_en; 
+  assign irq_got_busy = get_ready_en && clk_done && mmc_dat_i[0];
+  assign get_ready_done = irq_got_busy;
+
   /************ Manual Advance Logic *************/
 
   reg man_adv_done_reg;

@@ -39,7 +39,7 @@ module system_block #(
   wire  [7:0] rev_min = REV_MINOR;
   wire [15:0] rev_rcs = REV_RCS;
 
-  localparam IRQS = 1;
+  localparam IRQS = 2;
   reg [IRQS-1:0] irq_m;
   reg [IRQS-1:0] irq_r;
 

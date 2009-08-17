@@ -13,6 +13,8 @@ module wb_attach(
     output        mem_adv_en, 
     input         mem_adv_done, 
     output        man_adv_en, 
+    output        get_ready_en,
+    input         get_ready_done,
     input         man_adv_done, 
     input         rd_dat_avail,
 
@@ -63,6 +65,8 @@ module wb_attach(
 
   reg dat_oe_reg;
   reg cmd_oe_reg;
+
+  reg get_ready_en_reg;
 
   reg [1:0] crc_sel;
 
@@ -116,7 +120,7 @@ module wb_attach(
         wb_dat_reg <= dat_rd;
       end
       REG_AUTO: begin
-        wb_dat_reg <= {1'b0, mem_adv_mode, 3'b0, rd_dat_avail};
+        wb_dat_reg <= {1'b0, get_ready_en, mem_adv_mode, 3'b0, rd_dat_avail};
       end
       REG_ADV: begin
         wb_dat_reg <= {7'b0, man_adv_done};
@@ -166,12 +170,15 @@ module wb_attach(
   /****** Wishbone Reg Write *******/
 
   always @(posedge wb_clk_i) begin
+    if (get_ready_done)
+      get_ready_en_reg <= 1'b0;
     if (wb_rst_i) begin
       mem_adv_mode_reg <= 2'b0;
       data_width_reg   <= DW_1;
       clk_width_reg    <= 2'b11;
       dat_oe_reg       <= 1'b0;
       cmd_oe_reg       <= 1'b0;
+      get_ready_en_reg <= 1'b0;
     end else begin
       if (wb_trans && wb_we_i) begin
         case (wb_adr_i)
@@ -182,7 +189,8 @@ module wb_attach(
             dat_wr_reg <= wb_dat_i;
           end
           REG_AUTO: begin
-            mem_adv_mode_reg <= wb_dat_i[6:4];
+            mem_adv_mode_reg <= wb_dat_i[5:4];
+            get_ready_en_reg <= wb_dat_i[6];
           end
           REG_ADV: begin
           end
@@ -203,6 +211,7 @@ module wb_attach(
   end
 
   /********* Assignments **********/
+  assign get_ready_en = get_ready_en_reg;
 
   assign mem_adv_en = wb_trans && wb_adr_i == 3'd1 && (mem_adv_mode == 1 || mem_adv_mode == 2);
 
