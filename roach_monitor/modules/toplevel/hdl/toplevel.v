@@ -110,13 +110,15 @@ module toplevel(
   assign reset_xport = RESET_XPORT_N_z != RESET_XPORT_N;
 
   wire hard_reset_int;
+  wire por_reset;
+
   reset_block #(
     .DELAY(0),
     .WIDTH(32'h200_0000)
   ) reset_block_inst (
     .clk(gclk40),
     .async_reset_i(1'b0),
-    .reset_i(reset_xport || !CHS_RESET_N),
+    .reset_i(reset_xport || por_reset),
     .reset_o(hard_reset_int)
   );
   assign XPORT_RESET_N = 1'b1;
@@ -132,6 +134,15 @@ module toplevel(
     .rst(hard_reset),
     .in_switch(!CHS_POWERDOWN_N), .out_switch(chs_powerdown)
   );
+
+  debouncer #(
+    .DELAY(32'h0002_0000)
+  ) debouncer_rst_inst (  
+    .clk(gclk40),
+    .rst(1'b0),
+    .in_switch(!CHS_RESET_N), .out_switch(por_reset)
+  );
+
 
   assign chs_reset = 1'b0;
   //Chassis reset wont ever work on ROACH, as the POR is tied to same line as the switch
