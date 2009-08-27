@@ -763,7 +763,7 @@ module toplevel(
   wire FM_PAGESTATUS;
   wire FM_REN, FM_WEN, FM_PROGRAM;
   wire FM_CLK, FM_RESET;
-  wire [15:0]  FM_RD;
+  wire [31:0]  FM_RD; //32 bits to support full flash status read
   wire FM_BUSY;
   wire [1:0] FM_STATUS;
 

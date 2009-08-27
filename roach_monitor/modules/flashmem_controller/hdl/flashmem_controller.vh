@@ -2,9 +2,11 @@
 `define FLASHMEM_CONTROLLER_VH
 
 `define REG_FLASH_STATUS      6'd0
-`define REG_FLASH_PAGE_STATUS 6'd1
+`define REG_PAGE_STATUS_CTRL  6'd1
 `define REG_DIRTY_PAGE_STATUS 6'd2
 `define REG_DIRTY_PAGE_SYNC   6'd3
+`define REG_PAGE_STATUS_1     6'd4
+`define REG_PAGE_STATUS_0     6'd5
 
 `endif
 

@@ -23,7 +23,7 @@ module flashmem_controller(
   output [15:0] FM_WD;
   output FM_PAGESTATUS;
   output FM_REN, FM_WEN, FM_PROGRAM;
-  input  [15:0]  FM_RD;
+  input  [31:0]  FM_RD;
   input  FM_BUSY;
   input  [1:0] FM_STATUS;
 
@@ -37,6 +37,7 @@ module flashmem_controller(
   reg  [9:0] dirty_page_index; //which page is the current page
 
   reg [15:0] status_address; // which page are we going to check the status of
+  reg [31:0] status_register;
 
   reg  [2:0] fm_status; //flash status after transfer
 
@@ -63,8 +64,11 @@ module flashmem_controller(
   assign wb_dat_o = wb_dat_o_src == 4'd0 ? FM_RD_reg :
                     wb_dat_o_src == 4'd1 ? {7'b0, FM_BUSY, 6'b0, fm_status} :
                     wb_dat_o_src == 4'd2 ? (dirty_page ? {6'b0, dirty_page_index} : 16'hffff) :
+                    wb_dat_o_src == 4'd3 ? status_register[31:16] :
+                    wb_dat_o_src == 4'd4 ? status_register[15:0] :
                     16'b0;
   assign wb_ack_o = wb_ack_o_int | flash_trans_done;
+
 
   always @(posedge wb_clk_i) begin
     //strobes
@@ -100,17 +104,25 @@ module flashmem_controller(
                $display("fc: performing op status read");
 `endif
                end
-               `REG_FLASH_PAGE_STATUS: begin
+               `REG_PAGE_STATUS_1: begin
+	             	  wb_ack_o_int <=1'b1;
+                  wb_dat_o_src <= 3;
+               end
+               `REG_PAGE_STATUS_0: begin
+	             	  wb_ack_o_int <=1'b1;
+                  wb_dat_o_src <= 4;
+               end
+               `REG_PAGE_STATUS_CTRL: begin
                  if (wb_we_i) begin
                    wb_dat_o_src <= 4'd0;  //FM data out
                    flash_stat_trans <= 1'b1;
+		               status_address <= wb_dat_i;
                    state <= STATE_WAIT;
 `ifdef DEBUG
-                   $display("fc: performing page status read");
+                   $display("fc: performing page status fetch");
 `endif
                  end else begin
-		   status_address<=wb_dat_i;
-		   wb_ack_o_int <=1'b1;
+	             	   wb_ack_o_int <=1'b1;
                  end
                end
                `REG_DIRTY_PAGE_STATUS: begin
@@ -284,9 +296,11 @@ module flashmem_controller(
             fm_status <= FM_STATUS;
             flash_trans_done <= 1'b1;
             fm_state <= FM_STATE_IDLE;
-            FM_RD_reg <= FM_RD;
+            FM_RD_reg <= FM_RD[15:0];
 
             if (FM_STATUS == 2'b00) begin
+              if (status_read)
+                status_register <= FM_RD[31:0];
               if (~status_read) // only update dirty page index if the read not status
                 dirty_page_index <= FM_ADDR[15:6];
 `ifdef DEBUG

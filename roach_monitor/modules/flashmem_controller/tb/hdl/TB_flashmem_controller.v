@@ -14,7 +14,7 @@ module TB_flashmem_controller();
   wire [15:0] FM_WD;
   wire FM_REN, FM_WEN, FM_PROGRAM, FM_PAGESTATUS;
 
-  wire [15:0]  FM_RD;
+  wire [31:0]  FM_RD;
   wire FM_BUSY;
   wire [1:0] FM_STATUS;
 
@@ -65,7 +65,6 @@ module TB_flashmem_controller();
 
   /* Flash Memory Block */
 `ifdef MODELSIM
-  wire [15:0] temp;
   NVM NVM_inst(
    .ADDR({FM_ADDR,1'b0}),//last bit ignored due to 16'bit
    .WD({16'b0,FM_WD}),              
@@ -87,7 +86,7 @@ module TB_flashmem_controller();
    .LOCKREQUEST(1'b0),      
    .CLK(FM_CLK),              
    .RESET(FM_RESET),            
-   .RD({temp,FM_RD}),
+   .RD(FM_RD),
    .BUSY(FM_BUSY),
    .STATUS(FM_STATUS)
   );

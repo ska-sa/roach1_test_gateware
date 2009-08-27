@@ -25,11 +25,9 @@ module flashmem(
   input  FM_PAGESTATUS;
   input  FM_REN, FM_WEN, FM_PROGRAM;
   input  FM_CLK, FM_RESET;
-  output [15:0]  FM_RD;
+  output [31:0]  FM_RD;
   output FM_BUSY;
   output [1:0] FM_STATUS;
-
-  wire [15:0] temp; /*noconnect*/
 
   NVM NVM_inst(
    .ADDR({FM_ADDR,1'b0}), /*two bytes per command-hence no addr[0]*/
@@ -52,7 +50,7 @@ module flashmem(
    .LOCKREQUEST(1'b0),     
    .CLK(FM_CLK),             
    .RESET(FM_RESET),           
-   .RD({temp,FM_RD}),              
+   .RD(FM_RD),              
    .BUSY(FM_BUSY),            
    .STATUS(FM_STATUS)
   );
