@@ -170,5 +170,5 @@ set_io GPIO_CC0    -pinname E11 -fixed yes -iostd LVTTL
 
 
 # Fix location of the Flash Memory
-set_location flashmem_inst/NVM_inst -fixed yes 164 1
+set_location flashmem_inst/NVM_inst -fixed yes 32 1
 

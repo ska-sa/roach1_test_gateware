@@ -297,10 +297,10 @@ module flashmem_controller(
             flash_trans_done <= 1'b1;
             fm_state <= FM_STATE_IDLE;
             FM_RD_reg <= FM_RD[15:0];
+            if (status_read)
+              status_register <= FM_RD[31:0];
 
             if (FM_STATUS == 2'b00) begin
-              if (status_read)
-                status_register <= FM_RD[31:0];
               if (~status_read) // only update dirty page index if the read not status
                 dirty_page_index <= FM_ADDR[15:6];
 `ifdef DEBUG

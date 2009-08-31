@@ -49,7 +49,7 @@
 `define AT0_LOW       8'd0
 `define AT1_HIGH      8'd255
 `define AT1_LOW       8'd0
-`define AT2_HIGH      8'd87
+`define AT2_HIGH      8'd90
 `define AT2_LOW       8'd0
 `define AT3_HIGH      8'd255
 `define AT3_LOW       8'd0
