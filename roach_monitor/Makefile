@@ -45,7 +45,7 @@ $(GEN_DIR)/$(SYNTH_FILE): $(SRC) build_parameters
 		INCLUDE="$(addprefix ../,$(INCLUDE_DIR))"
 	@if [ $(GEN_DIR)/$(SYNTH_FILE) -ot $(SYNTH_DIR)/$(SYNTH_FILE) ] ; then \
 	cp $(SYNTH_DIR)/$(SYNTH_FILE) $(GEN_DIR)/$(SYNTH_FILE); fi
-	@if [ ! -e $(GEN_DIR)/$(SYNTH_FILE)] ; then \
+	@if [ ! -e $(GEN_DIR)/$(SYNTH_FILE) ] ; then \
 	cp $(SYNTH_DIR)/$(SYNTH_FILE) $(GEN_DIR)/$(SYNTH_FILE); fi
 
 # PAR
