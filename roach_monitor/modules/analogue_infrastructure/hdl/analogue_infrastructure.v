@@ -160,7 +160,7 @@ module analogue_infrastructure(
   );
  
   assign adc_clkdivide  = fast_mode ? 8'd1 : 8'd9;  /* quick */
-  assign adc_sampletime = fast_mode ? 8'd4 : 8'd18; /* 20us */
+  assign adc_sampletime = fast_mode ? 8'd4 : 8'd36; /* 40us */
 
 
 endmodule

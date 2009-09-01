@@ -64,10 +64,10 @@ module adc_controller(
   localparam ACQ_STATE_START     = 3'd4;
   localparam ACQ_STATE_SAMPLE    = 3'd5;
 
-  reg [7:0] stb_counter;
-  localparam STB_LOW_WIDTH = 200;
+  reg [8:0] stb_counter;
+  localparam STB_LOW_WIDTH = 300;
   /* cmstrb / tmstrb needs to go low for 5us before starting a sample */
-  localparam STB_SET_WIDTH = 200;
+  localparam STB_SET_WIDTH = 300;
   /* cmstrb / tmstrb needs to go high for 5us before starting a sample */
 
   wire strb_channel; /* is the channel a strobed channel (current or temp monitoring) */
@@ -78,7 +78,7 @@ module adc_controller(
     ADC_START <= 1'b0;
     if (wb_rst_i || WTF) begin
       acquire_state  <= ACQ_STATE_IDLE;
-      stb_counter    <= 8'd0;
+      stb_counter    <= 9'd0;
     end else begin
       case (acquire_state)
         ACQ_STATE_IDLE: begin
@@ -258,6 +258,7 @@ module adc_controller(
           end
           wtf_counter <= wtf_counter + 1;
           if (wtf_counter == {18{1'b1}}) begin
+            wtf_counter <= 0;
             WTF_auto <= 1'b1;
             process_state    <= PROC_STATE_START;
           end  

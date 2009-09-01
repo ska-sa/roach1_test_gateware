@@ -34,8 +34,8 @@
 `define POST_POWERUP_WAIT         32'h00ff_ffff
 
 /************ ADC Controller Defaults ************/
-`define DEFAULT_SAMPLE_AVERAGING 3'b100
-//2 ^ X == 8
+`define DEFAULT_SAMPLE_AVERAGING 3'b111
+//2 ^ X
 
 /********** WB Timeout Values ***********/
 
