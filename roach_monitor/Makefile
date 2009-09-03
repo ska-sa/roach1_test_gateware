@@ -18,6 +18,7 @@ build:
 	   fi
 	@echo "Updating RCS"
 	@svn up
+	@rm -f ./$(INCLUDE_DIR)/build_parameters.v
 	@make -C . bits \
 	   RCS_UPTODATE=1 REV_RCS=`svn info|grep Revision |cut -d ' ' -f 2`
 
