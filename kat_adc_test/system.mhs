@@ -25,27 +25,6 @@ PORT epb_rdy     = epb_rdy,     DIR = O
 
 PORT ppc_irq_n   = ppc_irq_n,   DIR = O
 
-PORT mgt_ref_clk_top_n    = xaui2_ref_clk_n, DIR = I
-PORT mgt_ref_clk_top_p    = xaui2_ref_clk_p, DIR = I
-PORT mgt_ref_clk_bottom_n = xaui0_ref_clk_n, DIR = I
-PORT mgt_ref_clk_bottom_p = xaui0_ref_clk_p, DIR = I
-PORT mgt_rx_top_1_n       = xaui3_mgt_rx_n,  DIR = I, VEC = [3:0]
-PORT mgt_rx_top_1_p       = xaui3_mgt_rx_p,  DIR = I, VEC = [3:0]
-PORT mgt_tx_top_1_n       = xaui3_mgt_tx_n,  DIR = O, VEC = [3:0]
-PORT mgt_tx_top_1_p       = xaui3_mgt_tx_p,  DIR = O, VEC = [3:0]
-PORT mgt_rx_top_0_n       = xaui2_mgt_rx_n,  DIR = I, VEC = [3:0]
-PORT mgt_rx_top_0_p       = xaui2_mgt_rx_p,  DIR = I, VEC = [3:0]
-PORT mgt_tx_top_0_n       = xaui2_mgt_tx_n,  DIR = O, VEC = [3:0]
-PORT mgt_tx_top_0_p       = xaui2_mgt_tx_p,  DIR = O, VEC = [3:0]
-PORT mgt_rx_bottom_1_n    = xaui1_mgt_rx_n,  DIR = I, VEC = [3:0]
-PORT mgt_rx_bottom_1_p    = xaui1_mgt_rx_p,  DIR = I, VEC = [3:0]
-PORT mgt_tx_bottom_1_n    = xaui1_mgt_tx_n,  DIR = O, VEC = [3:0]
-PORT mgt_tx_bottom_1_p    = xaui1_mgt_tx_p,  DIR = O, VEC = [3:0]
-PORT mgt_rx_bottom_0_n    = xaui0_mgt_rx_n,  DIR = I, VEC = [3:0]
-PORT mgt_rx_bottom_0_p    = xaui0_mgt_rx_p,  DIR = I, VEC = [3:0]
-PORT mgt_tx_bottom_0_n    = xaui0_mgt_tx_n,  DIR = O, VEC = [3:0]
-PORT mgt_tx_bottom_0_p    = xaui0_mgt_tx_p,  DIR = O, VEC = [3:0]
-
 PORT adc0_ser_clk = adc0_adc3wire_clk,    DIR = O
 PORT adc0_ser_dat = adc0_adc3wire_data,   DIR = O
 PORT adc0_ser_cs  = adc0_adc3wire_strobe, DIR = O
@@ -119,11 +98,10 @@ PORT adc0_dq_n = adc0dq_n, DIR = in, VEC = [7:0]
 PORT adc0_rst = adc0rst, DIR = out
 PORT adc0_powerdown = adc0powerdown, DIR = out
 
-
 BEGIN kat_adc
  PARAMETER INSTANCE = kat_adc_inst
  PARAMETER HW_VER = 1.00.a
- PORT clk = adc0_clk
+ PORT clk     = adc0_clk
  PORT rst     = 0b0
  PORT leddies = leddies
  PORT adc0_data_valid = kat_adc_adc0_user_data_valid
@@ -135,7 +113,7 @@ BEGIN kat_adc
  PORT adc0_dataq1 = kat_adc_adc0_user_dataq1
  PORT adc0_dataq2 = kat_adc_adc0_user_dataq2
  PORT adc0_dataq3 = kat_adc_adc0_user_dataq3
- #PORT adc0_overrange = kat_adc_adc0_user_overrange0
+ PORT adc0_outofrange = kat_adc_adc0_user_overrange
  PORT adc0_sync0 = kat_adc_adc0_user_sync0
  PORT adc0_sync1 = kat_adc_adc0_user_sync1
  PORT adc0_sync2 = kat_adc_adc0_user_sync2
@@ -149,13 +127,11 @@ BEGIN kat_adc
  PORT adc1_dataq1 = kat_adc_adc1_user_dataq1
  PORT adc1_dataq2 = kat_adc_adc1_user_dataq2
  PORT adc1_dataq3 = kat_adc_adc1_user_dataq3
- #PORT adc1_overrange = kat_adc_adc1_user_overrange0
+ PORT adc1_outofrange = kat_adc_adc1_user_overrange
  PORT adc1_sync0 = kat_adc_adc1_user_sync0
  PORT adc1_sync1 = kat_adc_adc1_user_sync1
  PORT adc1_sync2 = kat_adc_adc1_user_sync2
  PORT adc1_sync3 = kat_adc_adc1_user_sync3
- PORT ctrl0 = kat_adc_ctrl0_user_data_out
- PORT ctrl1 = kat_adc_ctrl1_user_data_out
  PORT qdr0_ack = kat_adc_qdr0_ack
  PORT qdr0_cal_fail = kat_adc_qdr0_cal_fail
  PORT qdr0_din = kat_adc_qdr0_data_out
@@ -174,28 +150,12 @@ BEGIN kat_adc
  PORT qdr1_dout = kat_adc_qdr1_data_in
  PORT qdr1_rd_en = kat_adc_qdr1_rd_en
  PORT qdr1_wr_en = kat_adc_qdr1_wr_en
- PORT status0 = kat_adc_status0_user_data_in
- PORT status1 = kat_adc_status1_user_data_in
- PORT ten_gbe0_led_rx = kat_adc_ten_gbe0_led_rx
- PORT ten_gbe0_led_tx = kat_adc_ten_gbe0_led_tx
- PORT ten_gbe0_led_up = kat_adc_ten_gbe0_led_up
- PORT ten_gbe0_rx_bad_frame = kat_adc_ten_gbe0_rx_bad_frame
- PORT ten_gbe0_rx_data = kat_adc_ten_gbe0_rx_data
- PORT ten_gbe0_rx_end_of_frame = kat_adc_ten_gbe0_rx_end_of_frame
- PORT ten_gbe0_rx_overrun = kat_adc_ten_gbe0_rx_overrun
- PORT ten_gbe0_rx_source_ip = kat_adc_ten_gbe0_rx_source_ip
- PORT ten_gbe0_rx_source_port = kat_adc_ten_gbe0_rx_source_port
- PORT ten_gbe0_rx_valid = kat_adc_ten_gbe0_rx_valid
- PORT ten_gbe0_tx_afull = kat_adc_ten_gbe0_tx_afull
- PORT ten_gbe0_tx_overflow = kat_adc_ten_gbe0_tx_overflow
- PORT ten_gbe0_rst = kat_adc_ten_gbe0_rst
- PORT ten_gbe0_rx_ack = kat_adc_ten_gbe0_rx_ack
- PORT ten_gbe0_rx_overrun_ack = kat_adc_ten_gbe0_rx_overrun_ack
- PORT ten_gbe0_tx_data = kat_adc_ten_gbe0_tx_data
- PORT ten_gbe0_tx_dest_ip = kat_adc_ten_gbe0_tx_dest_ip
- PORT ten_gbe0_tx_dest_port = kat_adc_ten_gbe0_tx_dest_port
- PORT ten_gbe0_tx_end_of_frame = kat_adc_ten_gbe0_tx_end_of_frame
- PORT ten_gbe0_tx_valid = kat_adc_ten_gbe0_tx_valid
+
+ PORT ctrl        = kat_adc_ctrl
+ PORT status      = kat_adc_status
+ PORT overrange   = kat_adc_overrange
+ PORT sync_count0 = kat_adc_sync_count0
+ PORT sync_count1 = kat_adc_sync_count1
 END
 
 BEGIN opb_katadccontroller
@@ -417,37 +377,6 @@ BEGIN sys_block
   PORT fab_clk    = adc0_clk
 END
 
-BEGIN xaui_infrastructure
-  PARAMETER INSTANCE = xaui_infrastructure_inst
-  PARAMETER HW_VER = 1.00.a
-  PARAMETER DIFF_BOOST = "TRUE"
-  PARAMETER DISABLE_0  = 0
-  PORT mgt_refclk_t_n = xaui2_ref_clk_n
-  PORT mgt_refclk_t_p = xaui2_ref_clk_p
-  PORT mgt_refclk_b_n = xaui0_ref_clk_n
-  PORT mgt_refclk_b_p = xaui0_ref_clk_p
-  PORT mgt_rx_t1_n    = xaui3_mgt_rx_n
-  PORT mgt_rx_t1_p    = xaui3_mgt_rx_p
-  PORT mgt_tx_t1_n    = xaui3_mgt_tx_n
-  PORT mgt_tx_t1_p    = xaui3_mgt_tx_p
-  PORT mgt_rx_t0_n    = xaui2_mgt_rx_n
-  PORT mgt_rx_t0_p    = xaui2_mgt_rx_p
-  PORT mgt_tx_t0_n    = xaui2_mgt_tx_n
-  PORT mgt_tx_t0_p    = xaui2_mgt_tx_p
-  PORT mgt_rx_b1_n    = xaui1_mgt_rx_n
-  PORT mgt_rx_b1_p    = xaui1_mgt_rx_p
-  PORT mgt_tx_b1_n    = xaui1_mgt_tx_n
-  PORT mgt_tx_b1_p    = xaui1_mgt_tx_p
-  PORT mgt_rx_b0_n    = xaui0_mgt_rx_n
-  PORT mgt_rx_b0_p    = xaui0_mgt_rx_p
-  PORT mgt_tx_b0_n    = xaui0_mgt_tx_n
-  PORT mgt_tx_b0_p    = xaui0_mgt_tx_p
-  PORT reset          = sys_reset
-  PORT mgt_clk_0      = mgt_clk_0
-  BUS_INTERFACE XAUI_SYS_0  = xaui_sys0
-  BUS_INTERFACE XAUI_CONF_0 = xaui_conf0
-END
-
 ############################
 # Simulink interfaces      #
 ############################
@@ -455,34 +384,10 @@ END
 # kat_adc/XSG core config
 
 
-# kat_adc/ctrl0
-BEGIN opb_register_ppc2simulink
- PARAMETER INSTANCE = kat_adc_ctrl0
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000000
- PARAMETER C_HIGHADDR = 0x010000FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_out = kat_adc_ctrl0_user_data_out
- PORT user_clk = adc0_clk
-END
-
-# kat_adc/ctrl1
-BEGIN opb_register_ppc2simulink
- PARAMETER INSTANCE = kat_adc_ctrl1
- PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000100
- PARAMETER C_HIGHADDR = 0x010001FF
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- PORT user_data_out = kat_adc_ctrl1_user_data_out
- PORT user_clk = adc0_clk
-END
-
 # kat_adc/qdr0
 BEGIN qdr_controller
  PARAMETER INSTANCE = qdr0_controller
- PARAMETER CLK_FREQ = 300
+ PARAMETER CLK_FREQ = 350
  PARAMETER HW_VER   = 1.00.a
  PORT clk0    = adc0_clk
  PORT clk180  = adc0_clk180
@@ -523,7 +428,7 @@ PORT qdr0_dll_off_n = qdr0_dll_off_n , DIR = O
 BEGIN opb_qdr_sniffer
  PARAMETER INSTANCE   = qdr0_sniffer
  PARAMETER HW_VER     = 1.00.a
- PARAMETER ENABLE     = 0
+ PARAMETER ENABLE     = 1
  PARAMETER C_BASEADDR = 0x02000000
  PARAMETER C_HIGHADDR = 0x02ffffff
  BUS_INTERFACE SQDR = kat_adc_qdr0
@@ -582,7 +487,7 @@ PORT qdr1_dll_off_n = qdr1_dll_off_n , DIR = O
 BEGIN opb_qdr_sniffer
  PARAMETER INSTANCE   = qdr1_sniffer
  PARAMETER HW_VER     = 1.00.a
- PARAMETER ENABLE     = 0
+ PARAMETER ENABLE     = 1
  PARAMETER C_BASEADDR = 0x03000000
  PARAMETER C_HIGHADDR = 0x03ffffff
  BUS_INTERFACE SQDR = kat_adc_qdr1
@@ -598,81 +503,135 @@ BEGIN opb_qdr_sniffer
 END
 
 
-
-# kat_adc/status0
-BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_status0
+# kat_adc/ctrl
+BEGIN opb_register_ppc2simulink
+ PARAMETER INSTANCE = kat_adc_ctrl_reg
  PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000600
- PARAMETER C_HIGHADDR = 0x010006FF
+ PARAMETER C_BASEADDR = 0x01000000
+ PARAMETER C_HIGHADDR = 0x010000FF
  BUS_INTERFACE SOPB = opb0
  PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_status0_user_data_in
+ PORT user_data_out = kat_adc_ctrl
  PORT user_clk = adc0_clk
 END
 
-# kat_adc/status1
+# kat_adc/status
 BEGIN opb_register_simulink2ppc
- PARAMETER INSTANCE = kat_adc_status1
+ PARAMETER INSTANCE = kat_adc_status_reg
  PARAMETER HW_VER = 1.00.a
- PARAMETER C_BASEADDR = 0x01000700
- PARAMETER C_HIGHADDR = 0x010007FF
+ PARAMETER C_BASEADDR = 0x01000100
+ PARAMETER C_HIGHADDR = 0x010001FF
  BUS_INTERFACE SOPB = opb0
  PORT OPB_Clk = epb_clk
- PORT user_data_in = kat_adc_status1_user_data_in
+ PORT user_data_in = kat_adc_status
  PORT user_clk = adc0_clk
 END
 
-# kat_adc/ten_gbe0
-BEGIN kat_ten_gb_eth
- PARAMETER INSTANCE = kat_adc_ten_gbe0
+# kat_adc/overrange
+BEGIN opb_register_ppc2simulink
+ PARAMETER INSTANCE = kat_adc_overrange_reg
  PARAMETER HW_VER = 1.00.a
- PARAMETER SWING = 800
- PARAMETER PREEMPHASYS = 3
- PARAMETER FABRIC_MAC = 0x123456780000
- PARAMETER FABRIC_IP = 0xC0A80544
- PARAMETER FABRIC_PORT = 0x2710
- PARAMETER FABRIC_GATEWAY = 0x1
- PARAMETER FABRIC_ENABLE = 1
- PARAMETER RX_DIST_RAM = 1
- PARAMETER CPU_RX_ENABLE = 0
- PARAMETER CPU_TX_ENABLE = 0
- PARAMETER C_BASEADDR = 0x01004000
- PARAMETER C_HIGHADDR = 0x01007FFF
+ PARAMETER C_BASEADDR = 0x01000200
+ PARAMETER C_HIGHADDR = 0x010002FF
  BUS_INTERFACE SOPB = opb0
  PORT OPB_Clk = epb_clk
- BUS_INTERFACE XAUI_CONF = xaui_conf0
- BUS_INTERFACE XGMII = xgmii0
- PORT led_rx = kat_adc_ten_gbe0_led_rx
- PORT led_tx = kat_adc_ten_gbe0_led_tx
- PORT led_up = kat_adc_ten_gbe0_led_up
- PORT rx_bad_frame = kat_adc_ten_gbe0_rx_bad_frame
- PORT rx_data = kat_adc_ten_gbe0_rx_data
- PORT rx_end_of_frame = kat_adc_ten_gbe0_rx_end_of_frame
- PORT rx_overrun = kat_adc_ten_gbe0_rx_overrun
- PORT rx_source_ip = kat_adc_ten_gbe0_rx_source_ip
- PORT rx_source_port = kat_adc_ten_gbe0_rx_source_port
- PORT rx_valid = kat_adc_ten_gbe0_rx_valid
- PORT tx_afull = kat_adc_ten_gbe0_tx_afull
- PORT tx_overflow = kat_adc_ten_gbe0_tx_overflow
- PORT rst = kat_adc_ten_gbe0_rst
- PORT rx_ack = kat_adc_ten_gbe0_rx_ack
- PORT rx_overrun_ack = kat_adc_ten_gbe0_rx_overrun_ack
- PORT tx_data = kat_adc_ten_gbe0_tx_data
- PORT tx_dest_ip = kat_adc_ten_gbe0_tx_dest_ip
- PORT tx_dest_port = kat_adc_ten_gbe0_tx_dest_port
- PORT tx_end_of_frame = kat_adc_ten_gbe0_tx_end_of_frame
- PORT tx_valid = kat_adc_ten_gbe0_tx_valid
- PORT clk = adc0_clk
- PORT xaui_clk = mgt_clk_0
+ PORT user_data_out = kat_adc_overrange
+ PORT user_clk = adc0_clk
 END
 
-BEGIN xaui_phy
-  PARAMETER INSTANCE = xaui_phy_0
-  PARAMETER HW_VER = 1.00.a
-  PARAMETER USE_KAT_XAUI = 1
-  BUS_INTERFACE XAUI_SYS = xaui_sys0
-  BUS_INTERFACE XGMII    = xgmii0
-  PORT reset   = sys_reset
-  PORT mgt_clk = mgt_clk_0
+# kat_adc/sync_count0
+BEGIN opb_register_ppc2simulink
+ PARAMETER INSTANCE = kat_adc_sync_count0_reg
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_BASEADDR = 0x01000300
+ PARAMETER C_HIGHADDR = 0x010003FF
+ BUS_INTERFACE SOPB = opb0
+ PORT OPB_Clk = epb_clk
+ PORT user_data_out = kat_adc_sync_count0
+ PORT user_clk = adc0_clk
 END
+
+# kat_adc/sync_count1
+BEGIN opb_register_ppc2simulink
+ PARAMETER INSTANCE = kat_adc_sync_count1_reg
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_BASEADDR = 0x01000400
+ PARAMETER C_HIGHADDR = 0x010004FF
+ BUS_INTERFACE SOPB = opb0
+ PORT OPB_Clk = epb_clk
+ PORT user_data_out = kat_adc_sync_count1
+ PORT user_clk = adc0_clk
+END
+
+BEGIN opb_iic
+ PARAMETER HW_VER = 1.02.a
+ PARAMETER INSTANCE = opb_iic_adc0
+ PARAMETER C_BASEADDR = 0x00040000
+ PARAMETER C_HIGHADDR = 0x00047FFF
+ PARAMETER C_CLK_FREQ = 83333333
+ PARAMETER C_IIC_FREQ = 100000
+ PARAMETER C_TEN_BIT_ADR = 0
+ BUS_INTERFACE SOPB = opb0
+ PORT OPB_Clk = epb_clk
+ 
+ PORT Sda_I = iic_adc0_sda_i
+ PORT Sda_O = iic_adc0_sda_o
+ PORT Sda_T = iic_adc0_sda_t
+ PORT Scl_I = iic_adc0_scl_i
+ PORT Scl_O = iic_adc0_scl_o
+ PORT Scl_T = iic_adc0_scl_t
+END
+
+PORT adc0_iic_sda = adc0_iic_sda, DIR = IO
+PORT adc0_iic_scl = adc0_iic_scl, DIR = IO
+
+BEGIN iic_infrastructure
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER INSTANCE = iic_infrastructure_adc0
+ PORT Sda_I = iic_adc0_sda_i
+ PORT Sda_O = iic_adc0_sda_o
+ PORT Sda_T = iic_adc0_sda_t
+ PORT Scl_I = iic_adc0_scl_i
+ PORT Scl_O = iic_adc0_scl_o
+ PORT Scl_T = iic_adc0_scl_t
+ PORT Sda   = adc0_iic_sda
+ PORT Scl   = adc0_iic_scl
+END
+
+BEGIN opb_iic
+ PARAMETER HW_VER = 1.02.a
+ PARAMETER INSTANCE = opb_iic_adc1
+ PARAMETER C_BASEADDR = 0x00048000
+ PARAMETER C_HIGHADDR = 0x0004FFFF
+ PARAMETER C_CLK_FREQ = 83333333
+ PARAMETER C_IIC_FREQ = 100000
+ PARAMETER C_TEN_BIT_ADR = 0
+ BUS_INTERFACE SOPB = opb0
+ PORT OPB_Clk = epb_clk
+ 
+ PORT Sda_I = iic_adc1_sda_i
+ PORT Sda_O = iic_adc1_sda_o
+ PORT Sda_T = iic_adc1_sda_t
+ PORT Scl_I = iic_adc1_scl_i
+ PORT Scl_O = iic_adc1_scl_o
+ PORT Scl_T = iic_adc1_scl_t
+END
+
+
+PORT adc1_iic_sda = adc1_iic_sda, DIR = IO
+PORT adc1_iic_scl = adc1_iic_scl, DIR = IO
+
+BEGIN iic_infrastructure
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER INSTANCE = iic_infrastructure_adc1
+ PORT Sda_I = iic_adc1_sda_i
+ PORT Sda_O = iic_adc1_sda_o
+ PORT Sda_T = iic_adc1_sda_t
+ PORT Scl_I = iic_adc1_scl_i
+ PORT Scl_O = iic_adc1_scl_o
+ PORT Scl_T = iic_adc1_scl_t
+ PORT Sda   = adc1_iic_sda
+ PORT Scl   = adc1_iic_scl
+END
+
+

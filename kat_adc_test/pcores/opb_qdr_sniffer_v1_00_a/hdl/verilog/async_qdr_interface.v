@@ -53,7 +53,6 @@ module async_qdr_interface #(
   assign qdr_be = (second_cycle && second_word) || (!second_cycle && !second_word) ?
                      host_be_reg : 4'b0;
 
-  assign host_datao = host_datao_reg;
   reg host_ack_reg;
   assign host_ack = host_ack_reg;
 
@@ -78,6 +77,9 @@ module async_qdr_interface #(
 
   reg wait_clear;
 
+  reg [31:0] host_datao_retimed;
+  assign host_datao = host_datao_retimed;
+
   always @(posedge host_clk) begin
     host_ack_reg <= 1'b0;
 
@@ -96,6 +98,7 @@ module async_qdr_interface #(
       if (resp_regRR) begin
         trans_reg  <= 1'b0;
         wait_clear <= 1'b1;
+        host_datao_retimed <= host_datao_reg;
       end
       if (wait_clear && !resp_regRR) begin
         wait_clear   <= 1'b0;

@@ -1,4 +1,6 @@
-module kat_adc_interface(
+module kat_adc_interface #(
+    parameter    EXTRA_REG = 1
+  ) (
     /* External signals */
     input        adc_clk_p,
     input        adc_clk_n,
@@ -205,12 +207,27 @@ module kat_adc_interface(
   /*************** ADC Clock Domain FIFO *****************/
 
   wire [69:0] fifo_data_in;
-  assign fifo_data_in = {capture_sync, adc_overrange_fall, adc_overrange_rise, adc_dq_fall, adc_dq_d_fall, adc_dq_rise, adc_dq_d_rise, adc_di_fall, adc_di_d_fall, adc_di_rise, adc_di_d_rise};
+  wire [69:0] reg_data_in;
+  assign reg_data_in = {capture_sync, adc_overrange_fall, adc_overrange_rise, adc_dq_fall, adc_dq_d_fall, adc_dq_rise, adc_dq_d_rise, adc_di_fall, adc_di_d_fall, adc_di_rise, adc_di_d_rise};
 
   wire [69:0] fifo_data_out;
   wire fifo_empty;
 
   reg fifo_rd_en;
+
+
+
+generate if (EXTRA_REG) begin : with_extra_reg
+
+  reg [69:0] extra_reg;
+  always @(posedge adc_clk) begin
+    extra_reg <= reg_data_in;
+  end
+  assign fifo_data_in = extra_reg;
+  
+end else begin
+  assign fifo_data_in = reg_data_in;
+end endgenerate
   
   adc_async_fifo adc_async_fifo_inst(
     .rst    (dcm_reset),

@@ -6,7 +6,7 @@ BEGIN kat_adc
 OPTION IPTYPE = IP
 OPTION IMP_NETLIST = TRUE
 OPTION IP_GROUP = USER
-OPTION ARCH_SUPPORT_MAP = (VIRTEX2P=PREFERRED, VIRTEX5=DEVELOPMENT)
+OPTION ARCH_SUPPORT_MAP = (VIRTEX5=PREFERRED)
 
 ###################
 # Clock port      #
@@ -18,63 +18,43 @@ PORT rst = "", DIR = I, SIGIS = RST
 # Interfaces      #
 ###################
 
-# kat_adc/XSG core config
-
 # kat_adc/adc0
 PORT adc0_data_valid = "", DIR = in
-PORT adc0_datai0 = "", DIR = in, VEC = [7:0]
-PORT adc0_datai1 = "", DIR = in, VEC = [7:0]
-PORT adc0_datai2 = "", DIR = in, VEC = [7:0]
-PORT adc0_datai3 = "", DIR = in, VEC = [7:0]
-PORT adc0_dataq0 = "", DIR = in, VEC = [7:0]
-PORT adc0_dataq1 = "", DIR = in, VEC = [7:0]
-PORT adc0_dataq2 = "", DIR = in, VEC = [7:0]
-PORT adc0_dataq3 = "", DIR = in, VEC = [7:0]
-PORT adc0_outofrangei0 = "", DIR = in
-PORT adc0_outofrangei1 = "", DIR = in
-PORT adc0_outofrangeq0 = "", DIR = in
-PORT adc0_outofrangeq1 = "", DIR = in
-PORT adc0_sync0 = "", DIR = in
-PORT adc0_sync1 = "", DIR = in
-PORT adc0_sync2 = "", DIR = in
-PORT adc0_sync3 = "", DIR = in
+PORT adc0_datai0     = "", DIR = in, VEC = [7:0]
+PORT adc0_datai1     = "", DIR = in, VEC = [7:0]
+PORT adc0_datai2     = "", DIR = in, VEC = [7:0]
+PORT adc0_datai3     = "", DIR = in, VEC = [7:0]
+PORT adc0_dataq0     = "", DIR = in, VEC = [7:0]
+PORT adc0_dataq1     = "", DIR = in, VEC = [7:0]
+PORT adc0_dataq2     = "", DIR = in, VEC = [7:0]
+PORT adc0_dataq3     = "", DIR = in, VEC = [7:0]
+PORT adc0_outofrange = "", DIR = in, VEC = [1:0]
+PORT adc0_sync0      = "", DIR = in
+PORT adc0_sync1      = "", DIR = in
+PORT adc0_sync2      = "", DIR = in
+PORT adc0_sync3      = "", DIR = in
 
 # kat_adc/adc1
 PORT adc1_data_valid = "", DIR = in
-PORT adc1_datai0 = "", DIR = in, VEC = [7:0]
-PORT adc1_datai1 = "", DIR = in, VEC = [7:0]
-PORT adc1_datai2 = "", DIR = in, VEC = [7:0]
-PORT adc1_datai3 = "", DIR = in, VEC = [7:0]
-PORT adc1_dataq0 = "", DIR = in, VEC = [7:0]
-PORT adc1_dataq1 = "", DIR = in, VEC = [7:0]
-PORT adc1_dataq2 = "", DIR = in, VEC = [7:0]
-PORT adc1_dataq3 = "", DIR = in, VEC = [7:0]
-PORT adc1_outofrangei0 = "", DIR = in
-PORT adc1_outofrangei1 = "", DIR = in
-PORT adc1_outofrangeq0 = "", DIR = in
-PORT adc1_outofrangeq1 = "", DIR = in
-PORT adc1_sync0 = "", DIR = in
-PORT adc1_sync1 = "", DIR = in
-PORT adc1_sync2 = "", DIR = in
-PORT adc1_sync3 = "", DIR = in
+PORT adc1_datai0     = "", DIR = in, VEC = [7:0]
+PORT adc1_datai1     = "", DIR = in, VEC = [7:0]
+PORT adc1_datai2     = "", DIR = in, VEC = [7:0]
+PORT adc1_datai3     = "", DIR = in, VEC = [7:0]
+PORT adc1_dataq0     = "", DIR = in, VEC = [7:0]
+PORT adc1_dataq1     = "", DIR = in, VEC = [7:0]
+PORT adc1_dataq2     = "", DIR = in, VEC = [7:0]
+PORT adc1_dataq3     = "", DIR = in, VEC = [7:0]
+PORT adc1_outofrange = "", DIR = in, VEC = [1:0]
+PORT adc1_sync0      = "", DIR = in
+PORT adc1_sync1      = "", DIR = in
+PORT adc1_sync2      = "", DIR = in
+PORT adc1_sync3      = "", DIR = in
 
-# kat_adc/ctrl0
-PORT ctrl0 = "", DIR = in, VEC = [31:0]
+# kat_adc/ctrl
+PORT ctrl = "", DIR = in, VEC = [31:0]
 
-# kat_adc/ctrl1
-PORT ctrl1 = "", DIR = in, VEC = [31:0]
-
-# kat_adc/overflow_i1
-PORT overrange_i1 = "", DIR = out, VEC = [31:0]
-
-# kat_adc/overflow_q1
-PORT overrange_q1 = "", DIR = out, VEC = [31:0]
-
-# kat_adc/overrange_i0
-PORT overrange_i0 = "", DIR = out, VEC = [31:0]
-
-# kat_adc/overrange_q0
-PORT overrange_q0 = "", DIR = out, VEC = [31:0]
+# kat_adc/overrange
+PORT overrange = "", DIR = out, VEC = [31:0]
 
 # kat_adc/qdr0
 PORT qdr0_ack = "", DIR = in
@@ -98,39 +78,14 @@ PORT qdr1_dout = "", DIR = out, VEC = [35:0]
 PORT qdr1_rd_en = "", DIR = out
 PORT qdr1_wr_en = "", DIR = out
 
-# kat_adc/status0
-PORT status0 = "", DIR = out, VEC = [31:0]
-
-# kat_adc/status1
-PORT status1 = "", DIR = out, VEC = [31:0]
+# kat_adc/status
+PORT status = "", DIR = out, VEC = [31:0]
 
 # kat_adc/sync_count0
 PORT sync_count0 = "", DIR = out, VEC = [31:0]
 
 # kat_adc/sync_count1
 PORT sync_count1 = "", DIR = out, VEC = [31:0]
-
-# kat_adc/ten_gbe0
-PORT ten_gbe0_led_rx = "", DIR = in
-PORT ten_gbe0_led_tx = "", DIR = in
-PORT ten_gbe0_led_up = "", DIR = in
-PORT ten_gbe0_rx_bad_frame = "", DIR = in
-PORT ten_gbe0_rx_data = "", DIR = in, VEC = [63:0]
-PORT ten_gbe0_rx_end_of_frame = "", DIR = in
-PORT ten_gbe0_rx_overrun = "", DIR = in
-PORT ten_gbe0_rx_source_ip = "", DIR = in, VEC = [31:0]
-PORT ten_gbe0_rx_source_port = "", DIR = in, VEC = [15:0]
-PORT ten_gbe0_rx_valid = "", DIR = in
-PORT ten_gbe0_tx_afull = "", DIR = in
-PORT ten_gbe0_tx_overflow = "", DIR = in
-PORT ten_gbe0_rst = "", DIR = out
-PORT ten_gbe0_rx_ack = "", DIR = out
-PORT ten_gbe0_rx_overrun_ack = "", DIR = out
-PORT ten_gbe0_tx_data = "", DIR = out, VEC = [63:0]
-PORT ten_gbe0_tx_dest_ip = "", DIR = out, VEC = [31:0]
-PORT ten_gbe0_tx_dest_port = "", DIR = out, VEC = [15:0]
-PORT ten_gbe0_tx_end_of_frame = "", DIR = out
-PORT ten_gbe0_tx_valid = "", DIR = out
 
 PORT leddies = "", DIR = out, VEC = [3:0]
 
