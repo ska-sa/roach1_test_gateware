@@ -147,28 +147,31 @@ module kat_adc #(
     wr_last <= write_progress_z == ({QDR_SIZE{1'b1}} - 1);
   end
 
+  assign capture_write_done = wr_last && wr_valid;
+
   /*********** QDR assignments ***************/
 
-  reg [35:0] qdr0_wr_data;
-  reg [35:0] qdr1_wr_data;
+  reg [31:0] qdr0_wr_data;
+  reg [31:0] qdr1_wr_data;
+
 
   always @(posedge clk) begin
     case (buffer0_src)
-      0: qdr0_wr_data <= {1'b0, adc0_datai0, 1'b0, adc0_datai1, 1'b0, adc0_datai2, 1'b0, adc0_datai3};
-      1: qdr0_wr_data <= {1'b0, adc0_dataq0, 1'b0, adc0_dataq1, 1'b0, adc0_dataq2, 1'b0, adc0_dataq3};
-      2: qdr0_wr_data <= {1'b0, adc1_datai0, 1'b0, adc1_datai1, 1'b0, adc1_datai2, 1'b0, adc1_datai3};
-      3: qdr0_wr_data <= {1'b0, adc1_dataq0, 1'b0, adc1_dataq1, 1'b0, adc1_dataq2, 1'b0, adc1_dataq3};
+      0: qdr0_wr_data <= {adc0_datai0, adc0_datai1, adc0_datai2, adc0_datai3};
+      1: qdr0_wr_data <= {adc0_dataq0, adc0_dataq1, adc0_dataq2, adc0_dataq3};
+      2: qdr0_wr_data <= {adc1_datai0, adc1_datai1, adc1_datai2, adc1_datai3};
+      3: qdr0_wr_data <= {adc1_dataq0, adc1_dataq1, adc1_dataq2, adc1_dataq3};
     endcase
     case (buffer1_src)
-      0: qdr1_wr_data <= {1'b0, adc0_datai0, 1'b0, adc0_datai1, 1'b0, adc0_datai2, 1'b0, adc0_datai3};
-      1: qdr1_wr_data <= {1'b0, adc0_dataq0, 1'b0, adc0_dataq1, 1'b0, adc0_dataq2, 1'b0, adc0_dataq3};
-      2: qdr1_wr_data <= {1'b0, adc1_datai0, 1'b0, adc1_datai1, 1'b0, adc1_datai2, 1'b0, adc1_datai3};
-      3: qdr1_wr_data <= {1'b0, adc1_dataq0, 1'b0, adc1_dataq1, 1'b0, adc1_dataq2, 1'b0, adc1_dataq3};
+      0: qdr1_wr_data <= {adc0_datai0, adc0_datai1, adc0_datai2, adc0_datai3};
+      1: qdr1_wr_data <= {adc0_dataq0, adc0_dataq1, adc0_dataq2, adc0_dataq3};
+      2: qdr1_wr_data <= {adc1_datai0, adc1_datai1, adc1_datai2, adc1_datai3};
+      3: qdr1_wr_data <= {adc1_dataq0, adc1_dataq1, adc1_dataq2, adc1_dataq3};
     endcase
   end
 
-  reg [35:0] qdr0_wr_data_z;
-  reg [35:0] qdr1_wr_data_z;
+  reg [31:0] qdr0_wr_data_z;
+  reg [31:0] qdr1_wr_data_z;
 
   always @(posedge clk) begin
     qdr0_wr_data_z <= qdr0_wr_data;
@@ -193,13 +196,13 @@ module kat_adc #(
 
   assign qdr0_address = qdr0_addr;
   assign qdr0_be      = 4'b1111;
-  assign qdr0_dout    = qdr0_wr_data_z;
+  assign qdr0_dout    = {1'b0, qdr0_wr_data_z[31:24], 1'b0, qdr0_wr_data_z[23:16], 1'b0, qdr0_wr_data_z[15:8], 1'b0, qdr0_wr_data_z[7:0]};
   assign qdr0_rd_en   = 1'b0;
   assign qdr0_wr_en   = qdr0_wr;
 
   assign qdr1_address = qdr1_addr;
   assign qdr1_be      = 4'b1111;
-  assign qdr1_dout    = qdr1_wr_data_z;
+  assign qdr1_dout    = {1'b0, qdr1_wr_data_z[31:24], 1'b0, qdr1_wr_data_z[23:16], 1'b0, qdr1_wr_data_z[15:8], 1'b0, qdr1_wr_data_z[7:0]};
   assign qdr1_rd_en   = 1'b0;
   assign qdr1_wr_en   = qdr1_wr;
 
