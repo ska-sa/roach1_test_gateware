@@ -23,7 +23,7 @@ SimModel: BEHAVIORAL
 MixLangSim: 1
 UcfFile: data/system.ucf
 FpgaImpMode: 0
-EnableParTimingError: 1
+EnableParTimingError: 0
 EnableResetOptimization: 0
 ShowLicenseDialog: 1
 Processor: epb_opb_bridge_inst

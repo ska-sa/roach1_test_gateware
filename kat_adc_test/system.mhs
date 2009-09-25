@@ -33,6 +33,75 @@ PORT adc1_ser_clk = adc1_adc3wire_clk,    DIR = O
 PORT adc1_ser_dat = adc1_adc3wire_data,   DIR = O
 PORT adc1_ser_cs  = adc1_adc3wire_strobe, DIR = O
 
+BEGIN kat_iic_controller
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER INSTANCE = iic_adc0
+ PARAMETER C_BASEADDR = 0x00040000
+ PARAMETER C_HIGHADDR = 0x00047FFF
+ PARAMETER CORE_FREQ = 83333
+ PARAMETER IIC_FREQ = 100
+ BUS_INTERFACE SOPB = opb0
+ PORT OPB_Clk = epb_clk
+ 
+ PORT sda_i = iic_adc0_sda_i
+ PORT sda_o = iic_adc0_sda_o
+ PORT sda_t = iic_adc0_sda_t
+ PORT scl_i = iic_adc0_scl_i
+ PORT scl_o = iic_adc0_scl_o
+ PORT scl_t = iic_adc0_scl_t
+END
+
+PORT adc0_iic_sda = adc0_iic_sda, DIR = IO
+PORT adc0_iic_scl = adc0_iic_scl, DIR = IO
+
+BEGIN iic_infrastructure
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER INSTANCE = iic_infrastructure_adc0
+ PORT Sda_I = iic_adc0_sda_i
+ PORT Sda_O = iic_adc0_sda_o
+ PORT Sda_T = iic_adc0_sda_t
+ PORT Scl_I = iic_adc0_scl_i
+ PORT Scl_O = iic_adc0_scl_o
+ PORT Scl_T = iic_adc0_scl_t
+ PORT Sda   = adc0_iic_sda
+ PORT Scl   = adc0_iic_scl
+END
+
+BEGIN kat_iic_controller
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER INSTANCE = iic_adc1
+ PARAMETER C_BASEADDR = 0x00048000
+ PARAMETER C_HIGHADDR = 0x0004FFFF
+ PARAMETER CORE_FREQ = 83333
+ PARAMETER IIC_FREQ = 100
+ BUS_INTERFACE SOPB = opb0
+ PORT OPB_Clk = epb_clk
+ 
+ PORT sda_i = iic_adc1_sda_i
+ PORT sda_o = iic_adc1_sda_o
+ PORT sda_t = iic_adc1_sda_t
+ PORT scl_i = iic_adc1_scl_i
+ PORT scl_o = iic_adc1_scl_o
+ PORT scl_t = iic_adc1_scl_t
+END
+
+
+PORT adc1_iic_sda = adc1_iic_sda, DIR = IO
+PORT adc1_iic_scl = adc1_iic_scl, DIR = IO
+
+BEGIN iic_infrastructure
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER INSTANCE = iic_infrastructure_adc1
+ PORT Sda_I = iic_adc1_sda_i
+ PORT Sda_O = iic_adc1_sda_o
+ PORT Sda_T = iic_adc1_sda_t
+ PORT Scl_I = iic_adc1_scl_i
+ PORT Scl_O = iic_adc1_scl_o
+ PORT Scl_T = iic_adc1_scl_t
+ PORT Sda   = adc1_iic_sda
+ PORT Scl   = adc1_iic_scl
+END
+
 # kat_adc/adc0
 BEGIN kat_adc_interface
  PARAMETER INSTANCE = kat_adc_adc0
@@ -561,77 +630,6 @@ BEGIN opb_register_ppc2simulink
  PORT OPB_Clk = epb_clk
  PORT user_data_out = kat_adc_sync_count1
  PORT user_clk = adc0_clk
-END
-
-BEGIN opb_iic
- PARAMETER HW_VER = 1.02.a
- PARAMETER INSTANCE = opb_iic_adc0
- PARAMETER C_BASEADDR = 0x00040000
- PARAMETER C_HIGHADDR = 0x00047FFF
- PARAMETER C_CLK_FREQ = 83333333
- PARAMETER C_IIC_FREQ = 100000
- PARAMETER C_TEN_BIT_ADR = 0
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- 
- PORT Sda_I = iic_adc0_sda_i
- PORT Sda_O = iic_adc0_sda_o
- PORT Sda_T = iic_adc0_sda_t
- PORT Scl_I = iic_adc0_scl_i
- PORT Scl_O = iic_adc0_scl_o
- PORT Scl_T = iic_adc0_scl_t
-END
-
-PORT adc0_iic_sda = adc0_iic_sda, DIR = IO
-PORT adc0_iic_scl = adc0_iic_scl, DIR = IO
-
-BEGIN iic_infrastructure
- PARAMETER HW_VER = 1.00.a
- PARAMETER INSTANCE = iic_infrastructure_adc0
- PORT Sda_I = iic_adc0_sda_i
- PORT Sda_O = iic_adc0_sda_o
- PORT Sda_T = iic_adc0_sda_t
- PORT Scl_I = iic_adc0_scl_i
- PORT Scl_O = iic_adc0_scl_o
- PORT Scl_T = iic_adc0_scl_t
- PORT Sda   = adc0_iic_sda
- PORT Scl   = adc0_iic_scl
-END
-
-BEGIN opb_iic
- PARAMETER HW_VER = 1.02.a
- PARAMETER INSTANCE = opb_iic_adc1
- PARAMETER C_BASEADDR = 0x00048000
- PARAMETER C_HIGHADDR = 0x0004FFFF
- PARAMETER C_CLK_FREQ = 83333333
- PARAMETER C_IIC_FREQ = 100000
- PARAMETER C_TEN_BIT_ADR = 0
- BUS_INTERFACE SOPB = opb0
- PORT OPB_Clk = epb_clk
- 
- PORT Sda_I = iic_adc1_sda_i
- PORT Sda_O = iic_adc1_sda_o
- PORT Sda_T = iic_adc1_sda_t
- PORT Scl_I = iic_adc1_scl_i
- PORT Scl_O = iic_adc1_scl_o
- PORT Scl_T = iic_adc1_scl_t
-END
-
-
-PORT adc1_iic_sda = adc1_iic_sda, DIR = IO
-PORT adc1_iic_scl = adc1_iic_scl, DIR = IO
-
-BEGIN iic_infrastructure
- PARAMETER HW_VER = 1.00.a
- PARAMETER INSTANCE = iic_infrastructure_adc1
- PORT Sda_I = iic_adc1_sda_i
- PORT Sda_O = iic_adc1_sda_o
- PORT Sda_T = iic_adc1_sda_t
- PORT Scl_I = iic_adc1_scl_i
- PORT Scl_O = iic_adc1_scl_o
- PORT Scl_T = iic_adc1_scl_t
- PORT Sda   = adc1_iic_sda
- PORT Scl   = adc1_iic_scl
 END
 
 
