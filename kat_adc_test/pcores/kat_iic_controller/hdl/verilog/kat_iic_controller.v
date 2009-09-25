@@ -66,8 +66,11 @@ module kat_iic_controller(
 
   reg Sl_xferAck_reg;
 
+  reg fifo_rst_reg;
+
   always @(posedge OPB_Clk) begin
     Sl_xferAck_reg <= 1'b0;
+    fifo_rst_reg <= 1'b0;
 
     op_fifo_wr_en_reg <= 1'b0;
     rx_fifo_rd_en_reg <= 1'b0;
@@ -96,6 +99,7 @@ module kat_iic_controller(
           end
           REG_STATUS: begin
             if (!OPB_RNW) begin
+              fifo_rst_reg <= 1'b1;
               op_fifo_over_reg <= 1'b0;
               rx_fifo_over_reg <= 1'b0;
               op_rd_error_reg <= 1'b0;
@@ -194,7 +198,7 @@ module kat_iic_controller(
     .clk      (OPB_Clk),
     .din      (op_fifo_wr_data),
     .rd_en    (op_fifo_rd_en),
-    .rst      (OPB_Rst),
+    .rst      (fifo_rst_reg),
     .wr_en    (op_fifo_wr_en),
     .dout     (op_fifo_rd_data),
     .empty    (op_fifo_empty),
@@ -206,7 +210,7 @@ module kat_iic_controller(
     .clk      (OPB_Clk),
     .din      (rx_fifo_wr_data),
     .rd_en    (rx_fifo_rd_en),
-    .rst      (OPB_Rst),
+    .rst      (fifo_rst_reg),
     .wr_en    (rx_fifo_wr_en),
     .dout     (rx_fifo_rd_data),
     .empty    (rx_fifo_empty),
