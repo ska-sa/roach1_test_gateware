@@ -143,9 +143,24 @@ module toplevel(
     .in_switch(!CHS_RESET_N), .out_switch(por_reset)
   );
 
+  /******* Chassis Reset (performs soft reset in power manager) ********/
+  wire chs_reset_int;
 
-  assign chs_reset = 1'b0;
-  //Chassis reset wont ever work on ROACH, as the POR is tied to same line as the switch
+  debouncer #(
+    .DELAY(32'h0002_0000)
+  ) debouncer_chs_rst_inst (  
+    .clk(gclk40),
+    .rst(1'b0),
+    .in_switch(GPIO[0]), .out_switch(chs_reset_int)
+  );
+
+  reg chs_reset_z;
+  always @(posedge gclk40) begin
+    chs_reset_z <= chs_reset_int;
+  end
+
+
+  wire chs_reset = chs_reset_int && (!chs_reset_z);
 
   /*********************** Global Infrastructure ************************/
   wire nc_fpgagood;
@@ -664,7 +679,9 @@ module toplevel(
 
   reg [26:0] counter;
   always @(posedge gclk40) begin
-    if (!hard_reset) begin
+    if (hard_reset) begin
+      counter <= 0;
+    end else begin
       counter <= counter + 1;
     end
   end
@@ -793,8 +810,7 @@ module toplevel(
   );
 
   /******************* GPIO ***********************/
-  assign GPIO_OE1 = 1'b1;
-  assign GPIO_OE0 = 1'b1;
-  assign GPIO       = {4'b1010, 4'b0011};
+  assign GPIO_OE1 = 1'b0;
+  assign GPIO_OE0 = 1'b0;
 
 endmodule
