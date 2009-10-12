@@ -34,6 +34,16 @@ NET "leddies<1>"    IOSTANDARD = LVCMOS18 | LOC = AP25;
 NET "leddies<2>"    IOSTANDARD = LVCMOS18 | LOC = AL25;
 NET "leddies<3>"    IOSTANDARD = LVCMOS18 | LOC = AL24;
 
+NET "gpio_a<7>"    IOSTANDARD = LVCMOS15 | LOC = B27;
+NET "gpio_a<6>"    IOSTANDARD = LVCMOS15 | LOC = D24;
+NET "gpio_a<5>"    IOSTANDARD = LVCMOS15 | LOC = E24;
+NET "gpio_a<4>"    IOSTANDARD = LVCMOS15 | LOC = A26;
+NET "gpio_a<3>"    IOSTANDARD = LVCMOS15 | LOC = J7;
+NET "gpio_a<2>"    IOSTANDARD = LVCMOS15 | LOC = H7;
+NET "gpio_a<1>"    IOSTANDARD = LVCMOS15 | LOC = J9;
+NET "gpio_a<0>"    IOSTANDARD = LVCMOS15 | LOC = J10;
+NET "gpio_a<8>"    IOSTANDARD = LVCMOS33 | LOC = AE14;
+
 #
 # PPC External Peripheral Bus [EPB]
 #
@@ -264,7 +274,7 @@ NET "adc0_rst" LOC = H29;
 #NET "adc0_rst_n" LOC = J29;
 NET "adc0_sync_p" LOC = K31 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE;
 NET "adc0_sync_n" LOC = L31 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE;
-NET "adc0_clk_p" LOC = J20 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE;
+NET "adc0_clk_p" LOC = J20 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE | PERIOD = 3.0 ns;
 NET "adc0_clk_n" LOC = J21 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE;
 NET "adc0_overrange_p" LOC = H19 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE;
 NET "adc0_overrange_n" LOC = H20 | IOSTANDARD = LVDS_25 | DIFF_TERM = TRUE;

@@ -18,6 +18,8 @@ PORT rst = "", DIR = I, SIGIS = RST
 # Interfaces      #
 ###################
 
+PORT debug = "", DIR = out, VEC = [8:0]
+
 # kat_adc/adc0
 PORT adc0_data_valid = "", DIR = in
 PORT adc0_datai0     = "", DIR = in, VEC = [7:0]

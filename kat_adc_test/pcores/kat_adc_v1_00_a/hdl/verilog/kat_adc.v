@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 
 module kat_adc #(
-    parameter QDR_SIZE   = 12
+    parameter QDR_SIZE = 14
   ) (
     input         clk,
     input         rst,
@@ -68,7 +68,9 @@ module kat_adc #(
     output [35:0] qdr1_dout,
     output        qdr1_rd_en,
     output        qdr1_wr_en
+    ,output [8:0] debug
   );
+  assign debug = {1'b0, 4'b1010, 3'b00, clk};
 
   /*************** Primary State Machine ****************/
 
@@ -154,6 +156,24 @@ module kat_adc #(
   reg [31:0] qdr0_wr_data;
   reg [31:0] qdr1_wr_data;
 
+  reg [15:0] counter0;
+  reg [15:0] counter1;
+  reg [15:0] counter2;
+  reg [15:0] counter3;
+
+  always @(posedge clk) begin
+    if (rst) begin
+      counter0 <= 16'h0000;
+      counter1 <= 16'h1000;
+      counter2 <= 16'h2000;
+      counter3 <= 16'h3000;
+    end else begin
+      counter0 <= counter0 + 1;
+      counter1 <= counter1 + 1;
+      counter2 <= counter2 + 1;
+      counter3 <= counter3 + 1;
+    end
+  end
 
   always @(posedge clk) begin
     case (buffer0_src)
@@ -174,8 +194,8 @@ module kat_adc #(
   reg [31:0] qdr1_wr_data_z;
 
   always @(posedge clk) begin
-    qdr0_wr_data_z <= qdr0_wr_data;
-    qdr1_wr_data_z <= qdr1_wr_data;
+    qdr0_wr_data_z <= ctrl[31] ? {counter1, counter0} : qdr0_wr_data;
+    qdr1_wr_data_z <= ctrl[31] ? {counter3, counter2} : qdr1_wr_data;
   end
 
   reg [31:0] qdr0_addr;

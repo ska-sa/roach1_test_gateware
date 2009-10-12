@@ -215,8 +215,6 @@ module kat_adc_interface #(
 
   reg fifo_rd_en;
 
-
-
 generate if (EXTRA_REG) begin : with_extra_reg
 
   reg [69:0] extra_reg;

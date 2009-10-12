@@ -100,6 +100,8 @@ module opb_katadccontroller(
   assign adc1_config_addr  = adc1_config_addr_reg;
   assign adc1_config_start = adc1_config_start_reg;
 
+  /* This register will keep the DCMs in reset until the ADC reset has been set */
+  reg hold_resets;
 
   always @(posedge OPB_Clk) begin
     opb_ack <= 1'b0;
@@ -114,6 +116,7 @@ module opb_katadccontroller(
     adc1_config_start_reg <= 1'b0;
 
     if (OPB_Rst) begin
+      hold_resets <= 1'b1;
     end else begin
       if (addr_match && OPB_select && !opb_ack) begin
         opb_ack <= 1'b1;
@@ -123,6 +126,7 @@ module opb_katadccontroller(
               if (OPB_BE[3]) begin
                 adc0_reset_reg <= OPB_DBus[31];
                 adc1_reset_reg <= OPB_DBus[30];
+                hold_resets <= 1'b0;
               end
               if (OPB_BE[1]) begin
                 adc0_dcm_psen_reg <= OPB_DBus[15];
@@ -220,8 +224,8 @@ module opb_katadccontroller(
     end
   end
 
-  assign adc0_dcm_reset = adc0_reset_counter != 0;
-  assign adc1_dcm_reset = adc1_reset_counter != 0;
+  assign adc0_dcm_reset = hold_resets || adc0_reset_counter != 0;
+  assign adc1_dcm_reset = hold_resets || adc1_reset_counter != 0;
   assign adc0_adc_reset = adc0_reset_iob;
   assign adc1_adc_reset = adc1_reset_iob;
 
@@ -295,7 +299,7 @@ module opb_katadccontroller(
   assign clk0_done = clk0_counter == 4'b1111;
   assign clk0_en   = adc0_state != CONFIG_IDLE;
 
-  assign adc0_adc3wire_strobe = !(adc0_state == CONFIG_DATA);
+  assign adc0_adc3wire_strobe = !(adc0_state == CONFIG_DATA); //active low
   assign adc0_adc3wire_data   = adc0_config_data_shift[31];
   assign adc0_adc3wire_clk    = clk0_counter[3];
 
@@ -363,7 +367,7 @@ module opb_katadccontroller(
   assign clk1_done = clk1_counter == 4'b1111;
   assign clk1_en   = adc1_state != CONFIG_IDLE;
 
-  assign adc1_adc3wire_strobe = adc1_state == CONFIG_DATA;
+  assign adc1_adc3wire_strobe = !(adc1_state == CONFIG_DATA); //active low
   assign adc1_adc3wire_data   = adc1_config_data_shift[31];
   assign adc1_adc3wire_clk    = clk0_counter[3];
 

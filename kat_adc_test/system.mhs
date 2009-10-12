@@ -225,7 +225,10 @@ BEGIN kat_adc
  PORT overrange   = kat_adc_overrange
  PORT sync_count0 = kat_adc_sync_count0
  PORT sync_count1 = kat_adc_sync_count1
+
+ PORT debug       = debug
 END
+PORT gpio_a = debug, DIR = out, VEC = [8:0]
 
 BEGIN opb_katadccontroller
  PARAMETER INSTANCE     = opb_katadccontroller_0
