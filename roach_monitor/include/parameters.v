@@ -29,7 +29,7 @@
 //Which analogue values must be checked and be valid -- 1 check, 0 dont check
 `define SYS_HEALTH_POWERUP_MASK   32'h0000_0000
 //how long the power manager waits before entering the powered_up state
-`define POWER_DOWN_WAIT           32'h00ff_ffff
+`define POWER_DOWN_WAIT           32'h01ff_ffff
 //how long the power manager waits before starting post power-up checks
 `define POST_POWERUP_WAIT         32'h00ff_ffff
 
