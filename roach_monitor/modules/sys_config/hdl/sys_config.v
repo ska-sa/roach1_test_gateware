@@ -103,7 +103,7 @@ module sys_config(
 
   reg [14:0] rtc_second_ticker;
 
-  reg [47:0] current_time; /* milliseconds since 1970 */
+  reg [47:0] current_time; /* seconds since 1970 */
 
   /* rtc value load handshaking registers */
   /* these should probably be registered to their respective clock domains */

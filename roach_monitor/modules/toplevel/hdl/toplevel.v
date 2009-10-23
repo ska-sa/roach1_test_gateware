@@ -677,8 +677,8 @@ module toplevel(
   assign CONTROLLER_RESET = ~power_ok;
 
 
-  reg [26:0] counter;
-  always @(posedge gclk40) begin
+  reg [16:0] counter;
+  always @(posedge gclk_xtal) begin
     if (hard_reset) begin
       counter <= 0;
     end else begin
@@ -686,9 +686,9 @@ module toplevel(
     end
   end
   wire bad_power_down = no_power_cause == 2'b01 || no_power_cause == 2'b10;
-  wire power_led  = power_ok ? 1'b1 : counter[26];
+  wire power_led  = power_ok ? 1'b1 : counter[14];
   wire action_led = power_ok ? CONTROLLER_IRQ :
-                    bad_power_down ? counter[24] :
+                    bad_power_down ? counter[12] :
                     1'b0;
 
   assign CHS_LED_N = hard_reset ? 2'b00 : ~{action_led, power_led};
