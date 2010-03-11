@@ -8,7 +8,7 @@ PROJECT=roach_bsp
 # module ID -> 16 bit hex
 BOARD_ID=57005 
 REV_MAJOR=5
-REV_MINOR=0
+REV_MINOR=1
 RCS_UPTODATE=0
 REV_RCS=0
 # Pin Constraints
