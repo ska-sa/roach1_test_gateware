@@ -155,8 +155,7 @@ module qdrc_top (
     .BW_WIDTH(BW_WIDTH),
     .ADDR_WIDTH(ADDR_WIDTH),
     .CLK_FREQ(CLK_FREQ),
-    .BURST_LENGTH(BURST_LENGTH),
-    .Q_CLK_270(Q_CLK_270)
+    .BURST_LENGTH(BURST_LENGTH)
   ) qdrc_phy_inst(
     /* general signals */
     .clk0    (clk0),

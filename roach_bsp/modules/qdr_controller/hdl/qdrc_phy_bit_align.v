@@ -35,7 +35,6 @@ module qdrc_phy_bit_align(
   parameter CLK_FREQ     = 200;
   parameter BURST_LENGTH = 4;
   parameter BYPASS       = 1;
-  parameter Q_CLK_270    = 0;
   
   input clk0, clk270, div_clk, reset;
 
@@ -127,10 +126,7 @@ end else begin                  :include_bit_align
   end
 
 
-  qdrc_phy_bit_train #(
-    .CLK_FREQ (CLK_FREQ),
-    .BYPASS   (1'b0)
-  ) qdrc_phy_bit_train_inst (
+  qdrc_phy_bit_train qdrc_phy_bit_train_inst (
     .clk   (div_clk),
     .reset (reset_div_clk),
 
@@ -154,7 +150,7 @@ end else begin                  :include_bit_align
   reg bit_align_fail_reg;
   assign bit_align_fail = bit_align_fail_reg;
 
-  reg [3:0] read_wait; /* TODO: finalize this delay */
+  reg [3:0] read_wait;
 
   reg [2:0] finish_wait;
 
@@ -210,9 +206,7 @@ end else begin                  :include_bit_align
   /* This module removes a possible half cycle delay 
    * that causes the rise data = 0 and fall = 1 */
 
-  qdrc_phy_bit_correct #(
-    .USE_CLK270(Q_CLK_270)
-  ) qdrc_phy_bit_correct_inst [DATA_WIDTH - 1:0](
+  qdrc_phy_bit_correct qdrc_phy_bit_correct_inst [DATA_WIDTH - 1:0](
     .clk0   (clk0),
     .clk270 (clk270),
     .reset  (reset),
