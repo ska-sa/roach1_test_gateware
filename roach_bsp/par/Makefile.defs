@@ -1,17 +1,17 @@
 #################### Build Parameters ###########################
 #
 #xilinx apps
-ISE_VER=10.1
+ISE_VER=
 
-NGDBUILD=ngdbuild-$(ISE_VER)
-MAP=map-$(ISE_VER)
-PAR=par-$(ISE_VER)
-TRCE=trce-$(ISE_VER)
-BITGEN=bitgen-$(ISE_VER)
-CPLDFIT=cpldfit-$(ISE_VER)
-HPREP6=hprep6-$(ISE_VER)
-IMPACT=impact-$(ISE_VER)
-TAEGINE=taengine-$(ISE_VER)
+NGDBUILD=ngdbuild$(ISE_VER)
+MAP=map$(ISE_VER)
+PAR=par$(ISE_VER)
+TRCE=trce$(ISE_VER)
+BITGEN=bitgen$(ISE_VER)
+CPLDFIT=cpldfit$(ISE_VER)
+HPREP6=hprep6$(ISE_VER)
+IMPACT=impact$(ISE_VER)
+TAEGINE=taengine$(ISE_VER)
 
 ######### Command Flags ###########
 NGDBUILD_FLAGS=-aul

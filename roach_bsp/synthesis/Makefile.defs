@@ -1,9 +1,9 @@
 #################### Build Parameters ###########################
 #
 #xilinx apps
-ISE_VER=10.1
+ISE_VER=
 
-XST=xst-$(ISE_VER)
+XST=xst$(ISE_VER)
 
 #XST script commands
 XST_ARGS=run,\
