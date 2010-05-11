@@ -1,0 +1,57 @@
+#############################################################################
+##
+## IP Name  : qdr_test
+## Desc     : Automatically generated IP core wrapping a
+##            Simulink Xilinx System Generator netlist.
+##            Please do not modify by hand, this file will be erased
+##
+#############################################################################
+
+BEGIN qdr_test
+
+###################
+# Generic Options #
+###################
+OPTION IPTYPE = IP
+OPTION STYLE  = BLACKBOX
+
+###################
+# Clock port      #
+###################
+PORT clk = "", DIR = I, SIGIS = CLK, CLK_FREQ = 250000000
+
+###################
+# Interfaces      #
+###################
+
+# qdr_test/XSG core config
+
+# qdr_test/ctrl
+PORT qdr_test_ctrl_user_data_out = "", DIR = in, VEC = [31:0]
+
+# qdr_test/qdr0
+PORT qdr_test_qdr0_ack = "", DIR = in
+PORT qdr_test_qdr0_cal_fail = "", DIR = in
+PORT qdr_test_qdr0_data_out = "", DIR = in, VEC = [35:0]
+PORT qdr_test_qdr0_phy_ready = "", DIR = in
+PORT qdr_test_qdr0_address = "", DIR = out, VEC = [31:0]
+PORT qdr_test_qdr0_be = "", DIR = out, VEC = [3:0]
+PORT qdr_test_qdr0_data_in = "", DIR = out, VEC = [35:0]
+PORT qdr_test_qdr0_rd_en = "", DIR = out
+PORT qdr_test_qdr0_wr_en = "", DIR = out
+
+# qdr_test/qdr1
+PORT qdr_test_qdr1_ack = "", DIR = in
+PORT qdr_test_qdr1_cal_fail = "", DIR = in
+PORT qdr_test_qdr1_data_out = "", DIR = in, VEC = [35:0]
+PORT qdr_test_qdr1_phy_ready = "", DIR = in
+PORT qdr_test_qdr1_address = "", DIR = out, VEC = [31:0]
+PORT qdr_test_qdr1_be = "", DIR = out, VEC = [3:0]
+PORT qdr_test_qdr1_data_in = "", DIR = out, VEC = [35:0]
+PORT qdr_test_qdr1_rd_en = "", DIR = out
+PORT qdr_test_qdr1_wr_en = "", DIR = out
+
+# qdr_test/stat
+PORT qdr_test_stat_user_data_in = "", DIR = out, VEC = [31:0]
+
+END
