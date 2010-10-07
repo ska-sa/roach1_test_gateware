@@ -79,11 +79,11 @@ module toplevel(
   input  XTLCLK, PUB;
   inout  VAREF;
 
-  output GPIO_OE1;
-  output GPIO_OE0;
+  inout  GPIO_OE1;
+  inout  GPIO_OE0;
   inout  [7:0] GPIO;
-  input  GPIO_CC1;
-  input  GPIO_CC0;
+  inout  GPIO_CC1;
+  inout  GPIO_CC0;
 
   /*************** Global Nets ***************/
 
@@ -145,13 +145,14 @@ module toplevel(
 
   /******* Chassis Reset (performs soft reset in power manager) ********/
   wire chs_reset_int;
+  wire chs_reset_in_switch;
 
   debouncer #(
     .DELAY(32'h0002_0000)
   ) debouncer_chs_rst_inst (  
     .clk(gclk40),
     .rst(1'b0),
-    .in_switch(GPIO[0]), .out_switch(chs_reset_int)
+    .in_switch(chs_reset_in_switch), .out_switch(chs_reset_int)
   );
 
   reg chs_reset_z;
@@ -478,8 +479,8 @@ module toplevel(
    .A7_HIGH(`MEM_IRQ_H),
    .A8_BASE(`MEM_FANC_A),
    .A8_HIGH(`MEM_FANC_H),
-   .A9_BASE(`MEM_BUSMON_A),
-   .A9_HIGH(`MEM_BUSMON_H),
+   .A9_BASE(`MEM_GPIO_A),
+   .A9_HIGH(`MEM_GPIO_H),
    .A10_BASE(`MEM_FLASHMEM_A),
    .A10_HIGH(`MEM_FLASHMEM_H)
   ) wbs_arbiter_inst (
@@ -759,7 +760,58 @@ module toplevel(
     .fan_control({FAN3_CONTROL, FAN2_CONTROL, FAN1_CONTROL})
   );
 
+  /**************** GPIO Controller ******************/
+
+  wire [11:0] gpio_in;
+  wire [11:0] gpio_out;
+  wire [11:0] gpio_oe;
+
+  BIBUF bibuf_gpio[11:0] (
+    .PAD ({GPIO_OE1, GPIO_OE0, GPIO_CC1, GPIO_CC0, GPIO}),
+    .D   (gpio_out),
+    .E   (gpio_oe),
+    .Y   (gpio_in)
+  );
+  
+
+  wire [11:0] sw_gpio_out;
+  wire [11:0] sw_gpio_oe;
+  wire [11:0] dedicated_gpio_en;
+
+  gpio_controller #(
+    .NUM_GPIO     (12),
+    .OE_DEFAULTS  (12'b1100_0000_0011),
+    .OUT_DEFAULTS (12'b0100_0000_0000),
+    .DED_DEFAULTS (12'b0000_1000_0000)
+  ) gpio_controller_inst (
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_cyc_i(wbs_cyc_o[9]), .wb_stb_i(wbs_stb_o[9]), .wb_we_i(wbs_we_o),
+    .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(9 + 1) - 1:16*9]),
+    .wb_ack_o(wbs_ack_i[9]),
+
+    .gpio_out (sw_gpio_out),
+    .gpio_in  (gpio_in),
+    .gpio_oe  (sw_gpio_oe),
+    
+    .ded_en   (dedicated_gpio_en)
+  );
+
+  wire [11:0] dedicated_gpio_oe  = 12'b0000_0000_0000;
+  wire [11:0] dedicated_gpio_out = 12'b0000_0000_0000;
+
+genvar geni;
+generate for (geni=0 ; geni < 12; geni=geni + 1) begin: gpio_dedicated
+  assign gpio_oe[geni]  = dedicated_gpio_en[geni] ? dedicated_gpio_oe[geni]  : sw_gpio_oe[geni];
+  assign gpio_out[geni] = dedicated_gpio_en[geni] ? dedicated_gpio_out[geni] : sw_gpio_out[geni];
+end endgenerate
+   
+
+  //dedicated reset is active low
+  assign chs_reset_in_switch = dedicated_gpio_en[7] ? !gpio_in[7] : 1'b0;
+
   /***************** Bus Monitor *********************/
+  /*
+  no longer used
   bus_monitor bus_monitor_inst(
     .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[9]), .wb_stb_i(wbs_stb_o[9]), .wb_we_i(wbs_we_o),
@@ -772,6 +824,7 @@ module toplevel(
     .bm_addr(bm_addr),
     .bm_we(bm_we)
   );
+  */
 
   /************* FlashMem Controller *****************/
 
@@ -808,9 +861,5 @@ module toplevel(
     .FM_REN(FM_REN), .FM_WEN(FM_WEN), .FM_PROGRAM(FM_PROGRAM),
     .FM_BUSY(FM_BUSY), .FM_STATUS(FM_STATUS), .FM_PAGESTATUS(FM_PAGESTATUS)
   );
-
-  /******************* GPIO ***********************/
-  assign GPIO_OE1 = 1'b0;
-  assign GPIO_OE0 = 1'b0;
 
 endmodule

@@ -29,8 +29,8 @@
 `define MEM_FANC_A     16'h300
 `define MEM_FANC_H     16'h33F
 //9
-`define MEM_BUSMON_A   16'h340
-`define MEM_BUSMON_H   16'h37F
+`define MEM_GPIO_A   16'h340
+`define MEM_GPIO_H   16'h37F
 //10
 `define MEM_FLASHMEM_A 16'h3C0
 `define MEM_FLASHMEM_H 16'hFFFF

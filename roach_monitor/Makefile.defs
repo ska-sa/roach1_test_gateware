@@ -1,6 +1,6 @@
 MODULE_ID=roach_monitor
-REV_MAJOR=8
-REV_MINOR=4
+REV_MAJOR=9
+REV_MINOR=0
 REV_RCS:=0
 RCS_UPTODATE:=0
 PROJECT=$(MODULE_ID)_$(REV_MAJOR)_$(REV_MINOR)_$(REV_RCS)
@@ -24,8 +24,7 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./modules/analogue_infrastructure/hdl/analogue_infrastructure.v \
     ./modules/as_wb_bridge/hdl/as_wb_bridge.v \
     ./modules/as_wb_bridge/hdl/fifo_512_8.v \
-    ./modules/bus_monitor/hdl/bus_monitor.v \
-    ./modules/bus_monitor/hdl/bus_monitor.vh \
+    ./modules/gpio_controller/hdl/gpio_controller.v \
     ./modules/debouncer/hdl/debouncer.v \
     ./modules/dma_engine/hdl/dma_engine.v \
     ./modules/fan_controller/hdl/fan_controller.v \

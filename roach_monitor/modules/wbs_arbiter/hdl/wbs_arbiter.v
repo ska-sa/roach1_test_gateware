@@ -156,7 +156,8 @@ module wbs_arbiter(
   reg [15:0] wbm_adr_o_reg;
   assign wbs_adr_o = wbm_adr_o_reg;
 
-  assign wbm_dat_o = wbs_active == (temp << 0)  ? wbs_dat_i[16*(0+1)  - 1:16*0 ] :
+  wire [15:0] wbm_dat_o_int =
+                     wbs_active == (temp << 0)  ? wbs_dat_i[16*(0+1)  - 1:16*0 ] :
                      wbs_active == (temp << 1)  ? wbs_dat_i[16*(1+1)  - 1:16*1 ] :
                      wbs_active == (temp << 2)  ? wbs_dat_i[16*(2+1)  - 1:16*2 ] :
                      wbs_active == (temp << 3)  ? wbs_dat_i[16*(3+1)  - 1:16*3 ] :
@@ -184,6 +185,8 @@ module wbs_arbiter(
 
   assign timeout_reset = ~(state == STATE_WAIT);
   
+
+  reg [15:0] wbm_dat_o_reg;
 
   always @(posedge wb_clk_i) begin
     /* strobes */
@@ -266,6 +269,7 @@ module wbs_arbiter(
         STATE_WAIT: begin
           if (wbs_ack_i & wbs_active) begin
             wbm_ack_o <= 1'b1;
+            wbm_dat_o_reg <= wbm_dat_o_int;
             state <= STATE_IDLE;
 `ifdef DEBUG
             $display("wb_arb: got ack");
@@ -281,5 +285,6 @@ module wbs_arbiter(
       endcase
     end
   end
+  assign wbm_dat_o = wbm_dat_o_reg;
 
 endmodule
