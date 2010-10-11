@@ -5,7 +5,7 @@ $(BIT_FILE): $(PROG_SCRIPT) $(FLASHROM_UFC)
 
 $(PAR_F): $(PAR_SCRIPT) $(CONSTRAINTS_P) $(CONSTRAINTS_T)
 	$(PAR_BIN) SCRIPT:$(PAR_SCRIPT) > $(PAR_MSGS)
-	@grep -q"TIMER: Max delay timing requirements have been met." $(PAR_MSGS) && echo "Warning: Timing not met"
+	@grep -q "TIMER: Max delay timing requirements have been met." $(PAR_MSGS) || echo "Warning: Timing not met"
 
 $(PROG_SCRIPT): $(PAR_F) 
 	@echo "$(PROG_COMMANDS)" | sed -e 's/ *; */\n/g' > $@
