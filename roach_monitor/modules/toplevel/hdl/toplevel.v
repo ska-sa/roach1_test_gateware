@@ -772,6 +772,14 @@ module toplevel(
     .E   (gpio_oe),
     .Y   (gpio_in)
   );
+
+
+  reg power_ok_z;
+  always @(posedge gclk40) begin
+    power_ok_z <= power_ok;
+  end
+
+  wire power_ok_negedge = !power_ok && power_ok_z;
   
 
   wire [11:0] sw_gpio_out;
@@ -784,7 +792,7 @@ module toplevel(
     .OUT_DEFAULTS (12'b0100_0000_0000),
     .DED_DEFAULTS (12'b0000_1000_0000)
   ) gpio_controller_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk40), .wb_rst_i(hard_reset || power_ok_negedge),
     .wb_cyc_i(wbs_cyc_o[9]), .wb_stb_i(wbs_stb_o[9]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(9 + 1) - 1:16*9]),
     .wb_ack_o(wbs_ack_i[9]),

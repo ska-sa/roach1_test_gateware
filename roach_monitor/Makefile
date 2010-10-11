@@ -67,7 +67,6 @@ clean:
 	make -C $(PAR_DIR) clean \
 		PROJECT=$(PROJECT) \
 		BIT_FILE=$(BIT_FILE)
-	make -C $(MODULES_DIR) clean 
 	make -C $(SYNTH_DIR) clean \
 		PROJECT=$(PROJECT)
 	make -C $(SUPPORT_DIR) clean \
