@@ -2,7 +2,7 @@ module gpio_controller #(
     parameter NUM_GPIO     = 12,
     parameter OE_DEFAULTS  = 0,
     parameter OUT_DEFAULTS = 0,
-    parameter DED_DEFAULTS = 0,
+    parameter DED_DEFAULTS = 0
 
   ) (
     input                 wb_clk_i,
