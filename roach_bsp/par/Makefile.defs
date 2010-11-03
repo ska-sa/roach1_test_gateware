@@ -17,7 +17,8 @@ TAEGINE=taengine$(ISE_VER)
 NGDBUILD_FLAGS=-aul
 MAP_FLAGS=-detail -ol high -w -xe n
 PAR_FLAGS=-w -ol high -xe n
-BITGEN_FLAGS=-w -g DriveDone:No -g DonePin:Pullup -g StartUpClk:CCLK -g Security:NONE -m -g binary:yes
+BITGEN_FLAGS=-w -g DriveDone:No -g DonePin:Pullup -g StartUpClk:CCLK -g Security:NONE -m -g binary:yes -g GTS_cycle:2
+
 CPLDFIT_FLAGS=
 TRCE_FLAGS=-e 1000
 HPREP6_FLAGS=
