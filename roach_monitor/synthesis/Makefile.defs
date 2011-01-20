@@ -1,7 +1,7 @@
 SYNTH_BIN=synplify
 SYNTH_F=$(PROJECT).edn
 SYNTH_SCRIPT=$(PROJECT).prj
-SYNTH_FREQ=40.000
+SYNTH_FREQ=33.333
 
 
 SYNTH_COMMANDS=impl -add synthesis -type fpga;\

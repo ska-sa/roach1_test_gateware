@@ -1,13 +1,11 @@
 `timescale 1ns/10ps
 module infrastructure(
-    gclk40,gclk100,gclk10,gclk_xtal,
-    PLL_LOCK,
+    gclk33, gclk_xtal,
     PUB, FPGAGOOD, XTLCLK,
     RTCCLK, SELMODE, RTC_MODE,
     vcc_good
   );
-  output gclk40,gclk100,gclk10,gclk_xtal;
-  output PLL_LOCK;
+  output gclk33, gclk_xtal;
 
   input  PUB;
   output FPGAGOOD;
@@ -20,16 +18,8 @@ module infrastructure(
   //clock infrastructure 
   wire rcclk;
 
-  rcclock rcclock(
-    .CLKOUT(rcclk)
-  );
-
-  clocks clocks(
-    .POWERDOWN(vcc_good), //active low
-    .CLKA(rcclk),
-    .GLA(gclk100),.GLB(gclk40),.GLC(gclk10),
-    .OADIVRST(1'b0),
-    .LOCK(PLL_LOCK)
+  clock clock(
+    .CLK(gclk33)
   );
 
   // RTC bits

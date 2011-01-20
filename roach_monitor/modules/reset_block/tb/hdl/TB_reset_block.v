@@ -22,6 +22,7 @@ module TB_reset_block();
   );
 
   initial begin
+    $dumpvars;
     clk<=1'b0;
     areset<=1'b1;
 
@@ -77,13 +78,13 @@ module TB_reset_block();
             $finish;
           end
         end
-        if (counter == `SIM_RESET_DELAY + 1) begin
+        if (counter == `SIM_RESET_DELAY + 2) begin
           if (~reset_o) begin
             $display("FAILED: expected reset 1");
             $finish;
           end
         end
-        if (counter == `SIM_RESET_DELAY + `SIM_RESET_WIDTH + 1) begin
+        if (counter == `SIM_RESET_DELAY + `SIM_RESET_WIDTH + 4) begin
           if (reset_o) begin
             $display("FAILED: expected reset deassert 1");
             $finish;

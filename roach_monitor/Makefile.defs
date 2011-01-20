@@ -1,5 +1,5 @@
 MODULE_ID=roach_monitor
-REV_MAJOR=9
+REV_MAJOR=10
 REV_MINOR=1
 REV_RCS:=0
 RCS_UPTODATE:=0
@@ -35,9 +35,8 @@ SRC=./modules/acm_controller/hdl/acm_controller.v \
     ./modules/from_infrastructure/hdl/flashrom_infrastructure.v \
     ./modules/i2c_infrastructure/hdl/i2c_infrastructure.v \
     ./modules/i2c_slave/hdl/i2c_slave.v \
-    ./modules/infrastructure/hdl/clocks.v \
+    ./modules/infrastructure/hdl/clock.v \
     ./modules/infrastructure/hdl/infrastructure.v \
-    ./modules/infrastructure/hdl/rcclock.v \
     ./modules/infrastructure/hdl/vrpsm.v \
     ./modules/infrastructure/hdl/xtalclk.v \
     ./modules/irq_controller/hdl/irq_controller.v \

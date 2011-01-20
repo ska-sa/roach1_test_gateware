@@ -88,8 +88,7 @@ module toplevel(
   /*************** Global Nets ***************/
 
   wire hard_reset;
-  wire gclk10, gclk40, gclk100;
-  wire pll_lock;
+  wire gclk33;
 
   wire soft_reset;
 
@@ -104,21 +103,22 @@ module toplevel(
 
   wire reset_xport;
   reg RESET_XPORT_N_z;
-  always @(posedge gclk40) begin
+  always @(posedge gclk33) begin
     RESET_XPORT_N_z <= RESET_XPORT_N;
   end
   assign reset_xport = RESET_XPORT_N_z != RESET_XPORT_N;
 
   wire hard_reset_int;
   wire por_reset;
+  assign por_reset = !CHS_RESET_N;
 
   reset_block #(
     .DELAY(0),
     .WIDTH(32'h200_0000)
   ) reset_block_inst (
-    .clk(gclk40),
-    .async_reset_i(1'b0),
-    .reset_i(reset_xport || por_reset),
+    .clk(gclk33),
+    .async_reset_i(por_reset),
+    .reset_i(reset_xport),
     .reset_o(hard_reset_int)
   );
   assign XPORT_RESET_N = 1'b1;
@@ -130,17 +130,9 @@ module toplevel(
   debouncer #(
     .DELAY(32'h0020_0000)
   ) debouncer_pwr_inst (  
-    .clk(gclk40),
+    .clk(gclk33),
     .rst(hard_reset),
     .in_switch(!CHS_POWERDOWN_N), .out_switch(chs_powerdown)
-  );
-
-  debouncer #(
-    .DELAY(32'h0002_0000)
-  ) debouncer_rst_inst (  
-    .clk(gclk40),
-    .rst(1'b0),
-    .in_switch(!CHS_RESET_N), .out_switch(por_reset)
   );
 
   /******* Chassis Reset (performs soft reset in power manager) ********/
@@ -150,13 +142,13 @@ module toplevel(
   debouncer #(
     .DELAY(32'h0002_0000)
   ) debouncer_chs_rst_inst (  
-    .clk(gclk40),
+    .clk(gclk33),
     .rst(1'b0),
     .in_switch(chs_reset_in_switch), .out_switch(chs_reset_int)
   );
 
   reg chs_reset_z;
-  always @(posedge gclk40) begin
+  always @(posedge gclk33) begin
     chs_reset_z <= chs_reset_int;
   end
 
@@ -170,8 +162,8 @@ module toplevel(
 
   wire gclk_xtal;
   infrastructure infrastructure_inst(
-    .gclk40(gclk40),.gclk100(gclk100),.gclk10(gclk10),.gclk_xtal(gclk_xtal),
-    .PLL_LOCK(pll_lock),
+    .gclk33    (gclk33),
+    .gclk_xtal (gclk_xtal),
     .PUB(PUB), .FPGAGOOD(nc_fpgagood), .XTLCLK(XTLCLK),
     .RTCCLK(rtcclk), .SELMODE(selmode), .RTC_MODE(rtc_mode), .vcc_good(AUX_3V3_PG)
   );
@@ -214,7 +206,7 @@ module toplevel(
     .BAUD(`DEBUG_SERIAL_BAUD),
     .CLOCK_RATE(`MASTER_CLOCK_RATE)
   ) serial_uart_debug (
-    .clk(gclk40), .reset(hard_reset),
+    .clk(gclk33), .reset(hard_reset),
     .serial_in  (DEBUG_SERIAL_IN),   .serial_out(DEBUG_SERIAL_OUT),
     .serial_rts (1'b1),  .serial_cts(),
 
@@ -231,7 +223,7 @@ module toplevel(
 
   /* Debug WB bridge */
   as_wb_bridge as_wb_bridge_debug(
-    .clk(gclk40),
+    .clk(gclk33),
     .reset(hard_reset), 
     .as_data_i  (ds_as_data_o),
     .as_dstrb_i (ds_as_dstrb_o),
@@ -264,7 +256,7 @@ module toplevel(
     .BAUD       (`XPORT_SERIAL_BAUD),
     .CLOCK_RATE (`MASTER_CLOCK_RATE)
   ) serial_uart_xport (
-    .clk   (gclk40),
+    .clk   (gclk33),
     .reset (hard_reset),
     .serial_in  (XPORT_SERIAL_IN),  .serial_out (XPORT_SERIAL_OUT),
     .serial_rts (XPORT_SERIAL_RTS), .serial_cts (XPORT_SERIAL_CTS),
@@ -281,7 +273,7 @@ module toplevel(
     .USE_INPUT_FIFO  (0),
     .USE_OUTPUT_FIFO (0)
   ) as_wb_bridge_xport (
-    .clk   (gclk40),
+    .clk   (gclk33),
     .reset (hard_reset), 
 
     .as_data_i  (xp_as_data_o),
@@ -331,7 +323,7 @@ module toplevel(
     .CLOCK_RATE(`MASTER_CLOCK_RATE),
     .ADDRESS(`I2C_SLAVE_ADDRESS)
   ) i2c_slave_controller (
-    .clk(gclk40), .reset(hard_reset),
+    .clk(gclk33), .reset(hard_reset),
     .scl_i(ctrl_scl_i), .scl_o(ctrl_scl_o), .scl_oen(ctrl_scl_oen),
     .sda_i(ctrl_sda_i), .sda_o(ctrl_sda_o), .sda_oen(ctrl_sda_oen),
     .as_data_i(ctrl_as_data_i),  .as_data_o(ctrl_as_data_o),
@@ -344,7 +336,7 @@ module toplevel(
     .USE_INPUT_FIFO  (1),
     .USE_OUTPUT_FIFO (1)
   ) as_wb_bridge_controller(
-    .clk(gclk40), .reset(hard_reset), 
+    .clk(gclk33), .reset(hard_reset), 
     .as_data_i(ctrl_as_data_o), .as_data_o(ctrl_as_data_i),
     .as_dstrb_i(ctrl_as_dstrb_o), .as_busy_i(ctrl_as_busy_o), .as_dstrb_o(ctrl_as_dstrb_i),
     .wb_we_o(controller_wb_we_o), .wb_cyc_o(controller_wb_cyc_o), .wb_stb_o(controller_wb_stb_o),
@@ -377,7 +369,7 @@ module toplevel(
     .FLASH_A           (`MEM_FLASHMEM_A + 64),
     .FLASH_SYSCONFIG_A (`MEM_FLASHMEM_H)
   ) dma_engine_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_o(dma_wb_cyc_o), .wb_stb_o(dma_wb_stb_o), .wb_we_o(dma_wb_we_o),
     .wb_adr_o(dma_wb_adr_o), .wb_dat_o(dma_wb_dat_o), .wb_dat_i(dma_wb_dat_i),
     .wb_ack_i(dma_wb_ack_i), .wb_err_i(dma_wb_err_i),
@@ -411,7 +403,7 @@ module toplevel(
   wbm_arbiter #(
     .NUM_MASTERS(4)
   ) wbm_arbiter_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
 
     .wbm_cyc_i({dma_wb_cyc_o, controller_wb_cyc_o, xport_wb_cyc_o, debug_wb_cyc_o}),
     .wbm_stb_i({dma_wb_stb_o, controller_wb_stb_o, xport_wb_stb_o, debug_wb_stb_o}),
@@ -484,7 +476,7 @@ module toplevel(
    .A10_BASE(`MEM_FLASHMEM_A),
    .A10_HIGH(`MEM_FLASHMEM_H)
   ) wbs_arbiter_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wbm_cyc_i(wbm_cyc_o), .wbm_stb_i(wbm_stb_o), .wbm_we_i(wbm_we_o),
     .wbm_adr_i(wbm_adr_o), .wbm_dat_i(wbm_dat_o), .wbm_dat_o(wbm_dat_i),
     .wbm_ack_o(wbm_ack_i), .wbm_err_o(wbm_err_i),
@@ -513,7 +505,7 @@ module toplevel(
     .REV_RCS      (`REV_RCS),
     .RCS_UPTODATE (`RCS_UPTODATE)
   ) sys_config_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[0]), .wb_stb_i(wbs_stb_o[0]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(0 + 1) - 1:16*0]),
     .wb_ack_o(wbs_ack_i[0]),
@@ -533,7 +525,7 @@ module toplevel(
   );
 
   from_controller from_controller_0(
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[1]), .wb_stb_i(wbs_stb_o[1]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(1 + 1) - 1:16*1]),
     .wb_ack_o(wbs_ack_i[1]),
@@ -561,7 +553,7 @@ module toplevel(
   wire rtcmatch_nc, rtcpsmmatch_nc;
 
   analogue_infrastructure analogue_infrastructure_inst(
-    .SYS_CLK(gclk40),
+    .SYS_CLK(gclk33),
     .AG(AG),.AG_EN(ag_en),.AV(AV),.AC(AC),.AT(AT),.ATRETURN(ATRET),
     .ADC_START(ADC_START),.ADC_SAMPLE(ADC_SAMPLE),.ADC_CHNUM(ADC_CHNUM),
     .ADC_CALIBRATE(ADC_CALIBRATE),.ADC_BUSY(ADC_BUSY),.ADC_DATAVALID(ADC_DATAVALID),
@@ -575,7 +567,7 @@ module toplevel(
   );
 
   acm_controller acm_controller_inst(
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[2]), .wb_stb_i(wbs_stb_o[2]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(2 + 1) - 1:16*2]),
     .wb_ack_o(wbs_ack_i[2]),
@@ -593,7 +585,7 @@ module toplevel(
   adc_controller #(
     .DEFAULT_SAMPLE_AVERAGING(`DEFAULT_SAMPLE_AVERAGING)
   ) adc_controller_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[3]), .wb_stb_i(wbs_stb_o[3]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(3 + 1) - 1:16*3]),
     .wb_ack_o(wbs_ack_i[3]),
@@ -618,7 +610,7 @@ module toplevel(
   wire power_ok, power_on;
 
   lc_infrastructure lc_infrastructure_inst(
-    .clk(gclk40), .reset(hard_reset),
+    .clk(gclk33), .reset(hard_reset),
     .ram_raddr(lc_ram_raddr),
     .ram_waddr(lc_ram_waddr),
     .ram_rdata(lc_ram_rdata),
@@ -627,7 +619,7 @@ module toplevel(
   );
 
   level_checker level_checker_inst(
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[4]), .wb_stb_i(wbs_stb_o[4]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(4 + 1) - 1:16*4]),
     .wb_ack_o(wbs_ack_i[4]),
@@ -649,7 +641,7 @@ module toplevel(
   wire [11:0] vs_ram_wdata;
 
   vs_infrastructure vs_infrastructure (
-    .clk(gclk40), .reset(hard_reset),
+    .clk(gclk33), .reset(hard_reset),
     .ram_raddr(vs_ram_raddr),
     .ram_waddr(vs_ram_waddr),
     .ram_rdata(vs_ram_rdata),
@@ -658,7 +650,7 @@ module toplevel(
   );
 
   value_storage value_storage_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[5]), .wb_stb_i(wbs_stb_o[5]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(5 + 1) - 1:16*5]),
     .wb_ack_o(wbs_ack_i[5]),
@@ -707,7 +699,7 @@ module toplevel(
     .POST_POWERUP_WAIT(`POST_POWERUP_WAIT)
   ) power_manager_inst (
     /* Wishbone Interface */
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[6]), .wb_stb_i(wbs_stb_o[6]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(6 + 1) - 1:16*6]),
     .wb_ack_o(wbs_ack_i[6]),
@@ -739,7 +731,7 @@ module toplevel(
   irq_controller #(
     .NUM_SOURCES(4)
   ) irq_controller_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset | soft_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset | soft_reset),
     .wb_cyc_i(wbs_cyc_o[7]), .wb_stb_i(wbs_stb_o[7]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(7 + 1) - 1:16*7]),
     .wb_ack_o(wbs_ack_i[7]),
@@ -751,7 +743,7 @@ module toplevel(
   fan_controller #( 
     .NUM_FANS(3)
   ) fan_controller_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[8]), .wb_stb_i(wbs_stb_o[8]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(8 + 1) - 1:16*8]),
     .wb_ack_o(wbs_ack_i[8]),
@@ -775,7 +767,7 @@ module toplevel(
 
 
   reg power_ok_z;
-  always @(posedge gclk40) begin
+  always @(posedge gclk33) begin
     power_ok_z <= power_ok;
   end
 
@@ -792,7 +784,7 @@ module toplevel(
     .OUT_DEFAULTS (12'b0100_0000_0000),
     .DED_DEFAULTS (12'b0000_1000_0000)
   ) gpio_controller_inst (
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset || power_ok_negedge),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset || power_ok_negedge),
     .wb_cyc_i(wbs_cyc_o[9]), .wb_stb_i(wbs_stb_o[9]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(9 + 1) - 1:16*9]),
     .wb_ack_o(wbs_ack_i[9]),
@@ -821,7 +813,7 @@ end endgenerate
   /*
   no longer used
   bus_monitor bus_monitor_inst(
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[9]), .wb_stb_i(wbs_stb_o[9]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(9 + 1) - 1:16*9]),
     .wb_ack_o(wbs_ack_i[9]),
@@ -860,7 +852,7 @@ end endgenerate
   );
 
   flashmem_controller flashmem_controller_inst(
-    .wb_clk_i(gclk40), .wb_rst_i(hard_reset),
+    .wb_clk_i(gclk33), .wb_rst_i(hard_reset),
     .wb_cyc_i(wbs_cyc_o[10]), .wb_stb_i(wbs_stb_o[10]), .wb_we_i(wbs_we_o),
     .wb_adr_i(wbs_adr_o), .wb_dat_i(wbs_dat_o), .wb_dat_o(wbs_dat_i[16*(10 + 1) - 1:16*10]),
     .wb_ack_o(wbs_ack_i[10]),
